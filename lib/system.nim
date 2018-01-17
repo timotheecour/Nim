@@ -4111,3 +4111,18 @@ template doAssertRaises*(exception, code: untyped): typed =
     raiseAssert(astToStr(exception) &
                 " wasn't raised, another error was raised instead by:\n"&
                 astToStr(code))
+
+
+proc `$`*(t: typedesc): string =
+  ## Returns the name of the given type.
+  ##
+  ## For more procedures dealing with ``typedesc``, see the ``typetraits``
+  ## module.
+  ##
+  runnableExamples:
+     doAssert $(type(42)) == "int"
+     doAssert $(type("Foo")) == "string"
+     doAssert $(type(@['A', 'B'])) == "seq[char]"
+  proc name(t: typedesc): string {.magic: "TypeTrait".}
+
+  return name(t)
