@@ -265,4 +265,8 @@ bar()
 
 import std / [strutils, os, osproc]
 import someNimblePackage / [strutils, os]
+
 ```
+- ``osLastError`` is now marked with ``sideEffect`` and the ``ReadIOEffect`` tag
+  explicitly.
+
