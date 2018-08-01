@@ -2855,7 +2855,8 @@ Example:
 The block statement is a means to group statements to a (named) ``block``.
 Inside the block, the ``break`` statement is allowed to leave the block
 immediately. A ``break`` statement can contain a name of a surrounding
-block to specify which block is to leave.
+block to specify which block is to leave. Block symbols do not live in their own
+symbol table.
 
 
 Break statement
