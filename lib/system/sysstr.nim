@@ -123,10 +123,14 @@ proc cstrToNimstr(str: cstring): NimString {.compilerRtl.} =
   else: toNimStr(str, str.len)
 
 proc copyString(src: NimString): NimString {.compilerRtl.} =
+  echo "copyString:"
   if src != nil:
+    echo "copyString:ok2"
     if (src.reserved and seqShallowFlag) != 0:
+      echo "copyString:ok3"
       result = src
     else:
+      echo "copyString:ok4"
       result = rawNewStringNoInit(src.len)
       result.len = src.len
       copyMem(addr(result.data), addr(src.data), src.len + 1)

@@ -109,6 +109,7 @@ template `-!`(p: pointer, s: int): pointer =
   cast[pointer](cast[int](p) -% s)
 
 proc allocSlowPath(r: var MemRegion; size: int) =
+  echo ("allocSlowPath:", size)
   # we need to ensure that the underlying linked list
   # stays small. Say we want to grab 16GB of RAM with some
   # exponential growth function. So we allocate 16KB, then
@@ -146,6 +147,7 @@ proc allocSlowPath(r: var MemRegion; size: int) =
   r.remaining = s - sizeof(BaseChunk)
 
 proc allocFast(r: var MemRegion; size: int): pointer =
+  echo "allocFast:"
   when false:
     if size <= MaxSmallObject:
       var it = r.freeLists[size div MemAlign]
@@ -163,6 +165,7 @@ proc allocFast(r: var MemRegion; size: int): pointer =
         prev = it
         it = it.next
   let size = roundup(size, MemAlign)
+  echo ("allocFast:", size, r.remaining)
   if size > r.remaining:
     allocSlowPath(r, size)
   sysAssert(size <= r.remaining, "size <= r.remaining")
