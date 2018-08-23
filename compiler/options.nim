@@ -265,6 +265,12 @@ template newPackageCache*(): untyped =
                  else:
                    modeCaseSensitive)
 
+var globalConfigRef: ConfigRef
+proc getGlobalConfigRef*(): ConfigRef =
+  ## convenience function to retrieve globally defined globalConfigRef
+  ## in cases where it would otherwise require lots of refactoring to expose it
+  globalConfigRef
+
 proc newConfigRef*(): ConfigRef =
   result = ConfigRef(
     selectedGC: gcRefc,
@@ -315,6 +321,9 @@ proc newConfigRef*(): ConfigRef =
   # enable colors by default on terminals
   if terminal.isatty(stderr):
     incl(result.globalOptions, optUseColors)
+
+  if globalConfigRef.isNil:
+    globalConfigRef = result
 
 proc newPartialConfigRef*(): ConfigRef =
   ## create a new ConfigRef that is only good enough for error reporting.
