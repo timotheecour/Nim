@@ -291,9 +291,6 @@ proc coordToStr(coord: int): string =
 proc tLineInfoToStr*(conf: ConfigRef; info: TLineInfo): string =
   lineInfoToString(
     toMsgFilename(conf, info), info.line.int, info.col+colOffset)
-    # toMsgFilename(conf, info),
-    # coordToStr(info.line.int),
-    # coordToStr(info.col+columnOffset))
 
 proc msgKindToString*(kind: TMsgKind): string =
   # later versions may provide translated error messages
@@ -436,7 +433,7 @@ proc formatMsg*(conf: ConfigRef; info: TLineInfo, msg: TMsgKind, arg: string): s
               of warnMin..warnMax: WarningTitle
               of hintMin..hintMax: HintTitle
               else: ErrorTitle
-  result = conf.tLineInfoToStr(info) & title & getMessageStr(msg, arg)
+  result = conf.tLineInfoToStr(info) & " " & title & getMessageStr(msg, arg)
 
 proc liMessage(conf: ConfigRef; info: TLineInfo, msg: TMsgKind, arg: string,
                eh: TErrorHandling) =
@@ -471,7 +468,7 @@ proc liMessage(conf: ConfigRef; info: TLineInfo, msg: TMsgKind, arg: string,
     color = HintColor
     if msg != hintUserRaw: kind = HintsToStr[ord(msg) - ord(hintMin)]
     inc(conf.hintCounter)
-  let x = conf.tLineInfoToStr(info)
+  let x = conf.tLineInfoToStr(info) & " "
   let s = getMessageStr(msg, arg)
 
   if not ignoreMsg:
