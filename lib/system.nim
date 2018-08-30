@@ -3767,7 +3767,7 @@ template assertImpl(cond: bool, msg = "", enabled: static[bool]) =
   mixin failedAssertImpl
   when enabled:
     if not cond:
-      failedAssertImpl(loc & "`" & astToStr(cond) & "` " & msg)
+      failedAssertImpl(loc & " `" & astToStr(cond) & "` " & msg)
 
 template assert*(cond: bool, msg = "") =
   ## Raises ``AssertionError`` with `msg` if `cond` is false. Note

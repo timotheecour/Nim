@@ -23,7 +23,6 @@ proc lineInfoToString(file: string, line, col = colEmpty): string =
     if col > 0:
       result.add ", " & $col
     result.add ")"
-  result.add " "
 
 type InstantiationInfo = tuple[filename: string, line: int, column: int]
 
