@@ -273,7 +273,7 @@ proc cleanUpOnException(c: PCtx; tos: PStackFrame):
                           abstractPtrs)
                        else: nil
       #echo typeToString(exceptType), " ", typeToString(raisedType)
-      if exceptType.isNil or inheritanceDiff(exceptType, raisedType) <= 0:
+      if exceptType.isNil or inheritanceDiff(raisedType, exceptType) <= 0:
         # mark exception as handled but keep it in B for
         # the getCurrentException() builtin:
         c.currentExceptionB = c.currentExceptionA
@@ -820,7 +820,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         regs[ra].intVal = ord((regs[rb].node.kind == nkNilLit and
                               regs[rc].node.kind == nkNilLit) or
                               regs[rb].node == regs[rc].node)
-    of opcEqNimrodNode:
+    of opcEqNimNode:
       decodeBC(rkInt)
       regs[ra].intVal =
         ord(exprStructuralEquivalent(regs[rb].node, regs[rc].node,
@@ -917,6 +917,15 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
       if a.kind == nkSym:
         regs[ra].node = if a.sym.ast.isNil: newNode(nkNilLit)
                         else: copyTree(a.sym.ast)
+        regs[ra].node.flags.incl nfIsRef
+      else:
+        stackTrace(c, tos, pc, "node is not a symbol")
+    of opcSymOwner:
+      decodeB(rkNode)
+      let a = regs[rb].node
+      if a.kind == nkSym:
+        regs[ra].node = if a.sym.owner.isNil: newNode(nkNilLit)
+                        else: newSymNode(a.sym.skipGenericOwner)
         regs[ra].node.flags.incl nfIsRef
       else:
         stackTrace(c, tos, pc, "node is not a symbol")
