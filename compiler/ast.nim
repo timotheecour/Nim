@@ -664,7 +664,7 @@ type
     mNimvm, mIntDefine, mStrDefine, mBoolDefine, mRunnableExamples,
     mException, mBuiltinType, mSymOwner, mUncheckedArray, mGetImplTransf,
     mSymIsInstantiationOf, mNodeId
-
+    mModuleSymbols,
 
 # things that we can evaluate safely at compile time, even if not asked for it:
 const
