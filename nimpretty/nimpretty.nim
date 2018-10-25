@@ -27,6 +27,7 @@ Options:
   --backup:on|off     create a backup file before overwritting (default: ON)
   --output:file       set the output file (default: overwrite the .nim file)
   --indentSpaces:n    indents use `n` spaces (default: 0=infer from 1st indent)
+  --margin:n          max line length (default = 80, 0 = infinity ie no wrapping)
   --version           show the version
   --help              show this help
 """
@@ -64,6 +65,10 @@ proc main =
       of "version", "v": writeVersion()
       of "backup": backup = parseBool(val)
       of "indentspaces": conf.nimprettyOpt.indentSpaces = parseInt(val)
+      of "margin":
+        var n = parseInt(val)
+        if n == 0: n = int.high
+        conf.nimprettyOpt.maxLineLen = n
       of "output", "o": outfile = val
       else: writeHelp()
     of cmdEnd: assert(false) # cannot happen

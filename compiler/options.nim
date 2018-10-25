@@ -163,6 +163,7 @@ type
 
   NimprettyOpt* = object
     indentSpaces*: int ## number of spaces for indents; 0=infer from 1st indent
+    maxLineLen*: int ## max line length
 
   ConfigRef* = ref object ## every global configuration
                           ## fields marked with '*' are subject to
@@ -341,6 +342,10 @@ proc newConfigRef*(): ConfigRef =
     arguments: "",
     suggestMaxResults: 10_000
   )
+
+  when defined(nimpretty):
+    result.nimprettyOpt.maxLineLen = 80
+
   setTargetFromSystem(result.target)
   # enable colors by default on terminals
   if terminal.isatty(stderr):

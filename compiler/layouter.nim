@@ -14,7 +14,6 @@ import idents, lexer, lineinfos, llstream, options, msgs, strutils,
 from os import changeFileExt
 
 const
-  MaxLineLen = 80
   LineCommentColumn = 30
 
 type
@@ -37,6 +36,9 @@ type
     indentStack: seq[int]
     fixedUntil: int # marks where we must not go in the content
     altSplitPos: array[SplitKind, int] # alternative split positions
+
+proc maxLineLen(em: Emitter): int =
+  em.config.nimprettyOpt.maxLineLen
 
 proc openEmitter*(em: var Emitter, cache: IdentCache;
                   config: ConfigRef, fileIdx: FileIndex) =
@@ -84,7 +86,7 @@ template wr(x) =
   em.content.add x
   inc em.col, x.len
 
-template goodCol(col): bool = col in 40..MaxLineLen
+template goodCol(em): bool = em.col in 40..em.maxLineLen
 
 const
   openPars = {tkParLe, tkParDotLe,
@@ -95,7 +97,7 @@ const
             tkIsnot, tkNot, tkOf, tkAs, tkDotDot, tkAnd, tkOr, tkXor}
 
 template rememberSplit(kind) =
-  if goodCol(em.col):
+  if goodCol(em):
     em.altSplitPos[kind] = em.content.len
 
 template moreIndent(em): int =
@@ -105,7 +107,7 @@ proc softLinebreak(em: var Emitter, lit: string) =
   # XXX Use an algorithm that is outlined here:
   # https://llvm.org/devmtg/2013-04/jasper-slides.pdf
   # +2 because we blindly assume a comma or ' &' might follow
-  if not em.inquote and em.col+lit.len+2 >= MaxLineLen:
+  if not em.inquote and em.col+lit.len+2 >= em.maxLineLen:
     if em.lastTok in splitters:
       while em.content.len > 0 and em.content[em.content.high] == ' ':
         setLen(em.content, em.content.len-1)
@@ -138,7 +140,7 @@ proc emitTok*(em: var Emitter; L: TLexer; tok: TToken) =
     if em.lineSpan > 0: calcCol(em, lit)
     if not endsInWhite(em):
       wr(" ")
-      if em.lineSpan == 0 and max(em.col, LineCommentColumn) + lit.len <= MaxLineLen:
+      if em.lineSpan == 0 and max(em.col, LineCommentColumn) + lit.len <= em.maxLineLen:
         for i in 1 .. LineCommentColumn - em.col: wr(" ")
     wr lit
 

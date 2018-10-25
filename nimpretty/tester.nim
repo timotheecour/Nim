@@ -21,9 +21,11 @@ proc test(infile, ext: string) =
   case infile.splitFile.name:
     # can hardcode custom options here
     of "simple4": extraArg = "--indentSpaces:4"
+    of "simple5": extraArg = "--margin:100"
     else: discard
 
   let cmd = "$# -o:$# --backup:off $# $#" % [nimp, infile.changeFileExt(ext), extraArg, infile]
+  # echo cmd
   if execShellCmd(cmd) != 0:
     quit("FAILURE")
   let nimFile = splitFile(infile).name
