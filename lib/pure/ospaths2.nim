@@ -11,9 +11,11 @@
 ## to avoid the never ending time sink in getting path handling right.
 ## Might be a candidate for the stdlib later.
 
+include "system/inclrtl"
 import strutils
-import ospaths
+import osdefs
 
+## distinct types
 type
   AbsoluteFile* = distinct string
   AbsoluteDir* = distinct string
@@ -29,6 +31,31 @@ type
   PathIter = object
     i, prev: int
     notFirst: bool
+
+proc isAbsolute*(path: string): bool {.rtl, noSideEffect, extern: "nos$1".} =
+  ## Checks whether a given `path` is absolute.
+  ##
+  ## On Windows, network paths are considered absolute too.
+  runnableExamples:
+    doAssert(not "".isAbsolute)
+    doAssert(not ".".isAbsolute)
+    when defined(posix):
+      doAssert "/".isAbsolute
+      doAssert(not "a/".isAbsolute)
+
+  if len(path) == 0: return false
+
+  when doslikeFileSystem:
+    var len = len(path)
+    result = (path[0] in {'/', '\\'}) or
+              (len > 1 and path[0] in {'a'..'z', 'A'..'Z'} and path[1] == ':')
+  elif defined(macos):
+    # according to https://perldoc.perl.org/File/Spec/Mac.html `:a` is a relative path
+    result = path[0] != ':'
+  elif defined(RISCOS):
+    result = path[0] == '$'
+  elif defined(posix):
+    result = path[0] == '/'
 
 proc hasNext(it: PathIter; x: string): bool =
   it.i < x.len
@@ -193,14 +220,6 @@ when true:
   proc toAbsolute*(file: string; base: AbsoluteDir): AbsoluteFile =
     if isAbsolute(file): result = AbsoluteFile(file)
     else: result = base / RelativeFile file
-
-  proc changeFileExt*(x: AbsoluteFile; ext: string): AbsoluteFile {.borrow.}
-  proc changeFileExt*(x: RelativeFile; ext: string): RelativeFile {.borrow.}
-
-  proc addFileExt*(x: AbsoluteFile; ext: string): AbsoluteFile {.borrow.}
-  proc addFileExt*(x: RelativeFile; ext: string): RelativeFile {.borrow.}
-
-  proc writeFile*(x: AbsoluteFile; content: string) {.borrow.}
 
 when isMainModule and defined(posix):
   doAssert canon"/foo/../bar" == "/bar"

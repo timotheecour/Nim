@@ -12,6 +12,12 @@ proc splitFile*(x: AbsoluteFile): tuple[dir: AbsoluteDir, name, ext: string] =
   let (a, b, c) = splitFile(x.string)
   result = (dir: AbsoluteDir(a), name: b, ext: c)
 
+proc changeFileExt*(x: AbsoluteFile; ext: string): AbsoluteFile {.borrow.}
+proc changeFileExt*(x: RelativeFile; ext: string): RelativeFile {.borrow.}
+
+proc addFileExt*(x: AbsoluteFile; ext: string): AbsoluteFile {.borrow.}
+proc addFileExt*(x: RelativeFile; ext: string): RelativeFile {.borrow.}
+
 ##
 proc copyFile*(source, dest: AbsoluteFile) =
   os.copyFile(source.string, dest.string)
@@ -23,3 +29,4 @@ proc dirExists*(x: AbsoluteDir): bool {.borrow.}
 
 proc createDir*(x: AbsoluteDir) {.borrow.}
 
+proc writeFile*(x: AbsoluteFile; content: string) {.borrow.}
