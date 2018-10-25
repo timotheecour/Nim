@@ -222,8 +222,7 @@ when true:
     else: result = base / RelativeFile file
 
 when isMainModule and defined(posix):
-  # doAssert canon"/foo/../bar" == "/bar"
-  echo canon"foo/../bar"
+  doAssert canon"/foo/../bar" == "/bar"
   doAssert canon"foo/../bar" == "bar"
 
   doAssert canon"/f/../bar///" == "/bar"
