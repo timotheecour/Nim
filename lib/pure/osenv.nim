@@ -1,7 +1,20 @@
-## Include file that implements 'getEnv' and friends. Do not import it!
+## Include file that implements 'getEnv' and friends.
 
-when not declared(ospaths):
-  {.error: "This is an include file for ospaths.nim!".}
+import strutils
+import oserr
+
+type
+  ReadEnvEffect* = object of ReadIOEffect   ## effect that denotes a read
+                                            ## from an environment variable
+  WriteEnvEffect* = object of WriteIOEffect ## effect that denotes a write
+                                            ## to an environment variable
+
+  ReadDirEffect* = object of ReadIOEffect   ## effect that denotes a read
+                                            ## operation from the directory
+                                            ## structure
+  WriteDirEffect* = object of WriteIOEffect ## effect that denotes a write
+                                            ## operation to
+                                            ## the directory structure
 
 proc c_getenv(env: cstring): cstring {.
   importc: "getenv", header: "<stdlib.h>".}
@@ -94,59 +107,60 @@ proc findEnvVar(key: string): int =
     if startsWith(environment[i], temp): return i
   return -1
 
-proc getEnv*(key: string, default = ""): TaintedString {.tags: [ReadEnvEffect].} =
-  ## Returns the value of the `environment variable`:idx: named `key`.
-  ##
-  ## If the variable does not exist, "" is returned. To distinguish
-  ## whether a variable exists or it's value is just "", call
-  ## `existsEnv(key)`.
-  when nimvm:
-    discard "built into the compiler"
-  else:
-    var i = findEnvVar(key)
-    if i >= 0:
-      return TaintedString(substr(environment[i], find(environment[i], '=')+1))
+when not defined(nimscript):
+  proc getEnv*(key: string, default = ""): TaintedString {.tags: [ReadEnvEffect].} =
+    ## Returns the value of the `environment variable`:idx: named `key`.
+    ##
+    ## If the variable does not exist, "" is returned. To distinguish
+    ## whether a variable exists or it's value is just "", call
+    ## `existsEnv(key)`.
+    when nimvm:
+      discard "built into the compiler"
     else:
-      var env = c_getenv(key)
-      if env == nil: return TaintedString(default)
-      result = TaintedString($env)
-
-proc existsEnv*(key: string): bool {.tags: [ReadEnvEffect].} =
-  ## Checks whether the environment variable named `key` exists.
-  ## Returns true if it exists, false otherwise.
-  when nimvm:
-    discard "built into the compiler"
-  else:
-    if c_getenv(key) != nil: return true
-    else: return findEnvVar(key) >= 0
-
-proc putEnv*(key, val: string) {.tags: [WriteEnvEffect].} =
-  ## Sets the value of the `environment variable`:idx: named `key` to `val`.
-  ## If an error occurs, `EInvalidEnvVar` is raised.
-
-  # Note: by storing the string in the environment sequence,
-  # we guarantee that we don't free the memory before the program
-  # ends (this is needed for POSIX compliance). It is also needed so that
-  # the process itself may access its modified environment variables!
-  when nimvm:
-    discard "built into the compiler"
-  else:
-    var indx = findEnvVar(key)
-    if indx >= 0:
-      environment[indx] = key & '=' & val
-    else:
-      add environment, (key & '=' & val)
-      indx = high(environment)
-    when defined(windows) and not defined(nimscript):
-      when useWinUnicode:
-        var k = newWideCString(key)
-        var v = newWideCString(val)
-        if setEnvironmentVariableW(k, v) == 0'i32: raiseOSError(osLastError())
+      var i = findEnvVar(key)
+      if i >= 0:
+        return TaintedString(substr(environment[i], find(environment[i], '=')+1))
       else:
-        if setEnvironmentVariableA(key, val) == 0'i32: raiseOSError(osLastError())
+        var env = c_getenv(key)
+        if env == nil: return TaintedString(default)
+        result = TaintedString($env)
+
+  proc existsEnv*(key: string): bool {.tags: [ReadEnvEffect].} =
+    ## Checks whether the environment variable named `key` exists.
+    ## Returns true if it exists, false otherwise.
+    when nimvm:
+      discard "built into the compiler"
     else:
-      if c_putenv(environment[indx]) != 0'i32:
-        raiseOSError(osLastError())
+      if c_getenv(key) != nil: return true
+      else: return findEnvVar(key) >= 0
+
+  proc putEnv*(key, val: string) {.tags: [WriteEnvEffect].} =
+    ## Sets the value of the `environment variable`:idx: named `key` to `val`.
+    ## If an error occurs, `EInvalidEnvVar` is raised.
+
+    # Note: by storing the string in the environment sequence,
+    # we guarantee that we don't free the memory before the program
+    # ends (this is needed for POSIX compliance). It is also needed so that
+    # the process itself may access its modified environment variables!
+    when nimvm:
+      discard "built into the compiler"
+    else:
+      var indx = findEnvVar(key)
+      if indx >= 0:
+        environment[indx] = key & '=' & val
+      else:
+        add environment, (key & '=' & val)
+        indx = high(environment)
+      when defined(windows):
+        when useWinUnicode:
+          var k = newWideCString(key)
+          var v = newWideCString(val)
+          if setEnvironmentVariableW(k, v) == 0'i32: raiseOSError(osLastError())
+        else:
+          if setEnvironmentVariableA(key, val) == 0'i32: raiseOSError(osLastError())
+      else:
+        if c_putenv(environment[indx]) != 0'i32:
+          raiseOSError(osLastError())
 
 iterator envPairs*(): tuple[key, value: TaintedString] {.tags: [ReadEnvEffect].} =
   ## Iterate over all `environments variables`:idx:. In the first component

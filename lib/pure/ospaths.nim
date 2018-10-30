@@ -13,22 +13,11 @@
 include "system/inclrtl"
 
 import strutils
+import osenv
 import oserr
 
 export oserr
-
-type
-  ReadEnvEffect* = object of ReadIOEffect   ## effect that denotes a read
-                                            ## from an environment variable
-  WriteEnvEffect* = object of WriteIOEffect ## effect that denotes a write
-                                            ## to an environment variable
-
-  ReadDirEffect* = object of ReadIOEffect   ## effect that denotes a read
-                                            ## operation from the directory
-                                            ## structure
-  WriteDirEffect* = object of WriteIOEffect ## effect that denotes a write
-                                            ## operation to
-                                            ## the directory structure
+export osenv
 
 const
   doslikeFileSystem* = defined(windows) or defined(OS2) or defined(DOS)
@@ -548,9 +537,6 @@ proc unixToNativePath*(path: string, drive=""): string {.
       else:
         add result, path[i]
         inc(i)
-
-when not defined(nimscript):
-  include "includes/osenv"
 
 proc getHomeDir*(): string {.rtl, extern: "nos$1",
   tags: [ReadEnvEffect, ReadIOEffect].} =
