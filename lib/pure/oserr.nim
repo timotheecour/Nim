@@ -1,7 +1,7 @@
-## Include file that implements 'osErrorMsg' and friends. Do not import it!
+## Include file that implements 'osErrorMsg' and friends.
 
-when not declared(ospaths):
-  {.error: "This is an include file for ospaths.nim!".}
+type
+  OSErrorCode* = distinct int32 ## Specifies an OS Error Code.
 
 when not defined(nimscript):
   var errno {.importc, header: "<errno.h>".}: cint

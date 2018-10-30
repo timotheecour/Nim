@@ -13,6 +13,9 @@
 include "system/inclrtl"
 
 import strutils
+import oserr
+
+export oserr
 
 type
   ReadEnvEffect* = object of ReadIOEffect   ## effect that denotes a read
@@ -26,8 +29,6 @@ type
   WriteDirEffect* = object of WriteIOEffect ## effect that denotes a write
                                             ## operation to
                                             ## the directory structure
-
-  OSErrorCode* = distinct int32 ## Specifies an OS Error Code.
 
 const
   doslikeFileSystem* = defined(windows) or defined(OS2) or defined(DOS)
@@ -548,7 +549,6 @@ proc unixToNativePath*(path: string, drive=""): string {.
         add result, path[i]
         inc(i)
 
-include "includes/oserr"
 when not defined(nimscript):
   include "includes/osenv"
 
