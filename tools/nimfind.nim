@@ -29,7 +29,7 @@ are supported.
 """
 
 import strutils, os, parseopt, parseutils
-
+PRTMEP
 import "../compiler" / [options, commands, modules, sem,
   passes, passaux, msgs, nimconf,
   extccomp, condsyms,
