@@ -349,6 +349,7 @@ proc splitFile*(path: string): tuple[dir, name, ext: string] {.
   ## If `path` has no extension, `ext` is the empty string.
   ## If `path` has no directory component, `dir` is the empty string.
   ## If `path` has no filename component, `name` and `ext` are empty strings.
+  echo "splitFile:{",path,"}"
   if path.len == 0 or path[^1] in {DirSep, AltSep}:
     if path.len == 1:
       # issue #8255
