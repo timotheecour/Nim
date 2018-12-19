@@ -607,7 +607,8 @@ proc getNimcacheDir*(conf: ConfigRef): AbsoluteDir =
            elif conf.cmd == cmdCompileToJS:
              conf.projectPath / genSubDir
            else:
-            echo (conf.projectName, splitFile(conf.projectName), splitFile(conf.projectName).name)
+            echo ("foo", conf.projectName)
+            # echo (conf.projectName, splitFile(conf.projectName), splitFile(conf.projectName).name)
             AbsoluteDir(getOsCacheDir() / splitFile(conf.projectName).name &
                (if isDefined(conf, "release"): "_r" else: "_d"))
 
