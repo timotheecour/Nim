@@ -7,7 +7,8 @@
 #    distribution, for details about the copyright.
 #
 
-## This file implements basic features for any debugger.
+## This file implements basic features for any custom debugger.
+## Note: gdb/lldb don't use this.
 
 type
   VarSlot* {.compilerproc, final.} = object ## a slot in a frame
@@ -100,6 +101,7 @@ proc addBreakpoint*(filename: cstring, lo, hi: int): bool =
 const
   FileSystemCaseSensitive = not (
     defined(windows) or defined(dos) or defined(os2) or defined(macosx))
+    # todo: factor with osseps.nim
 
 proc fileMatches(c, bp: cstring): bool =
   # bp = breakpoint filename
