@@ -539,7 +539,6 @@ type
     line*: int          ## line number of the proc that is currently executing
     col*: int           ## col number of the proc that is currently executing
     filename*: cstring  ## filename of the proc that is currently executing
-    fileIndex*: int     ## see  PFrame.fileIndex
 
   Exception* {.compilerproc, magic: "Exception".} = object of RootObj ## \
     ## Base exception class.
@@ -2900,7 +2899,6 @@ type
     filename*: cstring  ## filename of the proc that is currently executing
     len*: int16         ## length of the inspectable slots
     calldepth*: int16   ## used for max call depth checking
-    fileIndex*: int     ## contains sufficient info for filename
 
 when defined(JS):
   proc add*(x: var string, y: cstring) {.asmNoStackFrame.} =

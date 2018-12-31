@@ -23,7 +23,6 @@ proc globalDataSetFileSource(file: cstring, src: cstring) {.compilerproc.} =
 
 proc formatSurroundingSource(src: cstring, line: int, contextLines: int): cstring =
   ## shows `contextLines` lines around `line` from `src`
-  # todo: make writeSurroundingSrc use this
   if contextLines == 0: return ""
   let line1 = line - (contextLines div 2)
   let line2 = line1 + contextLines
@@ -60,12 +59,7 @@ proc formatSurroundingSource(src: cstring, line: int, contextLines: int): cstrin
 
   return ret
 
-# proc c_printf2(frmt: cstring) {.importc: "printf", header: "<stdio.h>", varargs.}
 proc nimGetSourceLine(file: cstring, line: int, fileIndex: cint): cstring {.compilerRtl, inl, exportc: "$1".} =
-  # c_printf2("fileIndex:%d\n", fileIndex)
-  # echo fileIndex
-  # let data = globalData.files[fileIndex]
-  # return formatSurroundingSource(data.src, line, globalData.contextLines)
   for i in 0..globalData.filesLen-1:
     let data = globalData.files[i]
      # TODO: to abs at CT?

@@ -530,7 +530,7 @@ proc initFrameNoDebug(p: BProc; frame, procname, filename: Rope; line: int; col:
   addf(p.blocks[0].sections[cpsLocals], "TFrame $1;$n", [frame])
   result = ropecg(p.module, "\t$1.procname = $2; $1.filename = $3; " &
                       " $1.line = $4; $1.col = $5; $1.fileIndex = $6; $1.len = -1; nimFrame(&$1);$n",
-                      frame, procname, filename, rope(line), rope(col), rope(fileIndex.int32.cint))
+                      frame, procname, filename, rope(line), rope(col))
 
 proc deinitFrameNoDebug(p: BProc; frame: Rope): Rope =
   result = ropecg(p.module, "\t#popFrameOfAddr(&$1);$n", frame)
