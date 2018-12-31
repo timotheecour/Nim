@@ -35,7 +35,7 @@ proc formatSurroundingSource(src: cstring, line: int, contextLines: int): cstrin
     if linei < line1:
       # iterate until we reach 1st matching line.
       # Note: in the unlikely case this becomes a bottleneck, we can
-      # pre-compute at compile time.
+      # pre-compute at compile time or caching lines at run time.
       if srci == '\n':
         linei.inc
         lineStart = true
@@ -59,7 +59,7 @@ proc formatSurroundingSource(src: cstring, line: int, contextLines: int): cstrin
 
   return ret
 
-proc nimGetSourceLine(file: cstring, line: int, fileIndex: cint): cstring {.compilerRtl, inl, exportc: "$1".} =
+proc nimGetSourceLine(file: cstring, line: int): cstring {.compilerRtl, inl, exportc: "$1".} =
   for i in 0..globalData.filesLen-1:
     let data = globalData.files[i]
      # TODO: to abs at CT?
