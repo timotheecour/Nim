@@ -98,7 +98,8 @@ proc addBreakpoint*(filename: cstring, lo, hi: int): bool =
   for line in lo..hi: dbgBPbloom = dbgBPbloom or line
 
 const
-  FileSystemCaseInsensitive = defined(windows) or defined(dos) or defined(os2)
+  FileSystemCaseSensitive = not (
+    defined(windows) or defined(dos) or defined(os2) or defined(macosx))
 
 proc fileMatches(c, bp: cstring): bool =
   # bp = breakpoint filename
@@ -117,7 +118,7 @@ proc fileMatches(c, bp: cstring): bool =
   while i < blen:
     var x = bp[i]
     var y = c[i+clen-blen]
-    when FileSystemCaseInsensitive:
+    when not FileSystemCaseSensitive:
       if x >= 'A' and x <= 'Z': x = chr(ord(x) - ord('A') + ord('a'))
       if y >= 'A' and y <= 'Z': y = chr(ord(y) - ord('A') + ord('a'))
     if x != y: return false

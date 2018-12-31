@@ -533,6 +533,8 @@ type
   StackTraceEntry* = object ## In debug mode exceptions store the stack trace that led
                             ## to them. A StackTraceEntry is a single entry of the
                             ## stack trace.
+                            ## This is used at runtime, whereas `PFrame` is used
+                            ## at compile time.
     procname*: cstring  ## name of the proc that is currently executing
     line*: int          ## line number of the proc that is currently executing
     col*: int           ## col number of the proc that is currently executing
