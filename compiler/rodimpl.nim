@@ -429,7 +429,7 @@ proc storeRemaining*(g: ModuleGraph; module: PSym) =
   transitiveClosure(g)
   var nimid = 0
   for x in items(g.config.m.fileInfos):
-    # don't store the "command line" entry:
+    # don't store the "command line" entry (commandLineFile):
     if nimid != 0:
       storeFilename(g, x.fullPath, FileIndex(nimid))
     inc nimid

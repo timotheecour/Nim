@@ -31,6 +31,7 @@ type                          # please make sure we have under 32 options
     optOptimizeSpeed, optOptimizeSize, optStackTrace, # stack tracing support
     optLineTrace,             # line tracing support (includes stack tracing)
     optEndb,                  # embedded debugger
+    optGlobalData,            # global data (eg for stacktraces)
     optByRef,                 # use pass by ref for objects
                               # (for interfacing with C)
     optProfiler,              # profiler turned on
@@ -178,6 +179,7 @@ type
     cmd*: TCommands  # the command
     selectedGC*: TGCMode       # the selected GC (+)
     verbosity*: int            # how verbose the compiler is
+    contextLines*: int         # stacktraces will show `contextLines` source lines
     numberOfProcessors*: int   # number of processors
     evalExpr*: string          # expression for idetools --eval
     lastCmdTime*: float        # when caas is enabled, we measure each command

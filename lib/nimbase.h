@@ -435,6 +435,7 @@ struct TFrame_ {
   NCSTRING filename;
   NI16 len;
   NI16 calldepth;
+  NI fileIndex;
 };
 
 #ifdef NIM_NEW_MANGLING_RULES

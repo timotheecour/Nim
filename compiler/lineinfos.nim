@@ -156,6 +156,8 @@ const
   hintMin* = hintSuccess
   hintMax* = high(TMsgKind)
 
+  commandLineFile* = "command line"
+
 static:
   doAssert HintsToStr.len == ord(hintMax) - ord(hintMin) + 1
   doAssert WarningsToStr.len == ord(warnMax) - ord(warnMin) + 1

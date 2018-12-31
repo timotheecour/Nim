@@ -230,13 +230,17 @@ proc auxWriteStackTrace(f: PFrame; s: var seq[StackTraceEntry]) =
     s[last] = StackTraceEntry(procname: it.procname,
                               line: it.line,
                               col: it.col,
-                              filename: it.filename)
+                              filename: it.filename,
+                              fileIndex: it.fileIndex)
     it = it.prev
     dec last
 
 template addFrameEntry(s: var string, f: PFrame|StackTraceEntry) =
   var oldLen = s.len
   add(s, f.filename)
+  # echo "addFrameEntry:", f.fileIndex
+  # if f.fileIndex > 100:
+  #   quit 1
   if f.line > 0:
     add(s, '(')
     # todo: reuse `lineInfoToString`
@@ -245,7 +249,15 @@ template addFrameEntry(s: var string, f: PFrame|StackTraceEntry) =
     add(s, $(f.col+1))
     add(s, ')')
   for k in 1..max(1, 25-(s.len-oldLen)): add(s, ' ')
-  add(s, f.procname)
+  when defined(nimHasGlobalData):
+    let code = nimGetSourceLine(f.filename, f.line, f.fileIndex.cint)
+    # let code = nimGetSourceLine(f.fileIndex, f.line)
+    add(s, " in ")
+    add(s, f.procname)
+    add(s, ": ")
+    add(s, code)
+  else:
+    add(s, f.procname)
   add(s, "\n")
 
 proc `$`(s: seq[StackTraceEntry]): string =

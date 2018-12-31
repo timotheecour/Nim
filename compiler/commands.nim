@@ -469,6 +469,11 @@ proc processSwitch*(switch, arg: string, pass: TCmdLinePass, info: TLineInfo;
   of "stacktrace": processOnOffSwitch(conf, {optStackTrace}, arg, pass, info)
   of "excessivestacktrace": processOnOffSwitchG(conf, {optExcessiveStackTrace}, arg, pass, info)
   of "linetrace": processOnOffSwitch(conf, {optLineTrace}, arg, pass, info)
+  of "contextlines":
+    expectArg(conf, switch, arg, pass, info)
+    conf.contextLines = parseInt(arg)
+    conf.options.incl optGlobalData
+    defineSymbol(conf.symbols, "nimHasGlobalData")
   of "debugger":
     case arg.normalize
     of "on", "endb":
@@ -766,7 +771,7 @@ proc processSwitch*(switch, arg: string, pass: TCmdLinePass, info: TLineInfo;
     if strutils.find(switch, '.') >= 0: options.setConfigVar(conf, switch, arg)
     else: invalidCmdLineOption(conf, pass, switch, info)
 
-template gCmdLineInfo*(): untyped = newLineInfo(config, AbsoluteFile"command line", 1, 1)
+template gCmdLineInfo*(): untyped = newLineInfo(config, AbsoluteFile(commandLineFile), 1, 1)
 
 proc processCommand*(switch: string, pass: TCmdLinePass; config: ConfigRef) =
   var cmd, arg: string

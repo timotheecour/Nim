@@ -49,6 +49,7 @@ Advanced options:
   --os:SYMBOL               set the target operating system (cross-compilation)
   --cpu:SYMBOL              set the target processor (cross-compilation)
   --debuginfo               enables debug information
+  --contextLines:N          stacktrace entries show N lines of surrounding code
   -t, --passC:OPTION        pass an option to the C compiler
   -l, --passL:OPTION        pass an option to the linker
   --cincludes:DIR           modify the C compiler header search path

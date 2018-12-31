@@ -525,12 +525,12 @@ proc initFrame(p: BProc, procname, filename: Rope): Rope =
   else:
     result = ropecg(p.module, "\tnimfr_($1, $2);$n", procname, filename)
 
-proc initFrameNoDebug(p: BProc; frame, procname, filename: Rope; line: int; col: int): Rope =
+proc initFrameNoDebug(p: BProc; frame, procname, filename: Rope; line: int; col: int, fileIndex: FileIndex): Rope =
   discard cgsym(p.module, "nimFrame")
   addf(p.blocks[0].sections[cpsLocals], "TFrame $1;$n", [frame])
   result = ropecg(p.module, "\t$1.procname = $2; $1.filename = $3; " &
-                      " $1.line = $4; $1.col = $5; $1.len = -1; nimFrame(&$1);$n",
-                      frame, procname, filename, rope(line), rope(col))
+                      " $1.line = $4; $1.col = $5; $1.fileIndex = $6; $1.len = -1; nimFrame(&$1);$n",
+                      frame, procname, filename, rope(line), rope(col), rope(fileIndex.int32.cint))
 
 proc deinitFrameNoDebug(p: BProc; frame: Rope): Rope =
   result = ropecg(p.module, "\t#popFrameOfAddr(&$1);$n", frame)
@@ -1220,6 +1220,20 @@ proc genMainProc(m: BModule) =
       m.g.breakpoints.addf("dbgRegisterFilename($1);$N",
         [m.config.m.fileInfos[i].projPath.string.makeCString])
 
+  if optGlobalData in m.config.options:
+    m.g.breakpoints.addf("globalDataSetVars($1);$N",
+      [rope(m.config.contextLines)])
+    for i in 0..<m.config.m.fileInfos.len:
+      let file = $m.config.m.fileInfos[i].fullPath
+      if file == commandLineFile: continue
+      let src = readFile(file)
+      var file2 = if optExcessiveStackTrace in m.config.globalOptions: file
+      else: file.lastPathPart
+      # else: $m.config.m.fileInfos[i].fullPath
+      # todo: although this works, find a more meaningful place than `m.g.breakpoints`
+      m.g.breakpoints.addf("globalDataSetFileSource($1, $2);$N",
+        [file2.makeCString, src.makeCString])
+
   let initStackBottomCall =
     if m.config.target.targetOS == osStandalone or m.config.selectedGC == gcNone: "".rope
     else: ropecg(m, "\t#initStackBottomWith((void *)&inner);$N")
@@ -1657,6 +1671,9 @@ proc myClose(graph: ModuleGraph; b: PPassContext, n: PNode): PNode =
       discard cgsym(m, "dbgRegisterBreakpoint")
     if optEndb in m.config.options:
       discard cgsym(m, "dbgRegisterFilename")
+    if optGlobalData in m.config.options:
+      discard cgsym(m, "globalDataSetVars")
+      discard cgsym(m, "globalDataSetFileSource")
 
     if m.g.forwardedProcs.len == 0:
       incl m.flags, objHasKidsValid

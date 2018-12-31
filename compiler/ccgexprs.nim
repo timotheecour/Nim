@@ -2182,7 +2182,8 @@ template genStmtListExprImpl(exprOrStmt) {.dirty.} =
         let theMacro = it[0].sym
         add p.s(cpsStmts), initFrameNoDebug(p, frameName,
            makeCString theMacro.name.s,
-           quotedFilename(p.config, theMacro.info), it.info.line.int, it.info.col.int)
+           quotedFilename(p.config, theMacro.info),
+           it.info.line.int, it.info.col.int, theMacro.info.fileIndex)
     else:
       genStmts(p, it)
   if n.len > 0: exprOrStmt
