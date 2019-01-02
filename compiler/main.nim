@@ -107,6 +107,7 @@ when not defined(leanCompiler):
 proc interactivePasses(graph: ModuleGraph) =
   initDefines(graph.config.symbols)
   defineSymbol(graph.config.symbols, "nimscript")
+  # todo: consolidate with --experimental:allowFFI and -d:useFFI ?
   when hasFFI: defineSymbol(graph.config.symbols, "nimffi")
   registerPass(graph, verbosePass)
   registerPass(graph, semPass)

@@ -9,8 +9,9 @@
 
 ## This file implements the FFI part of the evaluator for Nim code.
 
-import ast, astalgo, ropes, types, options, tables, dynlib, libffi, msgs, os
+import ast, astalgo, ropes, types, options, tables, dynlib, msgs, os
 import compiler/lineinfos
+import pkg/libffi
 
 when defined(windows):
   const libcDll = "msvcrt.dll"
@@ -19,7 +20,7 @@ elif defined(linux):
 elif defined(osx):
   const libcDll = "/usr/lib/libSystem.dylib"
 else:
-  static: doAssert false
+  {.error: "`libcDll` not implemented on this platform".}
 
 type
   TDllCache = tables.Table[string, LibHandle]

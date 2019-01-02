@@ -1072,8 +1072,8 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
                  currentException: c.currentExceptionA,
                  currentLineInfo: c.debug[pc]))
       elif sfImportc in prc.flags:
-        if allowFFI notin c.features:
-          globalError(c.config, c.debug[pc], "VM not allowed to do FFI")
+        if allowFFI notin c.config.features:
+          globalError(c.config, c.debug[pc], "VM not allowed to do FFI, see `allowFFI`")
         # we pass 'tos.slots' instead of 'regs' so that the compiler can keep
         # 'regs' in a register:
         when hasFFI:
@@ -1925,15 +1925,12 @@ proc setupGlobalCtx*(module: PSym; graph: ModuleGraph) =
 
 proc myOpen(graph: ModuleGraph; module: PSym): PPassContext =
   #var c = newEvalContext(module, emRepl)
-  #c.features = {allowCast, allowFFI, allowInfiniteLoops}
-  # c.features = {allowFFI}
+  #c.features = {allowCast, allowInfiniteLoops}
   #pushStackFrame(c, newStackFrame())
 
   # XXX produce a new 'globals' environment here:
   setupGlobalCtx(module, graph)
   result = PCtx graph.vm
-  # when hasFFI:
-  #   PCtx(graph.vm).features = {allowFFI, allowCast}
 
 proc myProcess(c: PPassContext, n: PNode): PNode =
   let c = PCtx(c)
