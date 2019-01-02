@@ -1540,7 +1540,7 @@ proc genTypeLit(c: PCtx; t: PType; dest: var TDest) =
 
 proc importcSym(c: PCtx; info: TLineInfo; s: PSym) =
   when hasFFI:
-    if allowFFI in c.features:
+    if allowFFI in c.config.features:
       c.globals.add(importcSymbol(c.config, s))
       s.position = c.globals.len
     else:
