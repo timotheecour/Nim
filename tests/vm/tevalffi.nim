@@ -216,57 +216,10 @@ proc fun3() =
    block:
     let n: uint = 50
     var buffer2: pointer = c_malloc(n)
-
-    # var buffer: string
-    # var buffer: array[50, char]
-    # buffer.setLen 50
-    # echo buffer
-    # let temp = addr buffer[0]
-    # let temp = unsafeAddr buffer[0]
-    # var buffer: array[]
-    # var buffer: array[50, char]
-    # var buffer = newStringOfCap(50)
-    # let temp = addr buffer[0]
-    # # char buffer[50]; 
-
     var s: cstring = "geeksforgeeks"
-    # var buffer2 = cast[ptr UncheckedArray[char]](allocShared(sizeof(T) * size))
-    # var buffer2 = alloca(50)
-    # var buffer2 = C_alloca(n) # works
-    # var buffer2 = cast[ptr UncheckedArray[char]](buffer)
-
-    # var buffer2 = cast[UncheckedArray[char]](buffer)
-
-
-    # var buffer: array[50, char]
-    # var buffer2 = cast[ptr UncheckedArray[char]](buffer)
-    # var buffer2 = addr buffer[0]
-    # var buffer2: pointer = addr buffer[0]
-
-    # let j = snprintf(buffer2, n, "%s\n", s)
-    # let j = snprintf(buffer2, n, "%s:%d", s, 1+2)
-
-    # let j = snprintf(buffer2, n, "s1:%s s2:%s", s, s)
     var age: cint = 25
     let j = snprintf(buffer2, n, "s1:%s s2:%s age:%d pi:%g", s, s, age, 3.14)
-
-    # let j = snprintf(buffer2, n, "s1:%s s2:%s s3:%d", s, s, age)
-    # let j = snprintf(buffer2, n, "%s", s)
-
     c_printf("ret={%s}\n", buffer2)
-    # let temp = Foo.sizeof
-    # echo (temp:temp)
-    # echo cast[cstring](buffer2)
-    
-    # echo "{" & $cast[cstring](buffer2) & "}"
-    # echo (j, $type(j))
-
-    # let j = snprintf(buffer, 6, "%s\n", s)
-
-    # let j = snprintf(temp, 6, "%s\n", s)
-    # # echo buffer
-    # # printf("string:\n%s\ncharacter count = %d\n", 
-    # #                                  buffer, j); 
 
 proc main() =
   static:
