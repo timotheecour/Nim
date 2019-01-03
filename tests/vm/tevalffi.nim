@@ -9,7 +9,7 @@ foo
 # todo: this has no effect (unlike `--experimental:allowFFI`)
 # {.push experimental: "allowFFI".}
 
-proc c_printf(frmt: cstring, a0: pointer): cint {.importc: "printf", header: "<stdio.h>", varargs, discardable.}
+# proc c_printf(frmt: cstring, a0: pointer): cint {.importc: "printf", header: "<stdio.h>", varargs, discardable.}
 proc c_printf(frmt: cstring): cint {.importc: "printf", header: "<stdio.h>", varargs, discardable.}
 
 proc c_printf2(frmt: cstring, a0: pointer): void {.importc: "printf", header: "<stdio.h>", varargs.}
@@ -35,8 +35,16 @@ proc normal_fun2(a1:cint): cint = discard
 proc normal_fun1(): cint = discard
 proc normal_fun1b(a1:cint) = discard
 proc normal_fun0() = discard
+proc normal_fun_v(a1:cint): cint {.varargs.} = discard
 
 proc fun() =
+  c_printf("foo\n")
+  c_printf("foo:%d\n", 101.cint)
+  c_printf("foo:%d:%d\n", 102.cint, 103.cint)
+  let temp = 104.cint
+  c_printf("foo:%d:%d:%d\n", 102.cint, 103.cint, temp)
+
+proc fun_bak2() =
   var x = 0.3
   let b1 = c_exp(x)
   let b2 = c_exp(0.4)
@@ -44,18 +52,26 @@ proc fun() =
   let b4 = ffi_fun1(123, 1234)
   let b5 = ffi_fun1(123, 1234)
   let b6 = ffi_fun2(123, 1234)
-  # let b7 = ffi_fun2(123, 1234, 453)
-  var b7 = ffi_fun3(10, 11, 12)
-  b7 = ffi_fun3(10, 11, 12)
-  b7 = ffi_fun3(10, 11, 12)
-  let b8 = ffi_fun3(10, 11, 12)
-  let b9 = ffi_fun4(10, 11, 12, 13, 14)
 
-  discard normal_fun6(10, 11, 12, 13, 14)
-  discard normal_fun2(10)
-  discard normal_fun1()
-  normal_fun1b(10)
-  normal_fun0()
+  # let b7 = ffi_fun2(123, 1234, 453)
+  let b7 = ffi_fun2(123.cint, 1234.cint)
+  let b8 = ffi_fun2(10.cint, 11.cint, 12.cint)
+
+  when false:
+    var b7 = ffi_fun3(10, 11, 12)
+    b7 = ffi_fun3(10, 11, 12)
+    b7 = ffi_fun3(10, 11, 12)
+    let b8 = ffi_fun3(10, 11, 12)
+    let b9 = ffi_fun4(10, 11, 12, 13, 14)
+
+    discard normal_fun6(10, 11, 12, 13, 14)
+    discard normal_fun2(10)
+    discard normal_fun1()
+
+    # normal_fun1b(10)
+    # normal_fun0()
+    # discard normal_fun_v(12)
+    # discard normal_fun_v(12, 13)
 
 proc fun_bak1() =
   block:

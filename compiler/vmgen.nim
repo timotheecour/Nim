@@ -555,8 +555,11 @@ proc genCall(c: PCtx; n: PNode; dest: var TDest) =
     var r: TRegister = x+i
     c.gen(n.sons[i], r)
     if i >= fntyp.len:
+      echo2 i, fntyp.len, tfVarargs in fntyp.flags, fntyp.flags
       internalAssert c.config, tfVarargs in fntyp.flags
+      echo2 n.sons[i].typ
       c.gABx(n, opcSetType, r, c.genType(n.sons[i].typ))
+      echo2 "c.gABx"
   if dest < 0:
     c.gABC(n, opcIndCall, 0, x, n.len)
   else:

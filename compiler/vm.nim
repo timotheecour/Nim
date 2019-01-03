@@ -1624,9 +1624,53 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         regs[ra].node.ident = getIdent(c.cache, regs[rb].node.strVal)
         regs[ra].node.flags.incl nfIsRef
     of opcSetType:
-      if regs[ra].kind != rkNode:
-        internalError(c.config, c.debug[pc], "cannot set type: " & $(regs[ra].kind, rkNode))
-      regs[ra].node.typ = c.types[instr.regBx - wordExcess]
+      echo2 "ok1"
+      let typ = c.types[instr.regBx - wordExcess]
+      case regs[ra].kind
+      of rkNode:
+        regs[ra].node.typ = typ
+      of rkInt:
+        # let dest = fficast(
+        #   c.config,
+        #   regs[rb].node,
+        #    typ)
+        # putIntoReg(regs[ra], dest)
+        
+        # ensureKind(rkInt)
+        # decodeBx(rkInt)
+        # regs[ra].intVal = rbx
+
+        # regs[ra].node.typ = c.types[instr.regBx - wordExcess]
+        # regs[ra].node = newNodeI(nkIdent, c.debug[pc])
+        # ensureKind(rkNode)
+        # TODO: var t = skipTypes(typ, abstractRange+{tyStatic}-{tyTypeDesc})?
+        echo2 "ok2"
+        let temp = regs[ra].intVal
+        echo2 temp
+        echo2()
+        ensureKind(rkNode)
+        regs[ra].node = newNodeIT(nkIntLit, c.debug[pc], typ)
+        echo2()
+        # regs[ra].node = getNullValue(typ, c.debug[pc], c.config)
+        regs[ra].node.intVal = temp
+        echo2()
+      else:
+        doAssert false
+      # ensureKind(rkNode)
+      echo2 "ok3"
+
+      # else:
+        # regs[ra].kind = rkNode
+        # putIntoReg(regs[ra], cnst)
+        # regs[ra].node.typ = c.types[instr.regBx - wordExcess]
+      # case regs[ra].kind
+      # of rkNode:
+      #   regs[ra].node.typ = c.types[instr.regBx - wordExcess]
+      # of rkInt:
+      #   regs[ra].node.typ = c.types[instr.regBx - wordExcess]
+      # if regs[ra].kind != rkNode:
+        # internalError(c.config, c.debug[pc], "cannot set type: " & $(regs[ra].kind, rkNode, c.types[instr.regBx - wordExcess]))
+      # regs[ra].node.typ = c.types[instr.regBx - wordExcess]
     of opcConv:
       let rb = instr.regB
       inc pc
