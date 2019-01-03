@@ -478,7 +478,11 @@ proc `<`*[T](x, y: ref T): bool {.magic: "LtPtr", noSideEffect.}
 proc `<`*[T](x, y: ptr T): bool {.magic: "LtPtr", noSideEffect.}
 proc `<`*(x, y: pointer): bool {.magic: "LtPtr", noSideEffect.}
 
-template `!=`*(x, y: untyped): untyped =
+# template `!=`*(x, y: untyped): untyped =
+#   ## unequals operator. This is a shorthand for ``not (x == y)``.
+#   not (x == y)
+
+proc `!=`*[T](x, y: T): bool =
   ## unequals operator. This is a shorthand for ``not (x == y)``.
   not (x == y)
 

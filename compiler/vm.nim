@@ -1624,40 +1624,26 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         regs[ra].node.ident = getIdent(c.cache, regs[rb].node.strVal)
         regs[ra].node.flags.incl nfIsRef
     of opcSetType:
-      echo2 "ok1"
       let typ = c.types[instr.regBx - wordExcess]
-      case regs[ra].kind
-      of rkNode:
-        regs[ra].node.typ = typ
-      of rkInt:
-        # let dest = fficast(
-        #   c.config,
-        #   regs[rb].node,
-        #    typ)
-        # putIntoReg(regs[ra], dest)
-        
-        # ensureKind(rkInt)
-        # decodeBx(rkInt)
-        # regs[ra].intVal = rbx
+      if regs[ra].kind != rkNode:
+        regs[ra].node = regToNode(regs[ra])
+        regs[ra].node.info = c.debug[pc]
+      regs[ra].node.typ = typ
 
-        # regs[ra].node.typ = c.types[instr.regBx - wordExcess]
-        # regs[ra].node = newNodeI(nkIdent, c.debug[pc])
-        # ensureKind(rkNode)
-        # TODO: var t = skipTypes(typ, abstractRange+{tyStatic}-{tyTypeDesc})?
-        echo2 "ok2"
-        let temp = regs[ra].intVal
-        echo2 temp
-        echo2()
-        ensureKind(rkNode)
-        regs[ra].node = newNodeIT(nkIntLit, c.debug[pc], typ)
-        echo2()
-        # regs[ra].node = getNullValue(typ, c.debug[pc], c.config)
-        regs[ra].node.intVal = temp
-        echo2()
-      else:
-        doAssert false
-      # ensureKind(rkNode)
-      echo2 "ok3"
+      # case regs[ra].kind
+      # of rkNode:
+      #   regs[ra].node.typ = typ
+      # else:
+      #   regs[ra].node = regToNode(regs[ra])
+      # of rkInt:
+      #   # TODO: var t = skipTypes(typ, abstractRange+{tyStatic}-{tyTypeDesc})?
+      #   let temp = regs[ra].intVal
+      #   ensureKind(rkNode)
+      #   regs[ra].node = newNodeIT(nkIntLit, c.debug[pc], typ)
+      #   regs[ra].node.intVal = temp
+      # else:
+      #   doAssert false
+      # echo2 "ok3"
 
       # else:
         # regs[ra].kind = rkNode

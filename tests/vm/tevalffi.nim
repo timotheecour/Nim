@@ -44,6 +44,8 @@ proc fun() =
   let temp = 104.cint
   c_printf("foo:%d:%d:%d\n", 102.cint, 103.cint, temp)
 
+  # c_printf("foo:%g:%s:%d\n", 0.03, "asdf", 103.cint)
+
 proc fun_bak2() =
   var x = 0.3
   let b1 = c_exp(x)
