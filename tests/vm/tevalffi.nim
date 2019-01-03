@@ -212,14 +212,22 @@ proc fun2() =
 
 
 proc fun3() =
-  when true:
-   block:
+  block:
     let n: uint = 50
     var buffer2: pointer = c_malloc(n)
     var s: cstring = "geeksforgeeks"
     var age: cint = 25
     let j = snprintf(buffer2, n, "s1:%s s2:%s age:%d pi:%g", s, s, age, 3.14)
     c_printf("ret={%s}\n", buffer2)
+
+
+proc fun_bug() =
+  block:
+    var a = 123
+    var a2 = a.addr
+  block:
+    let n: uint = 50
+    var buffer2: pointer = c_malloc(n)
 
 proc main() =
   static:
@@ -229,6 +237,8 @@ proc main() =
     fun()
     fun2()
     fun3()
+    fun_bug()
+
   # fun()
   # fun2()
   # var buffer = newStringOfCap(50)
