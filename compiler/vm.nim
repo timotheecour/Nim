@@ -227,6 +227,7 @@ proc writeField(n: var PNode, x: TFullReg) =
   of rkNodeAddr: n = x.nodeAddr[]
 
 proc putIntoReg(dest: var TFullReg; n: PNode) =
+  # echo2 n.kind, dest.kind
   case n.kind
   of nkStrLit..nkTripleStrLit:
     dest.kind = rkNode
@@ -1631,34 +1632,6 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         regs[ra].node = temp
         regs[ra].node.info = c.debug[pc]
       regs[ra].node.typ = typ
-
-      # case regs[ra].kind
-      # of rkNode:
-      #   regs[ra].node.typ = typ
-      # else:
-      #   regs[ra].node = regToNode(regs[ra])
-      # of rkInt:
-      #   # TODO: var t = skipTypes(typ, abstractRange+{tyStatic}-{tyTypeDesc})?
-      #   let temp = regs[ra].intVal
-      #   ensureKind(rkNode)
-      #   regs[ra].node = newNodeIT(nkIntLit, c.debug[pc], typ)
-      #   regs[ra].node.intVal = temp
-      # else:
-      #   doAssert false
-      # echo2 "ok3"
-
-      # else:
-        # regs[ra].kind = rkNode
-        # putIntoReg(regs[ra], cnst)
-        # regs[ra].node.typ = c.types[instr.regBx - wordExcess]
-      # case regs[ra].kind
-      # of rkNode:
-      #   regs[ra].node.typ = c.types[instr.regBx - wordExcess]
-      # of rkInt:
-      #   regs[ra].node.typ = c.types[instr.regBx - wordExcess]
-      # if regs[ra].kind != rkNode:
-        # internalError(c.config, c.debug[pc], "cannot set type: " & $(regs[ra].kind, rkNode, c.types[instr.regBx - wordExcess]))
-      # regs[ra].node.typ = c.types[instr.regBx - wordExcess]
     of opcConv:
       let rb = instr.regB
       inc pc

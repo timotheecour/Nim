@@ -42,12 +42,17 @@ Error: unhandled exception: assignment to discriminant changes object branch [Fi
 
 proc c_printf2(frmt: cstring, a0: pointer): void {.importc: "printf", header: "<stdio.h>", varargs.}
 
+# proc c_printf(frmt: cstring): cint {.importc: "printf", header: "<stdio.h>", varargs, discardable.}
+
 proc C_alloca(n: uint): pointer {.importc:"C_alloca", dynlib: "/tmp/d02/liballoca2.dylib".}
 
 proc fun() =
   block:
     var a = 123
     c_printf2("foo2:a={%d}\n", a.addr)
+    # c_printf("foo2:a={%d}\n", 1234.cint)
+    # c_printf("foo2:a={%d}\n", a.addr)
+
   block:
     let n: uint = 50
     var buffer2 = C_alloca(n)
@@ -55,6 +60,6 @@ proc fun() =
 proc main() =
   static:
     fun()
-  fun()
+  # fun()
 
 main()
