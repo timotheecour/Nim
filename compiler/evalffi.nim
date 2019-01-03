@@ -9,8 +9,7 @@
 
 ## This file implements the FFI part of the evaluator for Nim code.
 
-import ast, astalgo, ropes, types, options, tables, dynlib, msgs, os
-import compiler/lineinfos
+import ast, astalgo, ropes, types, options, tables, dynlib, msgs, os, lineinfos
 import pkg/libffi
 
 when defined(windows):

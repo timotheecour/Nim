@@ -83,6 +83,7 @@ proc initDefines*(symbols: StringTableRef) =
   defineSymbol("nimErrorProcCanHaveBody")
   defineSymbol("nimHasInstantiationOfInMacro")
   defineSymbol("nimHasNilSeqs")
+  defineSymbol("useFFI") # see #10150
   for f in low(Feature)..high(Feature):
     defineSymbol("nimHas" & $f)
 
