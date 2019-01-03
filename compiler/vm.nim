@@ -483,6 +483,8 @@ const
     "compiler/vmdef.MaxLoopIterations and rebuild the compiler"
   errFieldXNotFound = "node lacks field: "
 
+import strformat
+
 proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
   var pc = start
   var tos = tos
@@ -498,7 +500,14 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
     let ra = instr.regA
 
     when traceCode:
-      echo "PC ", pc, " ", c.code[pc].opcode, " ra ", ra, " rb ", instr.regB, " rc ", instr.regC
+      # echo "PC ", pc, " ", c.code[pc].opcode, " ra ", ra, " rb ", instr.regB, " rc ", instr.regC
+      let rb = instr.regB
+      let rbk = if rb<regs.len: $regs[rb].kind else: ""
+      let rc = instr.regC
+      let rck = if rc<regs.len: $regs[rc].kind else: ""
+      echo fmt"""PC:{pc} opcode:{c.code[pc].opcode} ra:{ra},{regs[ra].kind} rb:{rb},{rbk} rc:{rc},{rck}"""
+      # echo "PC ", pc, " ", c.code[pc].opcode, " ra ", ra, " "," rb ", instr.regB, " rc ", instr.regC
+      # message(c.config, c.debug[pc], warnUser, "Trace")
 
     case instr.opcode
     of opcEof: return regs[ra]
@@ -1616,7 +1625,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         regs[ra].node.flags.incl nfIsRef
     of opcSetType:
       if regs[ra].kind != rkNode:
-        internalError(c.config, c.debug[pc], "cannot set type")
+        internalError(c.config, c.debug[pc], "cannot set type: " & $(regs[ra].kind, rkNode))
       regs[ra].node.typ = c.types[instr.regBx - wordExcess]
     of opcConv:
       let rb = instr.regB
@@ -1637,10 +1646,20 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
       let srctyp = c.types[c.code[pc].regBx - wordExcess]
 
       when hasFFI:
-        let dest = fficast(c.config, regs[rb].node, desttyp)
+        # let dest = fficast(c.config, regs[rb].node, desttyp)
+        # echo (k:regs[rb].kind)
+        echo2 (k:regs[rb].kind)
+        let dest = fficast(
+          c.config,
+          regs[rb].node,
+           desttyp)
         putIntoReg(regs[ra], dest)
       else:
-        globalError(c.config, c.debug[pc], "cannot evaluate cast")
+        # globalError(c.config, c.debug[pc], "cannot evaluate cast")
+        globalError(
+          c.config,
+          c.debug[pc],
+          "cannot evaluate cast")
     of opcNSetIntVal:
       decodeB(rkNode)
       var dest = regs[ra].node

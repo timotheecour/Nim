@@ -2068,7 +2068,8 @@ proc gen(c: PCtx; n: PNode; dest: var TDest; flags: TGenFlags = {}) =
   of nkObjConstr: genObjConstr(c, n, dest)
   of nkPar, nkClosure, nkTupleConstr: genTupleConstr(c, n, dest)
   of nkCast:
-    if allowCast in c.features:
+    # if allowCast in c.features:
+    if true:
       genConv(c, n, n.sons[1], dest, opcCast)
     else:
       genCastIntFloat(c, n, dest)
