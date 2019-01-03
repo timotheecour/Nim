@@ -1626,7 +1626,9 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
     of opcSetType:
       let typ = c.types[instr.regBx - wordExcess]
       if regs[ra].kind != rkNode:
-        regs[ra].node = regToNode(regs[ra])
+        let temp = regToNode(regs[ra])
+        ensureKind(rkNode)
+        regs[ra].node = temp
         regs[ra].node.info = c.debug[pc]
       regs[ra].node.typ = typ
 
