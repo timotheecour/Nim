@@ -65,6 +65,7 @@ proc codeListing(c: PCtx, result: var string, start=0; last = -1) =
   result.add "code listing:\n"
   var i = start
   while i <= last:
+    var oldResultLen = result.len
     if i in jumpTargets: result.addf("L$1:\n", i)
     let x = c.code[i]
 
@@ -100,8 +101,12 @@ proc codeListing(c: PCtx, result: var string, start=0; last = -1) =
       inc i
     else:
       result.addf("\t$#\tr$#, $#", opc.toStr, x.regA, x.regBx-wordExcess)
-    result.add("\t#")
-    result.add(debugInfo(c, c.debug[i]))
+
+    result.add("|")
+    # for j in (result.len-oldResultLen) .. 50: result.add " " # align
+    for j in result.len .. (oldResultLen+50): result.add " " # align
+    result.add("#")
+    result.add debugInfo(c, c.debug[i])
     result.add("\n")
     inc i
   when debugEchoCode:
@@ -229,7 +234,11 @@ proc getTemp(cc: PCtx; tt: PType): TRegister =
 
 proc freeTemp(c: PCtx; r: TRegister) =
   let c = c.prc
-  if c.slots[r].kind in {slotSomeTemp..slotTempComplex}: c.slots[r].inUse = false
+  if c.slots[r].kind in {slotSomeTemp..slotTempComplex}:
+    when not defined(nim_vm_freeTemp_skip):
+      c.slots[r].inUse = false
+    else:
+      echo2 "skipping c.slots[r].inUse = false", r
 
 proc getTempRange(cc: PCtx; n: int; kind: TSlotKind): TRegister =
   # if register pressure is high, we re-use more aggressively:

@@ -76,15 +76,17 @@ Error: unhandled exception: assignment to discriminant changes object branch [Fi
 ]#
 
 proc c_malloc(size:uint):pointer {.importc:"malloc", header: "<stdlib.h>".}
+# proc c_malloc(size:uint):pointer = discard
 
 proc fun_bug() =
   block:
     var a = 123
     var a2 = a.addr
-  block:
+  # block:
     let n: uint = 50
     # var buffer2: pointer = c_malloc(n)
     var buffer2 = c_malloc(n)
+    # echo a2[]
 
 proc main() =
   static:
