@@ -38,7 +38,7 @@ before_script:
 script:
   - nim c koch
   - ./koch boot -d:release
-  - nim c testament/tester r tests/compiler/tunittest_light.nim
+  - nim c -r testament/tester r tests/compiler/tunittest_light.nim
 
 before_deploy:
   # Make https://nim-lang.github.io/Nim work the same as https://nim-lang.github.io/Nim/overview.html
