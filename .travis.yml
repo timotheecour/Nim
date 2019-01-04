@@ -26,15 +26,8 @@ addons:
     - libgc-dev
     - libsfml-dev
 
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install boehmgc; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install sfml; fi
-
 before_script:
   - set -e
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then unset -f cd; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then shell_session_update() { :; }; fi
   - git clone --depth 1 https://github.com/nim-lang/csources.git
   - cd csources
   - sh build.sh
@@ -42,24 +35,8 @@ before_script:
   - export PATH=$(pwd)/bin${PATH:+:$PATH}
 script:
   - nim c koch
-  - env NIM_COMPILE_TO_CPP=false ./koch boot
   - ./koch boot -d:release
-  - ./koch nimble
-  - nim e tests/test_nimscript.nims
-  #- nimble install zip -y
-  #- nimble install opengl
-  #- nimble install sdl1
-  #- nimble install jester@#head -y
-  #- nimble install niminst
-  - nim c -d:nimCoroutines testament/tester
-  - testament/tester --pedantic all -d:nimCoroutines
-  - nim c -o:bin/nimpretty nimpretty/nimpretty.nim
-  - nim c -r nimpretty/tester.nim
-  - ./koch docs --git.commit:devel
-  - ./koch csource
-  - ./koch nimsuggest
-  - nim c -r nimsuggest/tester
-  - nim c -r nimdoc/tester
+  - nim c testament/tester r tests/compiler/tunittest_light.nim
 
 before_deploy:
   # Make https://nim-lang.github.io/Nim work the same as https://nim-lang.github.io/Nim/overview.html
