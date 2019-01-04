@@ -8,6 +8,9 @@ foo
 
 
 #[
+
+D20190104T041114:here
+
 PC:125 opcode:opcLdImmInt ra:0,rkNone rb:0,rkNone rc:128,
 PC:126 opcode:opcFJmp ra:0,rkInt rb:5,rkNone rc:128,
 PC:131 opcode:opcFJmp ra:0,rkInt rb:2,rkNone rc:128,
@@ -82,7 +85,12 @@ proc fun_bug() =
   block:
     var a = 123
     var a2 = a.addr
-  # block:
+  block:
+    let n: uint = 50
+    # var buffer2: pointer = c_malloc(n)
+    var buffer2 = c_malloc(n)
+    # echo a2[]
+  block:
     let n: uint = 50
     # var buffer2: pointer = c_malloc(n)
     var buffer2 = c_malloc(n)

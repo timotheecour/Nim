@@ -65,7 +65,6 @@ proc codeListing(c: PCtx, result: var string, start=0; last = -1) =
   result.add "code listing:\n"
   var i = start
   while i <= last:
-    var oldResultLen = result.len
     if i in jumpTargets: result.addf("L$1:\n", i)
     let x = c.code[i]
 
@@ -102,10 +101,7 @@ proc codeListing(c: PCtx, result: var string, start=0; last = -1) =
     else:
       result.addf("\t$#\tr$#, $#", opc.toStr, x.regA, x.regBx-wordExcess)
 
-    result.add("|")
-    # for j in (result.len-oldResultLen) .. 50: result.add " " # align
-    for j in result.len .. (oldResultLen+50): result.add " " # align
-    result.add("#")
+    result.add("\t#")
     result.add debugInfo(c, c.debug[i])
     result.add("\n")
     inc i
@@ -237,6 +233,7 @@ proc freeTemp(c: PCtx; r: TRegister) =
   if c.slots[r].kind in {slotSomeTemp..slotTempComplex}:
     when not defined(nim_vm_freeTemp_skip):
       c.slots[r].inUse = false
+      # c.slots[r].kind = slotEmpty # CHECKME; fixes D20190104T041114 but would that cause too many new registers?
     else:
       echo2 "skipping c.slots[r].inUse = false", r
 
