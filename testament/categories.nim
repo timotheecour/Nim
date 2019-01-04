@@ -599,6 +599,7 @@ proc runJoinedTest(r: var TResults, cat: Category, testsDir: string) =
   writeFile("megatest.nim", megatest)
 
   const args = ["c", "-d:testing", "--listCmd", "megatest.nim"]
+  echo ("megatest:PRTEMP",command, args, options, getCurrentDir())
   var (buf, exitCode) = execCmdEx2(command = compilerPrefix, args = args, options = {poStdErrToStdOut, poUsePath}, input = "")
   if exitCode != 0:
     echo buf
