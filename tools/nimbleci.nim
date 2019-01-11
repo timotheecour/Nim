@@ -103,7 +103,14 @@ proc runCIPackage(config: Config, data: var TestResult) =
     echo "not found: ", pkg
     return
   data.stats.foundOK.inc
-  let url = config.pkgs[pkg]["url"].getStr()
+
+  let pkgJson = config.pkgs[pkg]
+  if not pkgJson.hasKey "url":
+    echo "url not found: ", (pkg, pkgJson)
+    return
+
+  data.stats.urlOK.inc
+  let url = pkgJson["url"].getStr()
 
   if config.runInstall:
     let cmd = "nimble install --nimbleDir:$# -y $# " % [config.pkgInstall,
@@ -194,7 +201,7 @@ proc getPkgs(): seq[string] =
 
 proc runCIPackages*(dirOutput: string) =
   echo "runCIPackages", (dirOutput: dirOutput, pid: getCurrentProcessId())
-    # pid useful to kill process, since because of a bug, ^C doesn't work inside exec
+    # pending #9616 pid useful to kill process, since ^C doesn't work inside exec
 
   var data: TestResult
   var config = Config(
