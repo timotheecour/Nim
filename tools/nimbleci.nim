@@ -5,6 +5,35 @@ nimble wide CI
 import std/[os, strutils, json, tables, macros, times, osproc, sequtils]
 import ".." / compiler/asciitables
 
+const pkgList = """
+# add more packages here; lines starting with `#` are skipped
+
+#TODO: jester@#head or jester? etc
+jester
+
+cligen
+
+# CT failures
+libffi
+
+glob
+nimongo
+nimx
+karax
+freeimage
+regex
+nimpy
+zero_functional
+arraymancer
+inim
+c2nim
+sdl1
+iterutils
+gnuplot
+nimpb
+lazy
+"""
+
 proc getNimblePkgPath(nimbleDir: string): string =
   nimbleDir / "packages_official.json"
 
@@ -151,43 +180,11 @@ proc updateField[T](a: var T, b: T) =
 
 proc updateResults(a: var TestResultAll, b: TestResult) =
   a.tests.add b
-  if b.stats.testOK == 0:
-    a.failures.add b.pkg
-  macro domixin(s: static[string]): untyped = parseStmt(s)
-  for k, v in fieldPairs(b.stats):
-    domixin("updateField(a.stats.$#, b.stats.$#)" % [k, k])
+  if b.stats.testOK == 0: a.failures.add b.pkg
+  for ai, bi in fields(a.stats, b.stats): updateField(ai, bi)
 
 proc getPkgs(): seq[string] =
-  let pkgs0 = """
-# add more packages here; lines starting with `#` are skipped
-
-#TODO: jester@#head or jester? etc
-jester
-
-cligen
-
-# CT failures
-libffi
-
-glob
-nimongo
-nimx
-karax
-freeimage
-regex
-nimpy
-zero_functional
-arraymancer
-inim
-c2nim
-sdl1
-iterutils
-gnuplot
-nimpb
-lazy
-"""
-
-  for a in pkgs0.splitLines:
+  for a in pkgList.splitLines:
     var a = a.strip
     if a.len == 0: continue
     if a.startsWith '#': continue
