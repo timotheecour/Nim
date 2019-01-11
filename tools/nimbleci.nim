@@ -55,6 +55,7 @@ proc execEcho(cmd: string): bool =
 type Stats = object
   seenOK: int
   foundOK: int                ## whether nimble can still access it
+  urlOK: int                  ## some packages are invalid
   cloneOK: int
   tasksOK: int
   installOK: int
@@ -123,12 +124,13 @@ proc runCIPackage(config: Config, data: var TestResult) =
   withDir config.pkgClone:
     if not existsDir pkg:
       if config.runDevelop:
-        if execEcho("nimble develop --nimbleDir:$# -y $#" % [config.pkgInstall,
+        if execEcho("nimble develop --nimbleDir:$# -y $#" % [
+            config.pkgInstall,
           pkg]):
           data.stats.developOK.inc
       if config.runClone:
         if not execEcho("git clone $# $#" % [url, pkg]):
-          return                # nothing left to do without a clone
+          return              # nothing left to do without a clone
     data.stats.cloneOK.inc
 
   withDir config.pkgClone / pkg:
@@ -218,12 +220,12 @@ proc runCIPackages*(dirOutput: string) =
   doAssert execEcho "nimble refresh --nimbleDir:$#" % [config.pkgInstall]
   # doing it by hand until nimble exposes this API
   config.pkgs = config.pkgInstall.getNimblePkgPath.readFile.parseJson.parseNimble()
-  
+
   # lets pkgs = getPkgs()
   # let pkgs = config.pkgs.mapIt(it["name"].getStr())
   # let pkgs = config.pkgs.mapIt(it["name"].getStr()) # todo: blocked by my Map PR
   var pkgs: seq[string]
-  for k,v in config.pkgs:
+  for k, v in config.pkgs:
     pkgs.add k
 
   var testsAll: TestResultAll
