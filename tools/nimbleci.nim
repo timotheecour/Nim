@@ -3,7 +3,7 @@ nimble wide CI
 ]#
 
 import std/[os, strutils, json, tables, macros, times, osproc, sequtils]
-import compiler/asciitables
+import std/../compiler/asciitables
 
 proc getNimblePkgPath(nimbleDir: string): string =
   nimbleDir / "packages_official.json"
