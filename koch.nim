@@ -24,6 +24,7 @@ import
   os, strutils, parseopt, osproc, streams, times
 
 import tools / kochdocs
+import ".."/compiler/timers
 
 const VersionAsString = system.NimVersion
 
@@ -448,15 +449,17 @@ proc runCI(cmd: string) =
     # todo: implement `execWithEnv`
     exec("env NIM_COMPILE_TO_CPP=false $1 boot" % kochExe.quoteShell)
   kochExec "boot -d:release"
-
+  echo timersToStr()
   ## build nimble early on to enable remainder to depend on it if needed
   kochExec "nimble"
+  echo timersToStr()
 
   when false:
     for pkg in "zip opengl sdl1 jester@#head niminst".split:
       exec "nimble install -y" & pkg
 
   buildTools() # altenatively, kochExec "tools --toolsNoNimble"
+  echo timersToStr()
 
   ## run tests
   exec "nim e tests/test_nimscript.nims"
@@ -465,10 +468,11 @@ proc runCI(cmd: string) =
     exec "nim c -d:nimCoroutines --os:genode -d:posix --compileOnly testament/tester"
 
   # main bottleneck here
-  exec "nim c -r -d:nimCoroutines testament/tester --pedantic all -d:nimCoroutines"
+  # exec "nim c -r -d:nimCoroutines testament/tester --pedantic all -d:nimCoroutines"
 
   exec "nim c -r nimdoc/tester"
   exec "nim c -r nimpretty/tester.nim"
+  echo timersToStr()
   when defined(posix):
     exec "nim c -r nimsuggest/tester"
 

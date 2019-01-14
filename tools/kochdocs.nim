@@ -26,13 +26,6 @@ proc findNim*(): string =
   # assume there is a symlink to the exe or something:
   return nim
 
-proc reportTime(time: var float) =
-  var time2 = epochTime()
-  let duration = time2 - time
-  let s = formatFloat(duration, format = ffDecimal, precision = 3)
-  echo "elapsed time (s): " & s
-  time = time2
-
 proc exec*(cmd: string, errorcode: int = QuitFailure, additionalPath = "") =
   let prevPath = getEnv("PATH")
   if additionalPath.len > 0:
@@ -42,7 +35,9 @@ proc exec*(cmd: string, errorcode: int = QuitFailure, additionalPath = "") =
     echo("Adding to $PATH: ", absolute)
     putEnv("PATH", (if prevPath.len > 0: prevPath & PathSep else: "") & absolute)
   echo cmd
-  if execShellCmd(cmd) != 0: quit("FAILURE", errorcode)
+
+  withTimer(cmd):
+    if execShellCmd(cmd) != 0: quit("FAILURE", errorcode)
   putEnv("PATH", prevPath)
 
 proc execCleanPath*(cmd: string,
