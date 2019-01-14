@@ -21,7 +21,7 @@ when defined(i386) and defined(windows) and defined(vcc):
   {.link: "icons/koch-i386-windows-vcc.res".}
 
 import
-  os, strutils, parseopt, osproc, streams
+  os, strutils, parseopt, osproc, streams, times
 
 import tools / kochdocs
 
@@ -439,6 +439,7 @@ proc xtemp(cmd: string) =
     copyExe(d / "bin" / "nim_backup".exe, d / "bin" / "nim".exe)
 
 proc runCI(cmd: string) =
+  var time = epochTime()
   doAssert cmd.len == 0, cmd # avoid silently ignoring
   echo "runCI:", cmd
   # note(@araq): Do not replace these commands with direct calls (eg boot())

@@ -1,6 +1,7 @@
 ## Part of 'koch' responsible for the documentation generation.
 
 import os, strutils, osproc
+import ".."/compiler/timers
 
 const
   gaCode* = " --doc.googleAnalytics:UA-48159761-1"
@@ -25,6 +26,12 @@ proc findNim*(): string =
   # assume there is a symlink to the exe or something:
   return nim
 
+proc reportTime(time: var float) =
+  var time2 = epochTime()
+  let duration = time2 - time
+  let s = formatFloat(duration, format = ffDecimal, precision = 3)
+  echo "elapsed time (s): " & s
+  time = time2
 
 proc exec*(cmd: string, errorcode: int = QuitFailure, additionalPath = "") =
   let prevPath = getEnv("PATH")
@@ -34,7 +41,7 @@ proc exec*(cmd: string, errorcode: int = QuitFailure, additionalPath = "") =
       absolute = getCurrentDir() / absolute
     echo("Adding to $PATH: ", absolute)
     putEnv("PATH", (if prevPath.len > 0: prevPath & PathSep else: "") & absolute)
-  echo(cmd)
+  echo cmd
   if execShellCmd(cmd) != 0: quit("FAILURE", errorcode)
   putEnv("PATH", prevPath)
 
