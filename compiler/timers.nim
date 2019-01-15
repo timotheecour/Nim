@@ -5,7 +5,7 @@
 
 import times, strutils, tables, strformat, algorithm
 include "$nim/lib/system/helpers.nim"
-import compiler/asciitables
+import "$nim/compiler/asciitables"
 
 type TimeType = float
 
