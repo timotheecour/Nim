@@ -286,11 +286,13 @@ proc boot(args: string) =
   copyExe(findStartNim(), 0.thVersion)
   for i in 0..2:
     echo "iteration: ", i+1
-    let extraOption = if i == 0:
-      "--skipUserCfg"
+    var extraOption = ""
+    if i == 0:
+      extraOption.add "--skipUserCfg"
         # forward compatibility: for bootstrap (1st iteration), avoid user flags
         # that could break things, see #10030
-    else: ""
+      when (NimMajor, NimMinor, NimPatch) <= (0, 19, 0):
+        extraOption.add " -d:nimBoostrapCsources0_19_0"
     exec i.thVersion & " $# $# $# --nimcache:$# compiler" / "nim.nim" %
       [bootOptions, extraOption, args, smartNimcache]
     if sameFileContent(output, i.thVersion):
