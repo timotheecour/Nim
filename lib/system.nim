@@ -3462,7 +3462,8 @@ when not defined(JS): #and not defined(nimscript):
       proc unsetControlCHook*()
         ## reverts a call to setControlCHook
 
-    proc writeStackTrace*() {.tags: [], gcsafe.}
+    # proc writeStackTrace*() {.tags: [], gcsafe.}
+    proc writeStackTrace*() {.gcsafe.}
       ## writes the current stack trace to ``stderr``. This is only works
       ## for debug builds. Since it's usually used for debugging, this
       ## is proclaimed to have no IO effect!
@@ -4406,19 +4407,32 @@ when defined(cpp) and appType != "lib" and
     hostOS != "standalone" and not defined(noCppExceptions):
   proc setTerminate(handler: proc() {.noconv.})
     {.importc: "std::set_terminate", header: "<exception>".}
+  {.emit:"""
+    NIM_EXTERNC bool fileDescriptorIsValid(int fd) {
+     return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+    }
+    """.}
+  proc fileDescriptorIsValid(fd:cint): bool {.cdecl, importc.}
+
   setTerminate proc() {.noconv.} =
     # Remove ourself as a handler, reinstalling the default handler.
     setTerminate(nil)
 
     let ex = getCurrentException()
     let trace = ex.getStackTrace()
+    let msg = trace & "Error: unhandled exception: " & ex.msg &
+                   " [" & $ex.name & "]\n"
     when defined(genode):
       # stderr not available by default, use the LOG session
-      echo trace & "Error: unhandled exception: " & ex.msg &
-                   " [" & $ex.name & "]\n"
+      echo msg
     else:
-      stderr.write trace & "Error: unhandled exception: " & ex.msg &
-                   " [" & $ex.name & "]\n"
+      # using `c_feof(stderr)` doesn't give usable answer
+      let fd = c_fileno(stderr)
+      if fileDescriptorIsValid(fd):
+        stderr.write msg
+      else:
+        # todo: write to a logfile ($pid.log) if `--logerrorDir:mydir` is passed
+        discard
     quit 1
 
 when not defined(js):
@@ -4466,3 +4480,31 @@ proc `$`*(t: typedesc): string {.magic: "TypeTrait".} =
     doAssert $(type(42)) == "int"
     doAssert $(type("Foo")) == "string"
     static: doAssert $(type(@['A', 'B'])) == "seq[char]"
+
+
+proc wrapNimMain(fun: proc(){.cdecl.}) {.exportc.} =
+  ## used to catch un-caught exceptions instead of falling through
+  ## `std::terminate`, for example allows to fix #10343
+  # Alternatives based on `std::set_terminate` are less good.
+  fun()
+  when false and defined(cpp):
+    when defined(cpp):
+      {.emit:"""
+    NIM_EXTERNC int fd_is_valid(int fd) {
+     return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+    }
+    """.}
+    proc fd_is_valid(fd:cint): cint {.cdecl, importc.}
+    try:
+      fun()
+    except Exception as e:
+      # using `c_feof(stderr)` doesn't give usable answer
+      let fd = c_fileno(stderr)
+      if fd_is_valid(fd) != 0.cint:
+        stderr.write "uncaught exception:" & e.msg
+      else:
+        # could log to a file here
+        discard
+      quit(1)
+  else:
+    fun()

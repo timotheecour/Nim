@@ -1119,12 +1119,14 @@ proc genMainProc(m: BModule) =
       "}$N$N"
 
     NimMainProc =
+      "void wrapNimMain(void (*fun_ptr)());$N" &
       "N_CDECL(void, NimMain)(void) {$N" &
         "\tvoid (*volatile inner)(void);$N" &
         "\tPreMain();$N" &
         "\tinner = NimMainInner;$N" &
         "$2" &
-        "\t(*inner)();$N" &
+        "wrapNimMain(*inner);$N" &
+        "//\t(*inner)();$N" &
       "}$N$N"
 
     NimMainBody = NimMainInner & NimMainProc

@@ -508,6 +508,7 @@ when not defined(noSignalHandler) and not defined(useNimRtl):
     when defined(memtracker):
       logPendingOps()
     when hasSomeStackTrace:
+      echo "ok1"
       GC_disable()
       var buf = newStringOfCap(2000)
       rawWriteStackTrace(buf)
