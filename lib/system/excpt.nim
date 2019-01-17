@@ -22,10 +22,8 @@ proc c_fwrite(buf: pointer, size, n: csize, f: File): cint {.
 
 proc rawWrite(f: File, s: string|cstring) =
   # we cannot throw an exception here!
-  # discard c_fwrite(cstring(s), 1, s.len, f)
-  let temp = c_fwrite(cstring(s), 1, s.len, f)
-  # echo temp
-  echo "c_fwrite:", temp, ":\n", s
+  discard c_fwrite(cstring(s), 1, s.len, f)
+  # todo: same treatment as D20190117T013551 in case `c_fwrite` fails
 
 when not defined(windows) or not defined(guiapp):
   proc writeToStdErr(msg: cstring) = rawWrite(stdmsg, msg)
@@ -508,7 +506,6 @@ when not defined(noSignalHandler) and not defined(useNimRtl):
     when defined(memtracker):
       logPendingOps()
     when hasSomeStackTrace:
-      echo "ok1"
       GC_disable()
       var buf = newStringOfCap(2000)
       rawWriteStackTrace(buf)

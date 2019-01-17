@@ -3,6 +3,8 @@ discard """
   exitcode: 1
 """
 
-close stdmsg
-writeLine stdmsg, "exception!"
-# doAssert 1==2
+when defined(case1):
+  close stdmsg
+  writeLine stdmsg, "exception!"
+else:
+  doAssert 1==2

@@ -1126,7 +1126,6 @@ proc genMainProc(m: BModule) =
         "\tinner = NimMainInner;$N" &
         "$2" &
         "wrapNimMain(*inner);$N" &
-        "//\t(*inner)();$N" &
       "}$N$N"
 
     NimMainBody = NimMainInner & NimMainProc
