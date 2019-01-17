@@ -22,7 +22,10 @@ proc c_fwrite(buf: pointer, size, n: csize, f: File): cint {.
 
 proc rawWrite(f: File, s: string|cstring) =
   # we cannot throw an exception here!
-  discard c_fwrite(cstring(s), 1, s.len, f)
+  # discard c_fwrite(cstring(s), 1, s.len, f)
+  let temp = c_fwrite(cstring(s), 1, s.len, f)
+  # echo temp
+  echo "c_fwrite:", temp, ":\n", s
 
 when not defined(windows) or not defined(guiapp):
   proc writeToStdErr(msg: cstring) = rawWrite(stdmsg, msg)
