@@ -78,7 +78,7 @@ type
     wThis, wThrow, wTrue, wTypedef, wTypeid, wTypeof, wTypename,
     wUnion, wPacked, wUnsigned, wVirtual, wVoid, wVolatile, wWchar_t,
 
-    wAlignas, wAlignof, wConstexpr, wDecltype, wNullptr, wNoexcept,
+    wAlignas, wAlignof, wConstexpr, wDecltype, wNullptr, wNoexcept, wNoSystem,
     wThread_local, wStatic_assert, wChar16_t, wChar32_t,
 
     wStdIn, wStdOut, wStdErr,
@@ -167,7 +167,7 @@ const
     "typename", "union", "packed", "unsigned", "virtual", "void", "volatile",
     "wchar_t",
 
-    "alignas", "alignof", "constexpr", "decltype", "nullptr", "noexcept",
+    "alignas", "alignof", "constexpr", "decltype", "nullptr", "noexcept", "nosystem",
     "thread_local", "static_assert", "char16_t", "char32_t",
 
     "stdin", "stdout", "stderr",

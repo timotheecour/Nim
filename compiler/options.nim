@@ -127,6 +127,7 @@ type
     forLoopMacros,
     caseStmtMacros,
     codeReordering,
+    nosystem,
 
   SymbolFilesOption* = enum
     disabledSf, writeOnlySf, readOnlySf, v2Sf

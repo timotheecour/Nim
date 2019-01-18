@@ -130,7 +130,7 @@ proc compileProject*(graph: ModuleGraph; projectFileIdx = InvalidFileIDX) =
   if projectFile == systemFileIdx:
     discard graph.compileModule(projectFile, {sfMainModule, sfSystemModule})
   else:
-    graph.compileSystemModule()
+    graph.compileSystemModule() # CHECKME
     discard graph.compileModule(projectFile, {sfMainModule})
 
 proc makeModule*(graph: ModuleGraph; filename: AbsoluteFile): PSym =
