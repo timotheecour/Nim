@@ -22,5 +22,7 @@ steps:
     #git clone --depth 1 https://github.com/nim-lang/csources.git
     #cd csources
     sh build_all.sh
+    export PATH=$(pwd)/bin${PATH:+:$PATH}
+    ./koch runCI
 
   displayName: 'Run a multi-line script'
