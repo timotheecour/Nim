@@ -11,7 +11,8 @@
 
 import
   ast, astalgo, hashes, msgs, platform, nversion, times, idents,
-  modulegraphs, lineinfos
+  modulegraphs, lineinfos,
+  semdata
 
 export createMagic
 
@@ -25,10 +26,25 @@ proc newSysType(g: ModuleGraph; kind: TTypeKind, size: int): PType =
   result.size = size
   result.align = size.int16
 
+
+## PRTEMP duplicated
+iterator walkScopes(scope: PScope): PScope =
+  var current = scope
+  while current != nil:
+    yield current
+    current = current.parent
+
+proc searchInScopes(c: PContext, s: PIdent): PSym =
+  for scope in walkScopes(c.currentScope):
+    result = strTableGet(scope.symbols, s)
+    if result != nil: return
+  result = nil
+
 proc getSysSym*(g: ModuleGraph; info: TLineInfo; name: string): PSym =
-  result = strTableGet(g.systemModule.tab, getIdent(g.cache, name))
+  result = searchInScopes(c.config, getIdent(g.cache, name))
+  # result = strTableGet(g.systemModule.tab, getIdent(g.cache, name))
   if result == nil:
-    localError(g.config, info, "system module needs: " & name)
+    localError(g.config, info, "system module needs v2: " & name)
     result = newSym(skError, getIdent(g.cache, name), g.systemModule, g.systemModule.info, {})
     result.typ = newType(tyError, g.systemModule)
   if result.kind == skAlias: result = result.owner
@@ -44,7 +60,7 @@ proc getSysMagic*(g: ModuleGraph; info: TLineInfo; name: string, m: TMagic): PSy
       result = r
     r = nextIdentIter(ti, g.systemModule.tab)
   if result != nil: return result
-  localError(g.config, info, "system module needs: " & name)
+  localError(g.config, info, "system module needs v4: " & name)
   result = newSym(skError, id, g.systemModule, g.systemModule.info, {})
   result.typ = newType(tyError, g.systemModule)
 

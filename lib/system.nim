@@ -24,28 +24,52 @@
 type
   int* {.magic: Int.} ## default integer type; bitwidth depends on
                       ## architecture, but is always the same as a pointer
-  int8* {.magic: Int8.} ## signed 8 bit integer type
-  int16* {.magic: Int16.} ## signed 16 bit integer type
-  int32* {.magic: Int32.} ## signed 32 bit integer type
-  int64* {.magic: Int64.} ## signed 64 bit integer type
-  uint* {.magic: UInt.} ## unsigned default integer type
-  uint8* {.magic: UInt8.} ## unsigned 8 bit integer type
-  uint16* {.magic: UInt16.} ## unsigned 16 bit integer type
-  uint32* {.magic: UInt32.} ## unsigned 32 bit integer type
-  uint64* {.magic: UInt64.} ## unsigned 64 bit integer type
-  float* {.magic: Float.} ## default floating point type
-  float32* {.magic: Float32.} ## 32 bit floating point type
-  float64* {.magic: Float.} ## 64 bit floating point type
-
-# 'float64' is now an alias to 'float'; this solves many problems
 
 type # we need to start a new type section here, so that ``0`` can have a type
   bool* {.magic: Bool.} = enum ## built-in boolean type
     false = 0, true = 1
-
-type
   char* {.magic: Char.} ## built-in 8 bit character type (unsigned)
   string* {.magic: String.} ## built-in string type
+
+  untyped* {.magic: Expr.} ## meta type to denote an expression that
+                           ## is not resolved (for templates)
+
+proc defined*(x: untyped): bool {.magic: "Defined", noSideEffect, compileTime.}
+  ## Special compile-time procedure that checks whether `x` is
+  ## defined.
+  ## `x` is an external symbol introduced through the compiler's
+  ## `-d:x switch <nimc.html#compile-time-symbols>`_ to enable build time
+  ## conditionals:
+  ##
+  ## .. code-block:: Nim
+  ##   when not defined(release):
+  ##     # Do here programmer friendly expensive sanity checks.
+  ##   # Put here the normal code
+
+
+when defined(nimHasNoSystem):
+# when false:
+# when true:
+  import newsystem/ns_types
+else:
+  type
+    int8* {.magic: Int8.} ## signed 8 bit integer type
+    int16* {.magic: Int16.} ## signed 16 bit integer type
+    int32* {.magic: Int32.} ## signed 32 bit integer type
+    int64* {.magic: Int64.} ## signed 64 bit integer type
+    uint* {.magic: UInt.} ## unsigned default integer type
+    uint8* {.magic: UInt8.} ## unsigned 8 bit integer type
+    uint16* {.magic: UInt16.} ## unsigned 16 bit integer type
+    uint32* {.magic: UInt32.} ## unsigned 32 bit integer type
+    uint64* {.magic: UInt64.} ## unsigned 64 bit integer type
+    float* {.magic: Float.} ## default floating point type
+    float32* {.magic: Float32.} ## 32 bit floating point type
+    float64* {.magic: Float.} ## 64 bit floating point type
+
+  # 'float64' is now an alias to 'float'; this solves many problems
+
+
+type
   cstring* {.magic: Cstring.} ## built-in cstring (*compatible string*) type
   pointer* {.magic: Pointer.} ## built-in pointer type, use the ``addr``
                               ## operator to get a pointer to a variable
@@ -82,8 +106,7 @@ type
   void* {.magic: "VoidType".}   ## meta type to denote the absence of any type
   auto* {.magic: Expr.} ## meta type for automatic type determination
   any* = distinct auto ## meta type for any supported type
-  untyped* {.magic: Expr.} ## meta type to denote an expression that
-                           ## is not resolved (for templates)
+
   typed* {.magic: Stmt.}   ## meta type to denote an expression that
                            ## is resolved (for templates)
 
@@ -105,18 +128,6 @@ type
 
   SomeNumber* = SomeInteger|SomeFloat
     ## type class matching all number types
-
-proc defined*(x: untyped): bool {.magic: "Defined", noSideEffect, compileTime.}
-  ## Special compile-time procedure that checks whether `x` is
-  ## defined.
-  ## `x` is an external symbol introduced through the compiler's
-  ## `-d:x switch <nimc.html#compile-time-symbols>`_ to enable build time
-  ## conditionals:
-  ##
-  ## .. code-block:: Nim
-  ##   when not defined(release):
-  ##     # Do here programmer friendly expensive sanity checks.
-  ##   # Put here the normal code
 
 when defined(nimHasRunnableExamples):
   proc runnableExamples*(body: untyped) {.magic: "RunnableExamples".}

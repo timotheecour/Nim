@@ -287,7 +287,7 @@ proc callCodegenProc*(g: ModuleGraph; name: string;
   result = newNodeI(nkCall, info)
   let sym = magicsys.getCompilerProc(g, name)
   if sym == nil:
-    localError(g.config, info, "system module needs: " & name)
+    localError(g.config, info, "system module needs v3: " & name)
   else:
     result.add newSymNode(sym)
     if arg1 != nil: result.add arg1
