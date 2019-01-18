@@ -21,6 +21,7 @@ steps:
     echo See https://aka.ms/yaml
     #git clone --depth 1 https://github.com/nim-lang/csources.git
     #cd csources
+    sudo apt-get install -y -qq libcurl4-openssl-dev libsdl1.2-dev libgc-dev libsfml-dev
     sh build_all.sh
     export PATH=$(pwd)/bin${PATH:+:$PATH}
     ./koch runCI
