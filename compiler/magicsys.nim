@@ -11,9 +11,9 @@
 
 import
   ast, astalgo, hashes, msgs, platform, nversion, times, idents,
-  modulegraphs, lineinfos,
-  semdata
-
+  modulegraphs, lineinfos
+  # semdata
+import semdata_types
 export createMagic
 
 proc nilOrSysInt*(g: ModuleGraph): PType = g.sysTypes[tyInt]
@@ -28,21 +28,22 @@ proc newSysType(g: ModuleGraph; kind: TTypeKind, size: int): PType =
 
 
 ## PRTEMP duplicated
-iterator walkScopes(scope: PScope): PScope =
-  var current = scope
-  while current != nil:
-    yield current
-    current = current.parent
+when false:
+  iterator walkScopes(scope: PScope): PScope =
+    var current = scope
+    while current != nil:
+      yield current
+      current = current.parent
 
-proc searchInScopes(c: PContext, s: PIdent): PSym =
-  for scope in walkScopes(c.currentScope):
-    result = strTableGet(scope.symbols, s)
-    if result != nil: return
-  result = nil
+  proc searchInScopes(c: PContext, s: PIdent): PSym =
+    for scope in walkScopes(c.currentScope):
+      result = strTableGet(scope.symbols, s)
+      if result != nil: return
+    result = nil
 
 proc getSysSym*(g: ModuleGraph; info: TLineInfo; name: string): PSym =
-  result = searchInScopes(c.config, getIdent(g.cache, name))
-  # result = strTableGet(g.systemModule.tab, getIdent(g.cache, name))
+  # result = searchInScopes(g.config, getIdent(g.cache, name))
+  result = strTableGet(g.systemModule.tab, getIdent(g.cache, name))
   if result == nil:
     localError(g.config, info, "system module needs v2: " & name)
     result = newSym(skError, getIdent(g.cache, name), g.systemModule, g.systemModule.info, {})
