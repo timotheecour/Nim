@@ -14,6 +14,13 @@ steps:
   displayName: 'Run a one-line script'
 
 - script: |
+    pwd
+    ls
+    env
     echo Add other tasks to build, test, and deploy your project.
     echo See https://aka.ms/yaml
+    #git clone --depth 1 https://github.com/nim-lang/csources.git
+    #cd csources
+    sh build_all.sh
+
   displayName: 'Run a multi-line script'
