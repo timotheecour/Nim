@@ -37,6 +37,7 @@ pool:
 
 steps:
 - script: |
+    # separate step so we can download its log separately (can't download log before a script finishes apparently?)
     # echo See https://aka.ms/yaml
     echo pwd:$(pwd)
 
@@ -51,6 +52,7 @@ steps:
 
     echo ${ANOTHER_VAR}
 
+- script: |
     # sh build_all.sh
     git clone --depth 1 https://github.com/nim-lang/csources.git
     cd csources
