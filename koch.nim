@@ -483,9 +483,13 @@ node --version
 
   # note(@araq): Do not replace these commands with direct calls (eg boot())
   # as that would weaken our testing efforts.
-  when defined(posix): # appveyor (on windows) didn't run this
-    kochExec "boot"
+  # when defined(posix): # appveyor (on windows) didn't run this
+  #   kochExec "boot"
   kochExec "boot -d:release"
+
+  nimexec "js -r tests/js/tasync.nim"
+  echo "ok1"
+  doAssert false
 
   ## build nimble early on to enable remainder to depend on it if needed
   kochExec "nimble"
