@@ -19,6 +19,7 @@ def setup():
   if platform == "linux" or platform == "linux2":
     # linux
     runCmd("sudo apt-get install nim")
+    # TODO: 2019-01-19T13:29:45.4186042Z Setting up nim (0.12.0-2) ...
   elif platform == "darwin":
     # OS X
     runCmd("pwd")
@@ -30,7 +31,7 @@ def setup():
 
     # runCmd("cp $(which nim) bin/nim") # IMPROVE
     old_nim = shutil.which('nim')
-    print((old_nim,old_nim))
+    print(('old_nim', old_nim))
     assert(old_nim is not None)
     shutil.copyfile(old_nim, "bin/nim")
 

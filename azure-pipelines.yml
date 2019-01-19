@@ -46,6 +46,10 @@ steps:
     set -e
     export PATH=$(pwd)/bin${PATH:+:$PATH}
     echo PATH:${PATH}
+    echo "ls bin:"
+    ls bin
+    echo "nim:"
+    which nim
     nim c koch
     ./koch runCI
     # TODO: before_deploy and deploy from travis
