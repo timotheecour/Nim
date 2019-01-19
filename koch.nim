@@ -474,7 +474,10 @@ brew install boehmgc sfml #  >/dev/null ?
 
 which node
 # needed otherwise fails later for: tests/js/tasync.nim async function y_196050
-npm install -g npm@next
+# --quiet will show stderr and warnings, --silent should suppress nearly everything
+#npm install --quiet -g npm@next # bad! still at v6.16.0
+npm install --quiet -g npm@latest
+
 node --version
 """
     elif defined(windows):
