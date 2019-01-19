@@ -42,8 +42,9 @@ pool:
 
 steps:
 - script: |
+    echo NIM_COMPILE_TO_CPP:$(NIM_COMPILE_TO_CPP)
 
-    NIM_COMPILE_TO_CPP=$(NIM_COMPILE_TO_CPP)
+    # NIM_COMPILE_TO_CPP=$(NIM_COMPILE_TO_CPP)
 
     # separate step so we can download its log separately (can't download log before a script finishes apparently?)
     # echo See https://aka.ms/yaml
