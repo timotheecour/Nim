@@ -35,26 +35,29 @@ steps:
     # separate step so we can download its log separately (can't download log before a script finishes apparently?)
     set -e
     set -u
-    echo pwd:$(pwd)
-    echo imageName:$(imageName)
+    echo_run(){echo "$@" && "$@"}
+    echo_run pwd
+    # echo pwd:$(pwd)
+    # echo imageName:$(imageName)
+    echo_run echo $(imageName)
     # doesn't work: echo imageName2:${imageName}
+    # echo "env:"
+    echo_run env
 
-    echo "env:"
-    env
-
-    echo $MY_VAR
+    echo_run echo $MY_VAR
 
     # note: node too old, gives SyntaxError: Unexpected token function
     # v6.16.0
     # /usr/local/bin/node
     # Updating Homebrew...
 
-    node --version
-    which node
+    echo_run node --version
+    echo_run which node
     # brew upgrade node
-    brew install node
-    which node
-    node --version
+    echo_run brew install node
+    echo_run which node
+    echo_run node --version
+    echo_run echo "ok1"
 
 - script: |
     exit # PRTEMP
