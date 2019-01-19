@@ -12,7 +12,7 @@ def setup():
   print("platform:" + platform)
   if platform == "linux" or platform == "linux2":
     # linux
-    runCmd("apt-get install nim")
+    runCmd("sudo apt-get install nim")
   elif platform == "darwin":
     # OS X
     runCmd("brew install nim")
