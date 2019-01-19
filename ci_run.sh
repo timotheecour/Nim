@@ -9,8 +9,6 @@ echo_run(){
 run_all(){
   (
     set -e
-    echo $0
-    echo $SHELL
     echo_run pwd
     # echo imageName:$(imageName)
     echo_run env
