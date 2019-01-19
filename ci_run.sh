@@ -32,7 +32,7 @@ install_nim_bootstarp(){
 
     if [[ "$machine" == "Linux" ]]; then
         echo_run apt-get install nim
-    elif [[ "$OSTYPE" == "Mac" ]]; then
+    elif [[ "$machine" == "Mac" ]]; then
       echo_run brew install nim
       echo_run which nim
       echo_run nim --version
