@@ -466,7 +466,7 @@ proc runCI(cmd: string) =
       execScript """
 # some comment
 echo "in runCI" # some comment
-brew update > /dev/null
+# brew update > /dev/null
 brew install boehmgc sfml > /dev/null
 
 which node

@@ -14,21 +14,16 @@ run_all(){
     echo_run env
     echo_run echo $MY_VAR
 
-    # note: node too old, gives SyntaxError: Unexpected token function
-    # v6.16.0
-    # /usr/local/bin/node
-    # Updating Homebrew...
+    echo_run brew install nim
+    echo_run which nim
+    echo_run nim --version
 
-    # echo_run npm install -g npm@next
-    # echo_run node --version
-    # echo_run which node
-    # # brew upgrade node
-    # echo_run brew install node || echo_run brew link --overwrite node
-    # echo_run which node
+    # sh build_all.sh
 
-    # echo_run node --version
-
-    # echo_run echo "run_all ok"
+    #git clone --depth 1 https://github.com/nim-lang/csources.git
+    #cd csources
+    #sh build.sh
+    #cd
   )
 }
 
