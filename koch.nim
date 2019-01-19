@@ -465,12 +465,9 @@ proc runCI(cmd: string) =
     elif defined(osx):
       execScript """
 # some comment
-
-echo "in runCI" # some comment2
-echo "in runCI(2)" # some comment2
-
-brew update
-brew install boehmgc sfml #  >/dev/null ?
+echo "in runCI" # some comment
+brew update > /dev/null
+brew install boehmgc sfml > /dev/null
 
 which node
 # needed otherwise fails later for: tests/js/tasync.nim async function y_196050
