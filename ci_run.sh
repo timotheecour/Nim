@@ -6,6 +6,9 @@ echo_run(){
   echo "$@" && "$@"
 }
 
+
+echo_run uname -s
+
 # https://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
 unameOut="$(uname -s)"
 case "${unameOut}" in
@@ -15,6 +18,7 @@ case "${unameOut}" in
     MINGW*)     machine=MinGw;;
     *)          machine="UNKNOWN:${unameOut}"
 esac
+
 echo_run echo ${machine}
 
 install_nim_bootstarp(){
