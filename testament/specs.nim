@@ -8,13 +8,9 @@
 #
 
 import parseutils, strutils, os, osproc, streams, parsecfg
+import "$nim/tools/ciutils"
 
 var compilerPrefix* = "compiler" / "nim"  ## built via ./koch tests
-
-# D20190118T163952:here
-let isTravis* = existsEnv("TRAVIS")
-let isAppVeyor* = existsEnv("APPVEYOR")
-let isAzure* = existsEnv("AZURE_HTTP_USER_AGENT") # CHECKME; for azure-pipelines.yml CI
 
 type
   TTestAction* = enum

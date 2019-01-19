@@ -24,6 +24,7 @@ import
   os, strutils, parseopt, osproc, streams
 
 import tools / kochdocs
+import "$nim/tools/ciutils"
 
 const VersionAsString = system.NimVersion
 
@@ -404,7 +405,7 @@ proc tests(args: string) =
   nimexec "c --lib:lib -d:release --opt:speed compiler/nim.nim"
   let tester = quoteShell(getCurrentDir() / "testament/tester".exe)
   let success = tryExec tester & " " & (args|"all")
-  if not existsEnv("TRAVIS") and not existsEnv("APPVEYOR") and not existsEnv("AZURE_HTTP_USER_AGENT"): # todo: factor with D20190118T163952
+  if not isRunningUnderCI:
     exec tester & " html"
   if not success:
     quit("tests failed", QuitFailure)
@@ -450,6 +451,17 @@ proc xtemp(cmd: string) =
 proc runCI(cmd: string) =
   doAssert cmd.len == 0, cmd # avoid silently ignoring
   echo "runCI:", cmd
+
+  if isRunningUnderCI:
+    if defined(linux):
+      exex "sudo apt-get install -y -qq libcurl4-openssl-dev libsdl1.2-dev libgc-dev libsfml-dev"
+    elif defined(osx):
+      exec "brew update"
+      exec "brew install boehmgc sfml"
+    elif defined(windows):
+      # TODO
+      discard
+
   # note(@araq): Do not replace these commands with direct calls (eg boot())
   # as that would weaken our testing efforts.
   when defined(posix): # appveyor (on windows) didn't run this

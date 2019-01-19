@@ -38,8 +38,6 @@ steps:
     export PATH=$(pwd)/bin${PATH:+:$PATH}
     echo PATH:${PATH}
 
-    sudo apt-get install -y -qq libcurl4-openssl-dev libsdl1.2-dev libgc-dev libsfml-dev
-
     ./koch runCI
 
 
