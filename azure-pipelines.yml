@@ -33,9 +33,11 @@ steps:
 - script: |
     # echo See https://aka.ms/yaml
     # separate step so we can download its log separately (can't download log before a script finishes apparently?)
-    set -e
-    set -u
-    echo_run(){echo "$@" && "$@"}
+    # set -e
+    #set -u
+    echo $0
+    echo $SHELL
+    function echo_run(){echo "$@" && "$@"}
     echo_run pwd
     # echo pwd:$(pwd)
     # echo imageName:$(imageName)
