@@ -25,13 +25,13 @@ strategy:
 
 pool:
   vmImage: $(imageName)
-  timeoutInMinutes: 61
+  timeoutInMinutes: 59 # CHECKME
   # cancelTimeoutInMinutes: 5
 
 variables:
   MY_VAR: my value
   # Azure.ServiceConnectionId: '{{ serviceEndpointId }}'
-  Agent.Source.Git.ShallowFetchDepth: 'true'
+  # Agent.Source.Git.ShallowFetchDepth: 'true' # CHECKME
 
 steps:
 - script: |
