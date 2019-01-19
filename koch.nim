@@ -475,7 +475,7 @@ which node
 #npm install --quiet -g npm@next # bad! still at v6.16.0
 #npm install --quiet -g npm@latest
 
-brew install node || brew link --overwrite node
+(brew install node || brew link --overwrite node) > /dev/null
 
 node --version
 """
@@ -488,12 +488,8 @@ node --version
   # when defined(posix): # appveyor (on windows) didn't run this
   #   kochExec "boot"
 
-  # kochExec "boot -d:release"
-  nimexec "--version"
-
-  nimexec "js -r tests/js/tasync.nim"
-  echo "ok1"
-  doAssert false
+  kochExec "boot -d:release"
+  # nimexec "js -r tests/js/tasync.nim"
 
   ## build nimble early on to enable remainder to depend on it if needed
   kochExec "nimble"
