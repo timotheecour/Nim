@@ -11,6 +11,7 @@
 strategy:
   matrix:
     linux:
+      # note: travis was using trusty aka Ubuntu 14.04.5 LTS
       imageName: 'ubuntu-16.04'
     mac:
       imageName: 'macos-10.13'
@@ -43,7 +44,10 @@ steps:
 
     echo $MY_VAR
 
+    node --version
+
 - script: |
+    exit # PRTEMP
     # sh build_all.sh
     git clone --depth 1 https://github.com/nim-lang/csources.git
     cd csources
