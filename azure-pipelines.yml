@@ -12,6 +12,12 @@ strategy:
       imageName: 'ubuntu-16.04'
     mac:
       imageName: 'macos-10.13'
+      variables:
+        NIM_COMPILE_TO_CPP: "false"
+    mac:
+      imageName: 'macos-10.13'
+      variables:
+        NIM_COMPILE_TO_CPP: "true"
       # imageName: 'macos-10.14' # fails
     # windows:
     #   imageName: 'vs2017-win2016' # CHECKME
@@ -40,6 +46,6 @@ steps:
 
     nim c koch
     ./koch runCI
-
+    # TODO: before_deploy and deploy from travis
 
   displayName: 'Nim runCI'
