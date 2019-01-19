@@ -38,9 +38,18 @@ pool:
 steps:
 - script: |
     # echo See https://aka.ms/yaml
-    echo pwd:$pwd
-    echo imageName:$imageName
+    echo pwd:$(pwd)
+
+    pwd
+
+    echo imageName1:$(imageName)
+    echo imageName2:${imageName}
+
     echo env:$(env)
+
+    env
+
+    echo ${ANOTHER_VAR}
 
     # sh build_all.sh
     git clone --depth 1 https://github.com/nim-lang/csources.git
