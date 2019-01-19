@@ -36,8 +36,8 @@ def setup():
 
     runCmd("pwd")
     runCmd("ls -al bin")
-    shutil.copyfile(old_nim, "bin/nim")
-    runCmd("ls -al bin")
+    # shutil.copyfile(old_nim, "bin/nim")
+    # runCmd("ls -al bin")
     runCmd("cp " + old_nim + ' ' + "bin/nim")
     runCmd("ls -al bin")
 
