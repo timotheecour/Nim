@@ -34,5 +34,5 @@ run_all(){
   )
 }
 
-run_all()
+run_all
 
