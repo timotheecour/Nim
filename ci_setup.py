@@ -20,14 +20,17 @@ def setup():
     # linux
     runCmd("sudo apt-get install nim")
     # TODO: 2019-01-19T13:29:45.4186042Z Setting up nim (0.12.0-2) ...
+    # todo: maybe linux brew for nim as well?
   elif platform == "darwin":
     # OS X
     runCmd("pwd")
     runCmd("echo foo1; sleep 1; echo foo2;sleep 1; echo foo3;")
 
     runCmd("brew install nim")
-    runCmd("which nim")
+    # runCmd("which nim")
+    print(shutil.which('nim'))
     runCmd("nim --version")
+
 
     # runCmd("cp $(which nim) bin/nim") # IMPROVE
     old_nim = shutil.which('nim')
@@ -35,12 +38,8 @@ def setup():
     assert(old_nim is not None)
 
     runCmd("pwd")
+    shutil.copy(old_nim, "bin/nim")
     runCmd("ls -al bin")
-    # shutil.copyfile(old_nim, "bin/nim")
-    # runCmd("ls -al bin")
-    runCmd("cp " + old_nim + ' ' + "bin/nim")
-    runCmd("ls -al bin")
-
 
   elif platform == "win32":
     # Windows...
