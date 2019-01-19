@@ -448,6 +448,12 @@ proc xtemp(cmd: string) =
   finally:
     copyExe(d / "bin" / "nim_backup".exe, d / "bin" / "nim".exe)
 
+
+proc execScript(a: string) =
+  for ai in a.splitLines:
+    if ai.len > 0:
+      exec ai
+
 proc runCI(cmd: string) =
   doAssert cmd.len == 0, cmd # avoid silently ignoring
   echo "runCI:", cmd
@@ -456,11 +462,20 @@ proc runCI(cmd: string) =
     if defined(linux):
       exec "sudo apt-get install -y -qq libcurl4-openssl-dev libsdl1.2-dev libgc-dev libsfml-dev"
     elif defined(osx):
-      exec "brew update"
-      exec "brew install boehmgc sfml"
-      exec "which node"
-      exec "node --version"
-      exec "brew upgrade node"
+      execScript """
+# some comment
+
+echo "in runCI" # some comment2
+echo "in runCI(2)" # some comment2
+
+brew update
+brew install boehmgc sfml #  >/dev/null ?
+
+which node
+# needed otherwise fails later for: tests/js/tasync.nim async function y_196050
+npm install -g npm@next
+node --version
+"""
     elif defined(windows):
       # TODO
       discard
