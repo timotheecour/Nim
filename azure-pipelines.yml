@@ -27,4 +27,3 @@ steps:
     ./koch runCI
 
   displayName: 'Run a multi-line script'
-  memoryLimit: '8GB' # CHECKME

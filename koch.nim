@@ -404,7 +404,7 @@ proc tests(args: string) =
   nimexec "c --lib:lib -d:release --opt:speed compiler/nim.nim"
   let tester = quoteShell(getCurrentDir() / "testament/tester".exe)
   let success = tryExec tester & " " & (args|"all")
-  if not existsEnv("TRAVIS") and not existsEnv("APPVEYOR"):
+  if not existsEnv("TRAVIS") and not existsEnv("APPVEYOR") and not existsEnv("AZURE_HTTP_USER_AGENT"): # todo: factor with D20190118T163952
     exec tester & " html"
   if not success:
     quit("tests failed", QuitFailure)

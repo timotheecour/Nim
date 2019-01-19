@@ -11,8 +11,10 @@ import parseutils, strutils, os, osproc, streams, parsecfg
 
 var compilerPrefix* = "compiler" / "nim"  ## built via ./koch tests
 
+# D20190118T163952:here
 let isTravis* = existsEnv("TRAVIS")
 let isAppVeyor* = existsEnv("APPVEYOR")
+let isAzure* = existsEnv("AZURE_HTTP_USER_AGENT") # CHECKME; for azure-pipelines.yml CI
 
 type
   TTestAction* = enum
@@ -206,6 +208,8 @@ proc parseSpec*(filename: string): TSpec =
           if isTravis: result.err = reDisabled
         of "appveyor":
           if isAppVeyor: result.err = reDisabled
+        of "azure":
+          if isAzure: result.err = reDisabled
         else:
           result.parseErrors.addLine "cannot interpret as a bool: ", e.value
       of "cmd":
