@@ -36,9 +36,10 @@ variables:
 steps:
 - script: |
     set -e
-    echo See https://aka.ms/yaml
+    python ci_setup.py
+    # echo See https://aka.ms/yaml
     # separate step so we can download its log separately (can't download log before a script finishes apparently?)
-    sh ci_run.sh
+    # sh ci_run.sh
     # echo_run echo $(imageName)
 
 - script: |
