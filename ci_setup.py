@@ -1,5 +1,5 @@
 import os
-from shutil import copyfile
+import shutil
 
 def runCmd(cmd):
   print(("runCmd",cmd))
@@ -22,7 +22,7 @@ def setup():
 
     old_nim = shutil.which('nim')
     assert(old_nim is not None)
-    copyfile(old_nim, "bin/nim")
+    shutil.copyfile(old_nim, "bin/nim")
   elif platform == "win32":
     # Windows...
     # TODO
