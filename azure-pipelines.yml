@@ -34,35 +34,8 @@ steps:
 - script: |
     # echo See https://aka.ms/yaml
     # separate step so we can download its log separately (can't download log before a script finishes apparently?)
-    # bash ci_run.sh
     sh ci_run.sh
-    # # set -e
-    # #set -u
-    # echo $0
-    # echo $SHELL
-    # function echo_run(){echo "$@" && "$@"}
-    # echo_run pwd
-    # # echo pwd:$(pwd)
-    # # echo imageName:$(imageName)
     # echo_run echo $(imageName)
-    # # doesn't work: echo imageName2:${imageName}
-    # # echo "env:"
-    # echo_run env
-
-    # echo_run echo $MY_VAR
-
-    # # note: node too old, gives SyntaxError: Unexpected token function
-    # # v6.16.0
-    # # /usr/local/bin/node
-    # # Updating Homebrew...
-
-    # echo_run node --version
-    # echo_run which node
-    # # brew upgrade node
-    # echo_run brew install node
-    # echo_run which node
-    # echo_run node --version
-    # echo_run echo "ok1"
 
 - script: |
     exit # PRTEMP
