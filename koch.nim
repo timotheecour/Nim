@@ -458,6 +458,9 @@ proc runCI(cmd: string) =
     elif defined(osx):
       exec "brew update"
       exec "brew install boehmgc sfml"
+      exec "which node"
+      exec "node --version"
+      exec "brew upgrade node"
     elif defined(windows):
       # TODO
       discard

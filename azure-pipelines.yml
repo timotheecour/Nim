@@ -45,6 +45,8 @@ steps:
     echo $MY_VAR
 
     node --version
+    which node
+    brew upgrade node
 
 - script: |
     exit # PRTEMP
