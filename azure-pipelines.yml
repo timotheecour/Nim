@@ -21,6 +21,11 @@ strategy:
       #   NIM_COMPILE_TO_CPP: false
     mac_cpp:
       imageName: 'macos-10.13'
+
+      variables:
+        MY_VAR: my value
+        ANOTHER_VAR: another value
+
       # env:
       #   - NIM_COMPILE_TO_CPP: "true"
       # variables:
@@ -40,17 +45,13 @@ steps:
     # separate step so we can download its log separately (can't download log before a script finishes apparently?)
     # echo See https://aka.ms/yaml
     echo pwd:$(pwd)
-
-    pwd
-
     echo imageName1:$(imageName)
-    echo imageName2:${imageName}
+    # doesn't work: echo imageName2:${imageName}
 
-    echo env:$(env)
-
+    echo "env:"
     env
 
-    echo ${ANOTHER_VAR}
+    echo ${ANOTHER_VAR} #ok
 
 - script: |
     # sh build_all.sh
