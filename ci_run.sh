@@ -7,7 +7,8 @@ echo_run(){
 }
 
 run_all(){
-  export NIM_LIB_PREFIX=$(pwd)
+  # doesn't seem to work wrt D20190119T040042
+  # export NIM_LIB_PREFIX=$(pwd)
 
   (
     set -e
@@ -20,10 +21,11 @@ run_all(){
     echo_run which nim
     echo_run nim --version
 
-    # HACK, avoids: 
+    # HACK, avoids: D20190119T040047:here
     # koch.nim(27, 8) Error: cannot open file: /usr/local/Cellar/nim/0.19.0/nim/tools/ciutils
     # maybe use 
-    # cp $(which nim) bin/nim
+
+    cp $(which nim) bin/nim
 
     # sh build_all.sh
 
