@@ -6,24 +6,41 @@
 trigger:
 - master
 
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-16.04'
+    mac:
+      # imageName: 'macos-10.13'
+      imageName: 'macos-10.14'
+    # windows:
+    #   imageName: 'vs2017-win2016' # CHECKME
+
 pool:
-  vmImage: 'Ubuntu-16.04'
+  vmImage: $(imageName)
+
+# pool:
+#   vmImage: 'Ubuntu-16.04'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
 - script: |
-    pwd
-    ls
-    env
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-    #git clone --depth 1 https://github.com/nim-lang/csources.git
-    #cd csources
-    sudo apt-get install -y -qq libcurl4-openssl-dev libsdl1.2-dev libgc-dev libsfml-dev
-    sh build_all.sh
+    # echo See https://aka.ms/yaml
+    echo pwd:$pwd
+    echo imageName:$imageName
+    echo env:$(env)
+
+    # sh build_all.sh
+    git clone --depth 1 https://github.com/nim-lang/csources.git
+    cd csources
+    sh build.sh
+    cd ..
+
     export PATH=$(pwd)/bin${PATH:+:$PATH}
+    echo PATH:${PATH}
+
+    sudo apt-get install -y -qq libcurl4-openssl-dev libsdl1.2-dev libgc-dev libsfml-dev
+
     ./koch runCI
 
-  displayName: 'Run a multi-line script'
+
+  displayName: 'Nim runCI'
