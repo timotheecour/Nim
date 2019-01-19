@@ -28,6 +28,8 @@ pool:
 
 variables:
   MY_VAR: my value
+  # Azure.ServiceConnectionId: '{{ serviceEndpointId }}'
+  Agent.Source.Git.ShallowFetchDepth: 'true'
 
 steps:
 - script: |
