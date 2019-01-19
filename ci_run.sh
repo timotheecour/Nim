@@ -1,3 +1,5 @@
+# for CI
+
 set -e
 set -u
 
@@ -12,7 +14,7 @@ run_all(){
     echo_run pwd
     # echo pwd:$(pwd)
     # echo imageName:$(imageName)
-    echo_run echo $(imageName)
+    # echo_run echo $(imageName)
     # doesn't work: echo imageName2:${imageName}
     # echo "env:"
     echo_run env
@@ -27,7 +29,7 @@ run_all(){
     echo_run node --version
     echo_run which node
     # brew upgrade node
-    echo_run brew install node
+    echo_run brew install node || brew link --overwrite node
     echo_run which node
     echo_run node --version
     echo_run echo "ok1"
