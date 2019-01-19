@@ -37,6 +37,7 @@ steps:
     # echo See https://aka.ms/yaml
     # separate step so we can download its log separately (can't download log before a script finishes apparently?)
     set -e
+    set -u
     echo pwd:$(pwd)
     echo NIM_COMPILE_TO_CPP:$NIM_COMPILE_TO_CPP
     echo imageName1:$(imageName)
