@@ -38,9 +38,12 @@ def setup():
     # Windows...
     # TODO
     pass
+  
+  runCmd("nim --version")
 
 print("python start")
 
 setup()
+
 
 print("done")
