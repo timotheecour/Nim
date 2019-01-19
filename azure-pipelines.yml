@@ -13,11 +13,12 @@ strategy:
       imageName: 'ubuntu-16.04'
     mac:
       imageName: 'macos-10.13'
-      variables:
-        NIM_COMPILE_TO_CPP: false
+      # variables:
+      #   NIM_COMPILE_TO_CPP: false
     mac_cpp:
       imageName: 'macos-10.13'
-      # env: { NIM_COMPILE_TO_CPP: "true" }
+      env:
+        - NIM_COMPILE_TO_CPP: "true"
       # variables:
       #   NIM_COMPILE_TO_CPP: "true"
       # imageName: 'macos-10.14' # fails
