@@ -46,7 +46,7 @@ steps:
     echo "env:"
     env
 
-    echo ${ANOTHER_VAR} #ok
+    echo $MY_VAR
 
 - script: |
     # sh build_all.sh
