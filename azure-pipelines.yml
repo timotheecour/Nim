@@ -47,7 +47,7 @@ steps:
     export PATH=$(pwd)/bin${PATH:+:$PATH}
     echo PATH:${PATH}
     echo "ls bin:"
-    ls bin
+    ls -al bin
 
     echo "pwd:"
     pwd

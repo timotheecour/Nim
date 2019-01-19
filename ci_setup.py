@@ -35,11 +35,11 @@ def setup():
     assert(old_nim is not None)
 
     runCmd("pwd")
-    runCmd("ls bin")
+    runCmd("ls -al bin")
     shutil.copyfile(old_nim, "bin/nim")
-    runCmd("ls bin")
+    runCmd("ls -al bin")
     runCmd("cp " + old_nim + ' ' + "bin/nim")
-    runCmd("ls bin")
+    runCmd("ls -al bin")
 
 
   elif platform == "win32":
