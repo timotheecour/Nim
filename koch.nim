@@ -454,7 +454,7 @@ proc runCI(cmd: string) =
 
   if isRunningUnderCI:
     if defined(linux):
-      exex "sudo apt-get install -y -qq libcurl4-openssl-dev libsdl1.2-dev libgc-dev libsfml-dev"
+      exec "sudo apt-get install -y -qq libcurl4-openssl-dev libsdl1.2-dev libgc-dev libsfml-dev"
     elif defined(osx):
       exec "brew update"
       exec "brew install boehmgc sfml"
