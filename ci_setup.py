@@ -6,13 +6,14 @@ def runCmd(cmd):
   import subprocess
   # subprocess.check_call(cmd, shell=True) # BUG: this doesn't print anything in azure!
   output = subprocess.check_output(cmd, shell=True)
-  output=output.decode('ascii')
+  # output=output.decode('ascii')
+  output=output.decode('utf8')
   print("output:")
   print(output)
   # subprocess.check_call(cmd, shell=True, stdout=subprocess.STDOUT)
 
 def setup():
-  print("from python")
+  print("from setup")
   from sys import platform
   print("platform:" + platform)
   if platform == "linux" or platform == "linux2":
@@ -20,8 +21,8 @@ def setup():
     runCmd("sudo apt-get install nim")
   elif platform == "darwin":
     # OS X
-    # runCmd("pwd")
-    # runCmd("echo foo1; sleep 1; echo foo2;sleep 1; echo foo3;")
+    runCmd("pwd")
+    runCmd("echo foo1; sleep 1; echo foo2;sleep 1; echo foo3;")
 
     runCmd("brew install nim")
     runCmd("which nim")
@@ -37,6 +38,9 @@ def setup():
     # Windows...
     # TODO
     pass
+
+print("python start")
+
 setup()
 
 print("done")
