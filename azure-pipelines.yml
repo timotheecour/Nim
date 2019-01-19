@@ -10,10 +10,10 @@
 
 strategy:
   matrix:
-    linux:
+    linux_16:
       # note: travis was using trusty aka Ubuntu 14.04.5 LTS
       imageName: 'ubuntu-16.04'
-    linux:
+    linux_18:
       imageName: 'ubuntu-18.04'
     mac:
       imageName: 'macos-10.13'
