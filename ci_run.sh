@@ -25,7 +25,7 @@ run_all(){
     # koch.nim(27, 8) Error: cannot open file: /usr/local/Cellar/nim/0.19.0/nim/tools/ciutils
     # maybe use 
 
-    cp $(which nim) bin/nim
+    echo_run cp $(which nim) bin/nim
 
     # sh build_all.sh
 

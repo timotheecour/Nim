@@ -25,6 +25,8 @@ strategy:
 
 pool:
   vmImage: $(imageName)
+  timeoutInMinutes: 61
+  # cancelTimeoutInMinutes: 5
 
 variables:
   MY_VAR: my value
@@ -43,7 +45,6 @@ steps:
     set -e
     export PATH=$(pwd)/bin${PATH:+:$PATH}
     echo PATH:${PATH}
-    export NIM_LIB_PREFIX=$(pwd)
     nim c koch
     ./koch runCI
     # TODO: before_deploy and deploy from travis
