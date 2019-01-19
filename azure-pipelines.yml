@@ -12,14 +12,15 @@ strategy:
   matrix:
     linux:
       imageName: 'ubuntu-16.04'
+      NIM_COMPILE_TO_CPP: 'false'
 
     mac:
       imageName: 'macos-10.13'
-      NIM_COMPILE_TO_CPP2: 'false'
+      NIM_COMPILE_TO_CPP: 'false'
 
     mac_cpp:
       imageName: 'macos-10.13'
-      NIM_COMPILE_TO_CPP2: 'true'
+      NIM_COMPILE_TO_CPP: 'true'
 
       # imageName: 'macos-10.14' # fails
     # windows:
@@ -31,7 +32,6 @@ pool:
 
 variables:
   MY_VAR: my value
-  NIM_COMPILE_TO_CPP: $(NIM_COMPILE_TO_CPP2)
 
 steps:
 - script: |
