@@ -5,6 +5,7 @@ def runCmd(cmd):
   print(("runCmd",cmd))
   import subprocess
   subprocess.check_call(cmd, shell=True)
+  # subprocess.check_call(cmd, shell=True, stdout=subprocess.STDOUT)
 
 def setup():
   print("from python")
@@ -15,17 +16,21 @@ def setup():
     runCmd("sudo apt-get install nim")
   elif platform == "darwin":
     # OS X
-    runCmd("brew install nim")
-    runCmd("which nim")
-    runCmd("nim --version")
-    # runCmd("cp $(which nim) bin/nim") # IMPROVE
+    # runCmd("pwd")
+    runCmd("echo foo1; sleep 10; echo foo2;sleep 10; echo foo3;")
+    # runCmd("brew install nim")
+    # runCmd("which nim")
+    # runCmd("nim --version")
+    # # runCmd("cp $(which nim) bin/nim") # IMPROVE
 
-    old_nim = shutil.which('nim')
-    assert(old_nim is not None)
-    shutil.copyfile(old_nim, "bin/nim")
+    # old_nim = shutil.which('nim')
+    # print((old_nim,old_nim))
+    # assert(old_nim is not None)
+    # shutil.copyfile(old_nim, "bin/nim")
   elif platform == "win32":
     # Windows...
     # TODO
     pass
 setup()
 
+print("done")
