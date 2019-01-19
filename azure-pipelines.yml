@@ -48,8 +48,15 @@ steps:
     echo PATH:${PATH}
     echo "ls bin:"
     ls bin
+
+    echo "pwd:"
+    pwd
+
     echo "nim:"
     which nim
+    echo "which -a nim:"
+    which -a nim
+
     nim c koch
     ./koch runCI
     # TODO: before_deploy and deploy from travis
