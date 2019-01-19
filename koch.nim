@@ -452,6 +452,7 @@ proc xtemp(cmd: string) =
 proc execScript(a: string) =
   for ai in a.splitLines:
     if ai.len > 0:
+      # TODO: time each command(cf other PR)
       exec ai
 
 proc runCI(cmd: string) =
