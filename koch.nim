@@ -473,7 +473,9 @@ which node
 # needed otherwise fails later for: tests/js/tasync.nim async function y_196050
 # --quiet will show stderr and warnings, --silent should suppress nearly everything
 #npm install --quiet -g npm@next # bad! still at v6.16.0
-npm install --quiet -g npm@latest
+#npm install --quiet -g npm@latest
+
+brew install node || brew link --overwrite node
 
 node --version
 """
@@ -485,7 +487,9 @@ node --version
   # as that would weaken our testing efforts.
   # when defined(posix): # appveyor (on windows) didn't run this
   #   kochExec "boot"
-  kochExec "boot -d:release"
+
+  # kochExec "boot -d:release"
+  nimexec "--version"
 
   nimexec "js -r tests/js/tasync.nim"
   echo "ok1"
