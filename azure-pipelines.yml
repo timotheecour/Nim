@@ -38,6 +38,7 @@ steps:
     export PATH=$(pwd)/bin${PATH:+:$PATH}
     echo PATH:${PATH}
 
+    nim c koch
     ./koch runCI
 
 
