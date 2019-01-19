@@ -44,9 +44,17 @@ steps:
 
     echo $MY_VAR
 
+    # note: node too old, gives SyntaxError: Unexpected token function
+    # v6.16.0
+    # /usr/local/bin/node
+    # Updating Homebrew...
+
     node --version
     which node
-    brew upgrade node
+    # brew upgrade node
+    brew install node
+    which node
+    node --version
 
 - script: |
     exit # PRTEMP
