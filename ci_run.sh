@@ -7,6 +7,8 @@ echo_run(){
 }
 
 run_all(){
+  export NIM_LIB_PREFIX=$(pwd)
+
   (
     set -e
     echo_run pwd
@@ -17,6 +19,11 @@ run_all(){
     echo_run brew install nim
     echo_run which nim
     echo_run nim --version
+
+    # HACK, avoids: 
+    # koch.nim(27, 8) Error: cannot open file: /usr/local/Cellar/nim/0.19.0/nim/tools/ciutils
+    # maybe use 
+    # cp $(which nim) bin/nim
 
     # sh build_all.sh
 
