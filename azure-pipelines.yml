@@ -31,15 +31,17 @@ variables:
 
 steps:
 - script: |
-    # echo See https://aka.ms/yaml
+    set -e
+    echo See https://aka.ms/yaml
     # separate step so we can download its log separately (can't download log before a script finishes apparently?)
     sh ci_run.sh
     # echo_run echo $(imageName)
 
 - script: |
+    set -e
     export PATH=$(pwd)/bin${PATH:+:$PATH}
     echo PATH:${PATH}
-
+    export NIM_LIB_PREFIX=$(pwd)
     nim c koch
     ./koch runCI
     # TODO: before_deploy and deploy from travis
