@@ -14,7 +14,7 @@ strategy:
       imageName: 'macos-10.13'
       variables:
         NIM_COMPILE_TO_CPP: "false"
-    mac:
+    mac_cpp:
       imageName: 'macos-10.13'
       variables:
         NIM_COMPILE_TO_CPP: "true"
