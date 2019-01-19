@@ -13,6 +13,8 @@ strategy:
     linux:
       # note: travis was using trusty aka Ubuntu 14.04.5 LTS
       imageName: 'ubuntu-16.04'
+    linux:
+      imageName: 'ubuntu-18.04'
     mac:
       imageName: 'macos-10.13'
     mac_cpp:
@@ -33,7 +35,8 @@ steps:
 - script: |
     # echo See https://aka.ms/yaml
     # separate step so we can download its log separately (can't download log before a script finishes apparently?)
-    bash ci_run.sh
+    # bash ci_run.sh
+    sh ci_run.sh
     # # set -e
     # #set -u
     # echo $0
