@@ -7,9 +7,6 @@
 # trigger:
 # - master
 
-variables:
-  MY_VAR: my value
-  ANOTHER_VAR: another value
 
 strategy:
   matrix:
@@ -36,6 +33,10 @@ strategy:
 
 pool:
   vmImage: $(imageName)
+variables:
+  MY_VAR: my value
+  ANOTHER_VAR: another value
+  NIM_COMPILE_TO_CPP: $(NIM_COMPILE_TO_CPP)
 
 # pool:
 #   vmImage: 'Ubuntu-16.04'
@@ -43,6 +44,8 @@ pool:
 steps:
 - script: |
     echo NIM_COMPILE_TO_CPP:$(NIM_COMPILE_TO_CPP)
+    echo NIM_COMPILE_TO_CPP:$NIM_COMPILE_TO_CPP
+    echo NIM_COMPILE_TO_CPP:${NIM_COMPILE_TO_CPP}
 
     # NIM_COMPILE_TO_CPP=$(NIM_COMPILE_TO_CPP)
 
