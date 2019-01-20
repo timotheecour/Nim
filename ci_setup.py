@@ -2,15 +2,10 @@ import os
 import shutil
 
 def runCmd(cmd):
+  # D20190120T053813
   print(("runCmd",cmd))
   import subprocess
-  # subprocess.check_call(cmd, shell=True) # BUG: this doesn't print anything in azure!
-  output = subprocess.check_output(cmd, shell=True)
-  # output=output.decode('ascii')
-  output=output.decode('utf8')
-  print("output:")
-  print(output)
-  # subprocess.check_call(cmd, shell=True, stdout=subprocess.STDOUT)
+  subprocess.check_call(cmd, shell=True)
 
 def buildNimCsources():
   runCmd("git clone --depth 1 https://github.com/nim-lang/csources.git")
@@ -40,7 +35,7 @@ def setup():
   
   runCmd("nim --version")
 
-print("python start")
+print("python script v3")
 
 setup()
 

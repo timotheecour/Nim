@@ -10,56 +10,52 @@
 jobs:
   - job: MyJob
     displayName: MyJobName
-    # cancelTimeoutInMinutes: 1
 
-  strategy:
-    matrix:
-      linux:
-        # note: travis was using trusty aka Ubuntu 14.04.5 LTS
-        # note 18.04 not available
-        imageName: 'ubuntu-16.04'
-      mac:
-        imageName: 'macos-10.13'
-      mac_cpp:
-        # pending 'macos-10.14' availability
-        imageName: 'macos-10.13'
-        NIM_COMPILE_TO_CPP: 'true'
+    strategy:
+      matrix:
+        linux:
+          # note: travis was using trusty aka Ubuntu 14.04.5 LTS
+          # note 18.04 not available
+          imageName: 'ubuntu-16.04'
+        mac:
+          imageName: 'macos-10.13'
+        mac_cpp:
+          # pending 'macos-10.14' availability
+          imageName: 'macos-10.13'
+          NIM_COMPILE_TO_CPP: 'true'
 
-      # windows:
-      #   imageName: 'vs2017-win2016' # CHECKME
+        # windows:
+        #   imageName: 'vs2017-win2016' # CHECKME
 
-  pool:
-    vmImage: $(imageName)
+    pool:
+      vmImage: $(imageName)
 
-  variables:
-    MY_VAR: my value
+    steps:
+      - checkout: self
+        fetchDepth: 1
 
-  steps:
-  - script: |
-      set -e
-      python3 ci_setup.py
-      # echo See https://aka.ms/yaml
-      # separate step so we can download its log separately (can't download log before a script finishes apparently?)
-      # sh ci_run.sh
-      # echo_run echo $(imageName)
+    steps:
+    - script: |
+        set -e
+        python3 -u ci_setup.py
+        # separate step so we can download its log separately (can't download log before a script finishes apparently?)
+        # sh ci_run.sh
+        # echo_run echo $(imageName)
 
-  - script: |
-      set -e
-      export PATH=$(pwd)/bin${PATH:+:$PATH}
-      echo PATH:${PATH}
-      echo "ls bin:"
-      ls -al bin
+    - script: |
+        set -e
+        export PATH=$(pwd)/bin${PATH:+:$PATH}
+        echo PATH:${PATH}
+        echo "pwd:"
+        pwd
 
-      echo "pwd:"
-      pwd
+        echo "nim:"
+        which nim
+        echo "which -a nim:"
+        which -a nim
 
-      echo "nim:"
-      which nim
-      echo "which -a nim:"
-      which -a nim
+        nim c koch
+        ./koch runCI
+        # TODO: before_deploy and deploy from travis
 
-      nim c koch
-      ./koch runCI
-      # TODO: before_deploy and deploy from travis
-
-    displayName: 'Nim runCI'
+      displayName: 'Nim runCI'
