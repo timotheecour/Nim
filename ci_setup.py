@@ -12,37 +12,29 @@ def runCmd(cmd):
   print(output)
   # subprocess.check_call(cmd, shell=True, stdout=subprocess.STDOUT)
 
+def buildNimCsources():
+  runCmd("git clone --depth 1 https://github.com/nim-lang/csources.git")
+  runCmd("cd csources && sh build.sh")
+
 def setup():
   print("from setup")
   from sys import platform
   print("platform:" + platform)
-  if platform == "linux" or platform == "linux2":
-    # linux
-    runCmd("sudo apt-get install nim")
-    # TODO: 2019-01-19T13:29:45.4186042Z Setting up nim (0.12.0-2) ...
+  if platform == "linux" or platform == "linux2": # linux
+    # runCmd("sudo apt-get install nim") # too old: 0.12.0-2 on ubunty 16.04
     # todo: maybe linux brew for nim as well?
-  elif platform == "darwin":
-    # OS X
+    buildNimCsources()
+  elif platform == "darwin": # OSX
     runCmd("pwd")
-    runCmd("echo foo1; sleep 1; echo foo2;sleep 1; echo foo3;")
-
     runCmd("brew install nim")
-    # runCmd("which nim")
     print(shutil.which('nim'))
-    runCmd("nim --version")
 
-
-    # runCmd("cp $(which nim) bin/nim") # IMPROVE
     old_nim = shutil.which('nim')
     print(('old_nim', old_nim))
     assert(old_nim is not None)
-
-    runCmd("pwd")
     shutil.copy(old_nim, "bin/nim")
-    runCmd("ls -al bin")
 
-  elif platform == "win32":
-    # Windows...
+  elif platform == "win32": # windows
     # TODO
     pass
   
@@ -51,6 +43,5 @@ def setup():
 print("python start")
 
 setup()
-
 
 print("done")

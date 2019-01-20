@@ -32,8 +32,6 @@ install_nim_bootstarp(){
     echo_run env
     echo_run echo $MY_VAR
 
-
-
     if [[ "$machine" == "Linux" ]]; then
         echo_run apt-get install nim
     elif [[ "$machine" == "Mac" ]]; then
