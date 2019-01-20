@@ -7,58 +7,59 @@
 # trigger:
 # - master
 
-strategy:
-  matrix:
-    linux:
-      # note: travis was using trusty aka Ubuntu 14.04.5 LTS
-      # note 18.04 not available
-      imageName: 'ubuntu-16.04'
-    mac:
-      imageName: 'macos-10.13'
-    mac_cpp:
-      # 'macos-10.14' fails
-      imageName: 'macos-10.13'
-      NIM_COMPILE_TO_CPP: 'true'
+jobs:
+  - job: MyJob
+    displayName: MyJobName
+    # cancelTimeoutInMinutes: 1
 
-    # windows:
-    #   imageName: 'vs2017-win2016' # CHECKME
+  strategy:
+    matrix:
+      linux:
+        # note: travis was using trusty aka Ubuntu 14.04.5 LTS
+        # note 18.04 not available
+        imageName: 'ubuntu-16.04'
+      mac:
+        imageName: 'macos-10.13'
+      mac_cpp:
+        # pending 'macos-10.14' availability
+        imageName: 'macos-10.13'
+        NIM_COMPILE_TO_CPP: 'true'
 
-pool:
-  vmImage: $(imageName)
-  timeoutInMinutes: 59 # CHECKME
-  # cancelTimeoutInMinutes: 5
+      # windows:
+      #   imageName: 'vs2017-win2016' # CHECKME
 
-variables:
-  MY_VAR: my value
-  # Azure.ServiceConnectionId: '{{ serviceEndpointId }}'
-  # Agent.Source.Git.ShallowFetchDepth: 'true' # CHECKME
+  pool:
+    vmImage: $(imageName)
 
-steps:
-- script: |
-    set -e
-    python3 ci_setup.py
-    # echo See https://aka.ms/yaml
-    # separate step so we can download its log separately (can't download log before a script finishes apparently?)
-    # sh ci_run.sh
-    # echo_run echo $(imageName)
+  variables:
+    MY_VAR: my value
 
-- script: |
-    set -e
-    export PATH=$(pwd)/bin${PATH:+:$PATH}
-    echo PATH:${PATH}
-    echo "ls bin:"
-    ls -al bin
+  steps:
+  - script: |
+      set -e
+      python3 ci_setup.py
+      # echo See https://aka.ms/yaml
+      # separate step so we can download its log separately (can't download log before a script finishes apparently?)
+      # sh ci_run.sh
+      # echo_run echo $(imageName)
 
-    echo "pwd:"
-    pwd
+  - script: |
+      set -e
+      export PATH=$(pwd)/bin${PATH:+:$PATH}
+      echo PATH:${PATH}
+      echo "ls bin:"
+      ls -al bin
 
-    echo "nim:"
-    which nim
-    echo "which -a nim:"
-    which -a nim
+      echo "pwd:"
+      pwd
 
-    nim c koch
-    ./koch runCI
-    # TODO: before_deploy and deploy from travis
+      echo "nim:"
+      which nim
+      echo "which -a nim:"
+      which -a nim
 
-  displayName: 'Nim runCI'
+      nim c koch
+      ./koch runCI
+      # TODO: before_deploy and deploy from travis
+
+    displayName: 'Nim runCI'
