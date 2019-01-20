@@ -33,7 +33,7 @@ def setup():
     # TODO
     pass
   
-  runCmd("nim --version")
+  runCmd("bin/nim --version")
 
 print("python script v3")
 
