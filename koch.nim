@@ -455,9 +455,14 @@ proc runCI(cmd: string) =
   echo "runCI:", cmd
   # note(@araq): Do not replace these commands with direct calls (eg boot())
   # as that would weaken our testing efforts.
-  when defined(posix): # appveyor (on windows) didn't run this
-    kochExecFold("Boot", "boot")
+  # when defined(posix): # appveyor (on windows) didn't run this
+  #   kochExecFold("Boot", "boot")
   kochExecFold("Boot in release mode", "boot -d:release")
+
+  when true:
+    execFold("foo1", "nim c -r testament/tester r tests/stdlib/tos.nim")
+    execFold("foo1", "nim c -r testament/tester r tests/stdlib/nimblepkg/baz/tbaz.nim")
+  doAssert false
 
   ## build nimble early on to enable remainder to depend on it if needed
   kochExecFold("Build Nimble", "nimble")
