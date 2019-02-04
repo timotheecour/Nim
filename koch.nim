@@ -455,6 +455,12 @@ proc xtemp(cmd: string) =
     copyExe(d / "bin" / "nim_backup".exe, d / "bin" / "nim".exe)
 
 proc runCI(cmd: string) =
+  when true:
+    # PRTEMP just to test custom code
+    kochExecFold("Boot in release mode", "boot -d:release")
+    execFold("foo1", "nim c -r testament/tester r tests/stdlib/tos.nim")
+    echo "PRTEMP"
+    # doAssert false
   doAssert cmd.len == 0, cmd # avoid silently ignoring
   echo "runCI:", cmd
   # note(@araq): Do not replace these commands with direct calls (eg boot())
