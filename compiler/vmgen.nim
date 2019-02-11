@@ -40,7 +40,7 @@ when debugEchoCode:
   import asciitables
 when hasFFI:
   import evalffi
-import "/Users/timothee/git_clone/nim/timn/src/timn/pending/p_asciitables.nim"
+
 type
   TGenFlag = enum
     gfNode # Affects how variables are loaded - always loads as rkNode
