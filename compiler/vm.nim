@@ -1653,7 +1653,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
       when hasFFI:
         # let dest = fficast(c.config, regs[rb].node, desttyp)
         # echo (k:regs[rb].kind)
-        echo2 (k:regs[rb].kind)
+        echo (msg:"D20190211T154842", k: regs[rb].kind)
         let dest = fficast(
           c.config,
           regs[rb].node,

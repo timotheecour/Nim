@@ -235,7 +235,8 @@ proc freeTemp(c: PCtx; r: TRegister) =
       c.slots[r].inUse = false
       # c.slots[r].kind = slotEmpty # CHECKME; fixes D20190104T041114 but would that cause too many new registers?
     else:
-      echo2 "skipping c.slots[r].inUse = false", r
+      # echo2 "skipping c.slots[r].inUse = false", r
+      echo "skipping c.slots[r].inUse = false ", r
 
 proc getTempRange(cc: PCtx; n: int; kind: TSlotKind): TRegister =
   # if register pressure is high, we re-use more aggressively:

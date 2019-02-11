@@ -192,8 +192,7 @@ proc fun4() =
   let b3 = c_exp(x)
   # let b4 = c_exp(123.0)
   let b4 = c_exp(123)
-  echo (b3 == b4)
-  let b5 = c_exp2(123)
+  doAssert b3 == b4
 
 proc main() =
   static:
