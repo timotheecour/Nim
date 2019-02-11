@@ -229,8 +229,21 @@ proc fun_bug() =
     let n: uint = 50
     var buffer2: pointer = c_malloc(n)
 
+proc fun4() =
+  # DATE:D20190211T143540
+  let x = 123.0
+  let b3 = c_exp(x)
+  # let b4 = c_exp(123.0)
+  let b4 = c_exp(123)
+  echo (b3 == b4)
+  let b5 = c_exp2(123)
+
 proc main() =
   static:
+    fun4()
+    when true:
+      fun4()
+
     when defined(case1):
       fun_bug_D20190102T222233()
     # echo fun()

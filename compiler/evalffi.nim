@@ -63,17 +63,25 @@ proc importcSymbol*(conf: ConfigRef, sym: PSym): PNode =
     if lib != nil and lib.path.kind notin {nkStrLit..nkTripleStrLit}:
       globalError(conf, sym.info, "dynlib needs to be a string lit for the REPL")
     var theAddr: pointer
+    echo2()
     if lib.isNil and not gExehandle.isNil:
       # first try this exe itself:
       theAddr = gExehandle.symAddr(name)
+      echo2()
       # then try libc:
       if theAddr.isNil:
+        echo2()
         let dllhandle = getDll(conf, gDllCache, libcDll, sym.info)
         theAddr = dllhandle.symAddr(name)
+        echo2()
     elif not lib.isNil:
+      echo2()
       let dllhandle = getDll(conf, gDllCache, if lib.kind == libHeader: libcDll
                                        else: lib.path.strVal, sym.info)
+      echo2()
       theAddr = dllhandle.symAddr(name)
+      echo2(name)
+    echo2()
     if theAddr.isNil: globalError(conf, sym.info, "cannot import: " & sym.name.s)
     result.intVal = cast[ByteAddress](theAddr)
 
