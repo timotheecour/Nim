@@ -7,7 +7,7 @@ foo
 """
 
 # todo: this has no effect (unlike `--experimental:allowFFI`)
-{.push experimental: "allowFFI".}
+# {.push experimental: "allowFFI".}
 
 proc c_printf(frmt: cstring): cint {.importc: "printf", header: "<stdio.h>",
   varargs, discardable.}

@@ -217,8 +217,7 @@ type
     callbacks*: seq[tuple[key: string, value: VmCallback]]
     errorFlag*: string
     cache*: IdentCache
-    # config*: ConfigRef
-    config_aux*: ConfigRef
+    config*: ConfigRef
     graph*: ModuleGraph
     oldErrorCount*: int
 
