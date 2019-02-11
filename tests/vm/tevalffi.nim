@@ -18,7 +18,8 @@ proc c_printf2(frmt: cstring, a0: pointer): void {.importc: "printf", header: "<
 proc snprintf*(buffer: pointer, buf_size: uint, format: cstring): cint {.importc: "snprintf", header: "<stdio.h>", varargs .}
 
 proc c_exp(a: float64): float64 {.importc: "exp", header: "<math.h>".}
-proc c_exp2(a: cint): cint {.importc: "exp_temp", header: "<math.h>".}
+# proc c_exp2(a: cint): cint {.importc: "exp_temp", header: "<math.h>".}
+proc c_exp2(a: cint): cint {.importc: "exp_temp", header: "<math2.h>".}
 
 when defined(windows):
   proc alloca(n: int): pointer {.importc, header: "<malloc.h>".}

@@ -49,7 +49,6 @@ var myerrno {.importc: "errno", header: "<errno.h>".}: cint ## error variable
 
 proc importcSymbol*(conf: ConfigRef, sym: PSym): PNode =
   let name = $sym.loc.r
-
   # the AST does not support untyped pointers directly, so we use an nkIntLit
   # that contains the address instead:
   result = newNodeIT(nkPtrLit, sym.info, sym.typ)
@@ -76,11 +75,10 @@ proc importcSymbol*(conf: ConfigRef, sym: PSym): PNode =
         echo2()
     elif not lib.isNil:
       echo2()
-      let dllhandle = getDll(conf, gDllCache, if lib.kind == libHeader: libcDll
-                                       else: lib.path.strVal, sym.info)
-      echo2()
+      let dll = if lib.kind == libHeader: libcDll else: lib.path.strVal
+      let dllhandle = getDll(conf, gDllCache, dll, sym.info)
+      echo2(name, dllhandle == nil, lib.kind, dll, lib.path.strVal)
       theAddr = dllhandle.symAddr(name)
-      echo2(name)
     echo2()
     if theAddr.isNil: globalError(conf, sym.info, "cannot import: " & sym.name.s)
     result.intVal = cast[ByteAddress](theAddr)
