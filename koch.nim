@@ -463,7 +463,7 @@ proc runCI(cmd: string) =
 
   ## build nimble early on to enable remainder to depend on it if needed
   kochExecFold("Build Nimble", "nimble")
-  execFold("nimble install libffi", "nimble install libffi")
+  execFold("nimble install libffi", "nimble install -y libffi")
 
   when defined(posix): # appveyor (on windows) didn't run this
     kochExecFold("Boot", "boot")
