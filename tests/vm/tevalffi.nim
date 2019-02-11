@@ -18,23 +18,8 @@ proc c_printf2(frmt: cstring, a0: pointer): void {.importc: "printf", header: "<
 proc snprintf*(buffer: pointer, buf_size: uint, format: cstring): cint {.importc: "snprintf", header: "<stdio.h>", varargs .}
 
 proc c_exp(a: float64): float64 {.importc: "exp", header: "<math.h>".}
-# proc c_exp2(a: cint): cint {.importc: "exp_temp", header: "<math.h>".}
-proc c_exp2(a: cint): cint {.importc: "exp_temp", header: "<math2.h>".}
-
-when defined(windows):
-  proc alloca(n: int): pointer {.importc, header: "<malloc.h>".}
-else:
-  proc C_alloca(n: uint): pointer {.importc:"C_alloca", dynlib: "/tmp/d02/liballoca2.dylib".}
-
-proc ffi_fun1(a1:cint, a2:cint): cint {.importc, dynlib: "/tmp/d02/libplugin_temp.dylib".}
-proc ffi_fun3(a1:cint, a2:cint, a3:cint): cint {.importc, dynlib: "/tmp/d02/libplugin_temp.dylib".}
-proc ffi_fun2(a1:cint, a2:cint): cint {.importc, dynlib: "/tmp/d02/libplugin_temp.dylib", varargs.}
-proc ffi_fun4(a1:cint, a2:cint, a3:cint, a4:cint, a5:cint): cint {.importc, dynlib: "/tmp/d02/libplugin_temp.dylib", varargs.}
 
 proc c_malloc(size:uint):pointer {.importc:"malloc", header: "<stdlib.h>".}
-
-# PRTEMP
-proc c_sizeof(size:uint):pointer {.importc:"sizeof", header: "<stdlib.h>".}
 
 proc normal_fun6(a1:cint, a2:cint, a3:cint, a4:cint, a5:cint): cint = discard
 proc normal_fun2(a1:cint): cint = discard
@@ -43,12 +28,9 @@ proc normal_fun1b(a1:cint) = discard
 proc normal_fun0() = discard
 proc normal_fun_v(a1:cint): cint {.varargs.} = discard
 
-
 template toUncheckedArray*[T](a: pointer): untyped=
   cast[ptr UncheckedArray[T]](a)
 
-# proc fun(): string =
-# proc fun(): cint =
 proc fun() =
   block:
     c_printf("foo\n")
@@ -107,32 +89,6 @@ proc fun() =
       # return buffer2
       # return $temp
 
-
-proc fun_bak2() =
-  # let b3 = c_exp2(123)
-  let b4 = ffi_fun1(123, 1234)
-  let b5 = ffi_fun1(123, 1234)
-  let b6 = ffi_fun2(123, 1234)
-
-  # let b7 = ffi_fun2(123, 1234, 453)
-  let b7 = ffi_fun2(123.cint, 1234.cint)
-  let b8 = ffi_fun2(10.cint, 11.cint, 12.cint)
-
-  when false:
-    var b7 = ffi_fun3(10, 11, 12)
-    b7 = ffi_fun3(10, 11, 12)
-    b7 = ffi_fun3(10, 11, 12)
-    let b8 = ffi_fun3(10, 11, 12)
-    let b9 = ffi_fun4(10, 11, 12, 13, 14)
-
-    discard normal_fun6(10, 11, 12, 13, 14)
-    discard normal_fun2(10)
-    discard normal_fun1()
-
-    # normal_fun1b(10)
-    # normal_fun0()
-    # discard normal_fun_v(12)
-    # discard normal_fun_v(12, 13)
 
 when false:
   type MyFoo {.exportc.} = object
