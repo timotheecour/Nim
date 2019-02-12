@@ -1,38 +1,42 @@
 discard """
   cmd: "nim c --experimental:allowFFI $file"
+  nimout: '''
+foo
+foo:100
+foo:101
+foo:102:103
+foo:102:103:104
+foo:0.03:asdf:103:105
+ret={s1:foobar s2:foobar age:25 pi:3.14}
+'''
   output: '''
 foo
-1.349858807576003
+foo:100
+foo:101
+foo:102:103
+foo:102:103:104
+foo:0.03:asdf:103:105
+ret={s1:foobar s2:foobar age:25 pi:3.14}
 '''
 """
 
-# todo: this has no effect (unlike `--experimental:allowFFI`)
-# {.push experimental: "allowFFI".}
-
-# proc c_printf(frmt: cstring, a0: pointer): cint {.importc: "printf", header: "<stdio.h>", varargs, discardable.}
-proc c_printf(frmt: cstring): cint {.importc: "printf", header: "<stdio.h>", varargs, discardable.}
-
-proc c_printf2(frmt: cstring, a0: pointer): void {.importc: "printf", header: "<stdio.h>", varargs.}
-# proc c_printf2(frmt: cstring, a0: pointer) {.importc: "printf", header: "<stdio.h>", varargs.}
-
-proc snprintf*(buffer: pointer, buf_size: uint, format: cstring): cint {.importc: "snprintf", header: "<stdio.h>", varargs .}
-
 proc c_exp(a: float64): float64 {.importc: "exp", header: "<math.h>".}
-
+proc c_printf(frmt: cstring): cint {.importc: "printf", header: "<stdio.h>", varargs, discardable.}
+proc c_snprintf*(buffer: pointer, buf_size: uint, format: cstring): cint {.importc: "snprintf", header: "<stdio.h>", varargs .}
 proc c_malloc(size:uint):pointer {.importc:"malloc", header: "<stdlib.h>".}
-
-proc normal_fun6(a1:cint, a2:cint, a3:cint, a4:cint, a5:cint): cint = discard
-proc normal_fun2(a1:cint): cint = discard
-proc normal_fun1(): cint = discard
-proc normal_fun1b(a1:cint) = discard
-proc normal_fun0() = discard
-proc normal_fun_v(a1:cint): cint {.varargs.} = discard
-
-template toUncheckedArray*[T](a: pointer): untyped=
-  cast[ptr UncheckedArray[T]](a)
+proc c_free(p: pointer) {.importc:"free", header: "<stdlib.h>".}
 
 proc fun() =
-  block:
+  block: # c_exp
+    var x = 0.3
+    let b = c_exp(x)
+    let b2 = int(b*1_000_000) # avoids floating point equality
+    doAssert b2 == 1349858
+    doAssert c_exp(0.3) == c_exp(x)
+    const x2 = 0.3
+    doAssert c_exp(x2) == c_exp(x)
+
+  block: # c_printf
     c_printf("foo\n")
     c_printf("foo:%d\n", 100)
     c_printf("foo:%d\n", 101.cint)
@@ -42,178 +46,26 @@ proc fun() =
     var temp2 = 105.cint
     c_printf("foo:%g:%s:%d:%d\n", 0.03, "asdf", 103.cint, temp2)
 
+  block: # c_snprintf, c_malloc, c_free
+    let n: uint = 50
+    var buffer2: pointer = c_malloc(n)
+    var s: cstring = "foobar"
+    var age: cint = 25
+    let j = c_snprintf(buffer2, n, "s1:%s s2:%s age:%d pi:%g", s, s, age, 3.14)
+    c_printf("ret={%s}\n", buffer2)
+    c_free(buffer2) # not sure it has an effect
+
+  block: # c_printf bug
     var a = 123
     var a2 = a.addr
-    c_printf("foo2:a=%d\n", a.addr)
-    c_printf("foo2:a=%d\n", a2) # TODO: different bw CT RT
+    #[
+    bug: different behavior between CT RT in this case:
+    at CT, shows foo2:a=123
+    at RT, shows foo2:a=<address as int>
+    ]#
+    if false:
+      c_printf("foo2:a=%d\n", a2)
 
-    # c_printf("foo2:a=%ul\n", a2)
-
-  block:
-    var x = 0.3
-    let b = c_exp(x)
-    let b2 = int(b*1_000_000) # avoid floating point equality
-    doAssert b2 == 1349858
-    doAssert c_exp(0.3) == c_exp(x)
-
-  block:
-    let n: uint = 50
-    # var buffer2: pointer = c_malloc(n)
-    # var s: cstring = "hello_world"
-    # var age: cint = 25
-    # let j = snprintf(buffer2, n, "s1:%s s2:%s age:%d pi:%g", s, s, age, 3.14)
-    # let j = snprintf(buffer2, n, "s1")
-    # let j = snprintf(buffer2, n, "s1:%s s2:%s age:%d pi:%g", s, s, age, 3.14)
-
-    # var temp: cstring = cast[cstring](buffer2)
-    # var temp: string
-
-    # var ret: string
-
-  when false:
-      when false:
-        # let temp2 = toUncheckedArray[char](buffer2)
-        var i=0
-        when false:
-         while true:
-          let ai = temp2[i]
-          echo type(ai)
-          # let ai = buffer2.int + i
-          if ai == '\0': break
-          ret.add ai
-          i.inc
-
-      # return ret
-      # return 1234.cint
-
-      # return buffer2
-      # return $temp
-
-
-when false:
-  type MyFoo {.exportc.} = object
-    a: int
-    a2: cint
-    a3: string
-
-  when false:
-   {.emit: """
-  template<typename T> size_t getSize(T*a){
-    return sizeof(*a);
-  }
-  """.}
-
-  {.emit: """
-  void getSize2(){
-    printf("s:%d\n", (int) sizeof(MyFoo)); // IMPROVE
-    // return sizeof(*a);
-  }
-  """.}
-
-proc fun2() =
-  when true:
-   block:
-    let n: uint = 50
-    var buffer2: pointer = c_malloc(n)
-
-    # var buffer: string
-    # var buffer: array[50, char]
-    # buffer.setLen 50
-    # echo buffer
-    # let temp = addr buffer[0]
-    # let temp = unsafeAddr buffer[0]
-    # var buffer: array[]
-    # var buffer: array[50, char]
-    # var buffer = newStringOfCap(50)
-    # let temp = addr buffer[0]
-    # # char buffer[50]; 
-
-    var s: cstring = "geeksforgeeks"
-    # var buffer2 = cast[ptr UncheckedArray[char]](allocShared(sizeof(T) * size))
-    # var buffer2 = alloca(50)
-    # var buffer2 = C_alloca(n) # works
-    # var buffer2 = cast[ptr UncheckedArray[char]](buffer)
-
-    # var buffer2 = cast[UncheckedArray[char]](buffer)
-
-
-    # var buffer: array[50, char]
-    # var buffer2 = cast[ptr UncheckedArray[char]](buffer)
-    # var buffer2 = addr buffer[0]
-    # var buffer2: pointer = addr buffer[0]
-
-    # let j = snprintf(buffer2, n, "%s\n", s)
-    # let j = snprintf(buffer2, n, "%s:%d", s, 1+2)
-
-    # let j = snprintf(buffer2, n, "s1:%s s2:%s", s, s)
-    var age: cint = 25
-    let j = snprintf(buffer2, n, "s1:%s s2:%s age:%d pi:%g", s, s, age, 3.14)
-
-    # let j = snprintf(buffer2, n, "s1:%s s2:%s s3:%d", s, s, age)
-    # let j = snprintf(buffer2, n, "%s", s)
-
-    c_printf("ret={%s}\n", buffer2)
-    # let temp = Foo.sizeof
-    # echo (temp:temp)
-    # echo cast[cstring](buffer2)
-    
-    # echo "{" & $cast[cstring](buffer2) & "}"
-    # echo (j, $type(j))
-
-    # let j = snprintf(buffer, 6, "%s\n", s)
-
-    # let j = snprintf(temp, 6, "%s\n", s)
-    # # echo buffer
-    # # printf("string:\n%s\ncharacter count = %d\n", 
-    # #                                  buffer, j); 
-
-
-proc fun3() =
-  block:
-    let n: uint = 50
-    var buffer2: pointer = c_malloc(n)
-    var s: cstring = "geeksforgeeks"
-    var age: cint = 25
-    let j = snprintf(buffer2, n, "s1:%s s2:%s age:%d pi:%g", s, s, age, 3.14)
-    c_printf("ret={%s}\n", buffer2)
-
-
-proc fun_bug() =
-  block:
-    var a = 123
-    var a2 = a.addr
-  block:
-    let n: uint = 50
-    var buffer2: pointer = c_malloc(n)
-
-proc fun4() =
-  # DATE:D20190211T143540
-  let x = 123.0
-  let b3 = c_exp(x)
-  # let b4 = c_exp(123.0)
-  let b4 = c_exp(123)
-  doAssert b3 == b4
-
-proc main() =
-  static:
-    fun4()
-    when true:
-      fun4()
-
-    when defined(case1):
-      fun_bug_D20190102T222233()
-    # echo fun()
-    fun()
-    fun2()
-    fun3()
-    fun_bug()
-
-  # fun()
-  # fun2()
-  # var buffer = newStringOfCap(50)
-  # var buffer = newStringOfCap(50)
-  var buffer: string
-  buffer.setLen 50
-  let temp = addr buffer[0]
-
-main()
+static:
+  fun()
+fun()
