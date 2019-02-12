@@ -8,11 +8,11 @@ matrix:
     - os: linux
       env: NIM_COMPILE_TO_CPP=false
 
-    - os: osx
-      env: NIM_COMPILE_TO_CPP=false
+    # - os: osx
+    #   env: NIM_COMPILE_TO_CPP=false
 
-    - os: osx
-      env: NIM_COMPILE_TO_CPP=true
+    # - os: osx
+    #   env: NIM_COMPILE_TO_CPP=true
 
 # To allow failures for a failing configuration, use something like:
 #  allow_failures:

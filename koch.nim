@@ -469,9 +469,16 @@ proc runCI(cmd: string) =
   kochExecFold("Build Nimble", "nimble")
   execFold("nimble install libffi", "nimble install -y libffi")
 
-  when defined(posix): # appveyor (on windows) didn't run this
-    kochExecFold("Boot", "boot")
+  # when defined(posix): # appveyor (on windows) didn't run this
+  #   kochExecFold("Boot", "boot")
   kochExecFold("boot -d:release -d:nimHasLibFFI", "boot -d:release -d:nimHasLibFFI")
+
+  #PRTEMP
+  execFold("foo1", "nim c --experimental:compiletimeFFI -r tests/vm/tevalffi.nim")
+  execFold("foo2", "nim c -r testament/tester r tests/vm/tevalffi.nim")
+  execFold("foo3", "nim c -r testament/tester pcat vm")
+  execFold("foo4", "nim c -r -d:nimCoroutines testament/tester --pedantic r tests/vm/tevalffi.nim")
+  execFold("foo5", "nim c -r -d:nimCoroutines testament/tester --pedantic all -d:nimCoroutines")
 
   if getEnv("NIM_TEST_PACKAGES", "false") == "true":
     execFold("Test selected Nimble packages", "nim c -r testament/tester cat nimble-extra")
