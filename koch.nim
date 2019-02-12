@@ -462,7 +462,9 @@ proc runCI(cmd: string) =
   # note(@araq): Do not replace these commands with direct calls (eg boot())
   # as that would weaken our testing efforts.
 
+  exec("nim --version")
   kochExecFold("Boot in release mode", "boot -d:release") # PRTEMP: build once before nimble install
+  exec("nim --version")
 
   ## build nimble early on to enable remainder to depend on it if needed
   kochExecFold("Build Nimble", "nimble")
