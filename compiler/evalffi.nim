@@ -34,9 +34,12 @@ else:
   var gExeHandle = loadLib()
 
 proc getDll(conf: ConfigRef, cache: var TDllCache; dll: string; info: TLineInfo): pointer =
-  if dll in cache: return cache[dll]
+  if dll in cache:
+    echo (msg:"getDll", dll:dll)
+    return cache[dll]
   var libs: seq[string]
   libCandidates(dll, libs)
+  echo (msg:"getDll2", libs:libs)
   for c in libs:
     result = loadLib(c)
     if not result.isNil: break
