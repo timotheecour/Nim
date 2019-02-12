@@ -16,7 +16,8 @@ when defined(windows):
   const libcDll = "msvcrt.dll"
 elif defined(linux):
   # const libcDll = "libc.so(.6|.5|)"
-  const libcDll = "/usr/lib/x86_64-linux-gnu/libc.so(.6|.5|)"
+  # const libcDll = "/usr/lib/x86_64-linux-gnu/libc.so(.6|.5|)"
+  const libcDll = "/usr/lib/x86_64-linux-gnu/libc.so"
 elif defined(osx):
   const libcDll = "/usr/lib/libSystem.dylib"
 else:
