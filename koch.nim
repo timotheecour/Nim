@@ -462,15 +462,15 @@ proc runCI(cmd: string) =
   # note(@araq): Do not replace these commands with direct calls (eg boot())
   # as that would weaken our testing efforts.
 
-  # kochExecFold("Boot in release mode", "boot -d:release") # PRTEMP: build once before nimble install
+  kochExecFold("Boot in release mode", "boot -d:release") # PRTEMP: build once before nimble install
 
   ## build nimble early on to enable remainder to depend on it if needed
   kochExecFold("Build Nimble", "nimble")
   execFold("nimble install libffi", "nimble install -y libffi")
 
-  when defined(posix): # appveyor (on windows) didn't run this
-    kochExecFold("Boot", "boot")
-  kochExecFold("Boot in release mode", "boot -d:release")
+  # when defined(posix): # appveyor (on windows) didn't run this
+  #   kochExecFold("Boot", "boot")
+  kochExecFold("Boot in release mode", "boot -d:release -d:useFFI")
 
 
   if getEnv("NIM_TEST_PACKAGES", "false") == "true":
