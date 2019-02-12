@@ -15,9 +15,7 @@ import pkg/libffi
 when defined(windows):
   const libcDll = "msvcrt.dll"
 elif defined(linux):
-  # const libcDll = "libc.so(.6|.5|)"
-  # const libcDll = "/usr/lib/x86_64-linux-gnu/libc.so(.6|.5|)"
-  const libcDll = "/usr/lib/x86_64-linux-gnu/libc.so"
+  const libcDll = "libc.so(.6|.5|)"
 elif defined(osx):
   const libcDll = "/usr/lib/libSystem.dylib"
 else:
@@ -65,9 +63,9 @@ proc importcSymbol*(conf: ConfigRef, sym: PSym): PNode =
   else:
     let lib = sym.annex
     if lib != nil and lib.path.kind notin {nkStrLit..nkTripleStrLit}:
-      globalError(conf, sym.info, "dynlib needs to be a string lit for the REPL")
+      globalError(conf, sym.info, "dynlib needs to be a string lit")
     var theAddr: pointer
-    if lib.isNil and not gExehandle.isNil:
+    if (lib.isNil or lib.kind == libHeader) and not gExehandle.isNil:
       # first try this exe itself:
       theAddr = gExehandle.symAddr(name)
       # then try libc:
@@ -78,8 +76,6 @@ proc importcSymbol*(conf: ConfigRef, sym: PSym): PNode =
       let dll = if lib.kind == libHeader: libcDll else: lib.path.strVal
       let dllhandle = getDll(conf, gDllCache, dll, sym.info)
       theAddr = dllhandle.symAddr(name)
-      if theAddr.isNil:
-        echo ("importcSymbol", name, dllhandle == nil, lib.kind, dll, lib.path.strVal)
     if theAddr.isNil: globalError(conf, sym.info, "cannot import: " & sym.name.s)
     result.intVal = cast[ByteAddress](theAddr)
 
