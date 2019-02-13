@@ -472,7 +472,13 @@ proc runCI(cmd: string) =
     "https://github.com/timotheecour/libffi@#43b223875b4839b37dffba6528a2eb10d9e43fbf"
   else:
     "libffi"
-  execFold("nimble install libffi", "nimble install -y " & libffi)
+  when defined(windows):
+    let cmd2 =  "nimble install -y " & libffi
+    echo (cmd2: cmd2)
+    let ret = execShellCmd(cmd2)
+    doAssert ret == 0
+  else:
+    execFold("nimble install libffi", "nimble install -y " & libffi)
   kochExecFold("boot -d:release -d:nimHasLibFFI", "boot -d:release -d:nimHasLibFFI")
 
   if getEnv("NIM_TEST_PACKAGES", "false") == "true":
