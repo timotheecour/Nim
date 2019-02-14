@@ -450,7 +450,7 @@ proc generateSymbolIndex(symbols: seq[IndexEntry]): string =
     var j = i
     while j < symbols.len and keyword == symbols[j].keyword:
       let
-        url = symbols[j].link.escapeLink
+        url = "/" & symbols[j].link.escapeLink
         text = if symbols[j].linkTitle.len > 0: symbols[j].linkTitle else: url
         desc = if symbols[j].linkDesc.len > 0: symbols[j].linkDesc else: ""
       if desc.len > 0:
@@ -532,7 +532,7 @@ proc generateDocumentationToc(entries: seq[IndexEntry]): string =
       result.add(level.indentToLevel(levels[L].level))
       result.addf("""<li><a class="reference" data-doc-search-tag="$1: $2" href="$3">
         $3</a></li>
-        """, [titleTag, levels[L].text, link, levels[L].text])
+        """, [titleTag, levels[L].text, "/" & link, levels[L].text])
     inc L
   result.add(level.indentToLevel(1) & "</ul>\n")
 
