@@ -272,7 +272,7 @@ proc dosearch(value: cstring): Element =
     var stuff: Element
     {.emit: """
     var request = new XMLHttpRequest();
-    request.open("GET", "theindex.html", false);
+    request.open("GET", "/theindex.html", false);
     request.send(null);
 
     var doc = document.implementation.createHTMLDocument("theindex");
