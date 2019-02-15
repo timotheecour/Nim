@@ -59,7 +59,8 @@ proc commandCheck(graph: ModuleGraph) =
 when not defined(leanCompiler):
   proc commandDoc2(graph: ModuleGraph; json: bool) =
     handleDocOutputOptions graph.config
-    graph.config.errorMax = high(int)  # do not stop after first error
+    if graph.config.errorMax == 0:
+      graph.config.errorMax = high(int)  # do not stop after first error
     semanticPasses(graph)
     if json: registerPass(graph, docgen2JsonPass)
     else: registerPass(graph, docgen2Pass)
