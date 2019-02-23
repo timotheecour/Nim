@@ -769,7 +769,7 @@ iterator mpairs*(node: var JsonNode): tuple[key: string, val: var JsonNode] =
   for key, val in mpairs(node.fields):
     yield (key, val)
 
-proc parseJson(p: var JsonParser): JsonNode =
+proc parseJson*(p: var JsonParser): JsonNode =
   ## Parses JSON from a JSON Parser `p`.
   case p.tok
   of tkString:
