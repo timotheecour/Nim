@@ -841,23 +841,35 @@ proc parseJson(p: var JsonParser): JsonNode =
     raiseParseErr(p, "{")
 
 when not defined(js):
-  proc parseJson*(s: Stream, filename: string = ""): JsonNode =
+  proc parseJson*(s: Stream, filename: string = "", numRead: var int): JsonNode =
     ## Parses from a stream `s` into a `JsonNode`. `filename` is only needed
     ## for nice error messages.
-    ## If `s` contains extra data, it will raise `JsonParsingError`.
+    ## When numRead == 0:
+    ##   If `s` contains extra data, it will raise `JsonParsingError`.
+    ## else, numRead is set to number of parsed characters
     var p: JsonParser
     p.open(s, filename)
     try:
       discard getTok(p) # read first token
       result = p.parseJson()
-      eat(p, tkEof) # check if there is no extra data
+      if numRead == 0:
+        eat(p, tkEof) # check if there is no extra data
+      elif numRead == -1:
+        numRead = p.bufpos
     finally:
       p.close()
 
   proc parseJson*(buffer: string): JsonNode =
     ## Parses JSON from `buffer`.
     ## If `buffer` contains extra data, it will raise `JsonParsingError`.
-    result = parseJson(newStringStream(buffer), "input")
+    var numRead = 0
+    result = parseJson(newStringStream(buffer), "input", numRead)
+
+  proc parseJson*(buffer: string, numRead: var int): JsonNode =
+    ## Parses JSON from `buffer`. `numRead` will point to number of chars
+    ## parsed.
+    numRead = -1
+    result = parseJson(newStringStream(buffer), "input", numRead)
 
   proc parseFile*(filename: string): JsonNode =
     ## Parses `file` into a `JsonNode`.
@@ -865,7 +877,8 @@ when not defined(js):
     var stream = newFileStream(filename, fmRead)
     if stream == nil:
       raise newException(IOError, "cannot read from file: " & filename)
-    result = parseJson(stream, filename)
+    var numRead = 0
+    result = parseJson(stream, filename, numRead)
 else:
   from math import `mod`
   type
