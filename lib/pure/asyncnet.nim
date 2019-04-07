@@ -625,6 +625,7 @@ proc bindAddr*(socket: AsyncSocket, port = Port(0), address = "") {.
         "Unknown socket address family and no address specified to bindAddr")
 
   var aiList = getAddrInfo(realaddr, port, socket.domain)
+  # echo (realaddr, port, socket.domain)
   if bindAddr(socket.fd, aiList.ai_addr, aiList.ai_addrlen.Socklen) < 0'i32:
     freeAddrInfo(aiList)
     raiseOSError(osLastError())
