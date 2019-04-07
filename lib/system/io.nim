@@ -126,6 +126,7 @@ proc strerror(errnum: cint): cstring {.importc, header: "<string.h>".}
 when not defined(NimScript):
   var
     errno {.importc, header: "<errno.h>".}: cint ## error variable
+    EINTR {.importc: "EINTR", header: "<errno.h>".}: cint
 
 proc checkErr(f: File) =
   when not defined(NimScript):
@@ -143,8 +144,17 @@ proc readBuffer*(f: File, buffer: pointer, len: Natural): int {.
   ## reads `len` bytes into the buffer pointed to by `buffer`. Returns
   ## the actual number of bytes that have been read which may be less than
   ## `len` (if not as many bytes are remaining), but not greater.
-  result = c_fread(buffer, 1, len, f)
-  if result != len: checkErr(f)
+  while true:
+    result = c_fread(buffer, 1, len, f)
+    if result == len: return result
+    when not defined(NimScript):
+      if errno == EINTR:
+        errno = 0
+        c_clearerr(f)
+        doAssert result == 0 # TODO: do we need to handle result > 0 (ie short read)?
+        continue
+    checkErr(f)
+    break
 
 proc readBytes*(f: File, a: var openArray[int8|uint8], start, len: Natural): int {.
   tags: [ReadIOEffect], benign.} =
