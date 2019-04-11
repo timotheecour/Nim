@@ -758,10 +758,10 @@ when defined(android):
 elif defined(linux):
   proc sigtimedwait*(a1: var Sigset, a2: var SigInfo,
                      a3: var Timespec): cint {.importc, header: "<signal.h>".}
+  proc sigwaitinfo*(a1: var Sigset, a2: var SigInfo): cint {.
+    importc, header: "<signal.h>".}
 
 proc sigwait*(a1: var Sigset, a2: var cint): cint {.
-  importc, header: "<signal.h>".}
-proc sigwaitinfo*(a1: var Sigset, a2: var SigInfo): cint {.
   importc, header: "<signal.h>".}
 
 when not defined(nintendoswitch):
