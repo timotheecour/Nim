@@ -755,7 +755,7 @@ when defined(android):
 
   proc sigtimedwait*(a1: var Sigset, a2: var SigInfo, a3: var Timespec): cint =
     result = cint(syscall(NR_rt_sigtimedwait, addr(a1), addr(a2), addr(a3), NSIGMAX div 8))
-else:
+elif defined(linux):
   proc sigtimedwait*(a1: var Sigset, a2: var SigInfo,
                      a3: var Timespec): cint {.importc, header: "<signal.h>".}
 
