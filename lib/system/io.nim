@@ -162,6 +162,7 @@ proc readBuffer*(f: File, buffer: pointer, len: Natural): int {.
         errno = 0
         c_clearerr(f)
         doAssert result == 0 # TODO: do we need to handle result > 0 (ie short read)?
+        # https://stackoverflow.com/questions/35224048/can-read-fail-with-eintr-when-reading-from-regular-file
         continue
     checkErr(f)
     break
