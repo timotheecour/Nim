@@ -95,6 +95,10 @@ iterator runes(s: cstring, L: int): int =
     fastRuneAt(s, i, L, result, true)
     yield result
 
+when defined(js):
+  # PRTEMP D20190412T164559
+  proc toU16(x: int): int16 {.magic: "ToU16", noSideEffect, deprecated.}
+
 proc newWideCString*(source: cstring, L: int): WideCString =
   unsafeNew(result, L * 4 + 2)
   #result = cast[wideCString](alloc(L * 4 + 2))
