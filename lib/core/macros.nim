@@ -555,7 +555,9 @@ proc parseExpr*(s: string): NimNode {.noSideEffect, compileTime.} =
   ## Expects a single expression. Raises ``ValueError`` for parsing errors.
   result = internalParseExpr(s)
   let x = internalErrorFlag()
-  if x.len > 0: raise newException(ValueError, x)
+  if x.len > 0:
+    # debugEcho "\nparseExpr:\n", s, "\nEND\n\n" # PRTEMP
+    raise newException(ValueError, x)
 
 proc parseStmt*(s: string): NimNode {.noSideEffect, compileTime.} =
   ## Compiles the passed string to its AST representation.
