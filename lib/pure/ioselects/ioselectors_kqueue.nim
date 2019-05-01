@@ -192,10 +192,10 @@ when hasThreadSupport:
       mixin withChangeLock
       s.withChangeLock():
         if s.changesLength > 0:
-          if kevent(s.kqFD, addr(s.changes[0]), cint(s.changesLength),
-                    nil, 0, nil) == -1:
-            raiseIOSelectorsError(osLastError())
+          let ret = kevent(s.kqFD, addr(s.changes[0]), cint(s.changesLength),
+                    nil, 0, nil)
           s.changesLength = 0
+          if ret == -1: raiseIOSelectorsError(osLastError())
 else:
   template modifyKQueue[T](s: Selector[T], nident: uint, nfilter: cshort,
                            nflags: cushort, nfflags: cuint, ndata: int,
@@ -209,10 +209,10 @@ else:
     template flushKQueue[T](s: Selector[T]) =
       let length = cint(len(s.changes))
       if length > 0:
-        if kevent(s.kqFD, addr(s.changes[0]), length,
-                  nil, 0, nil) == -1:
-          raiseIOSelectorsError(osLastError())
+        let ret = kevent(s.kqFD, addr(s.changes[0]), length,
+                  nil, 0, nil)
         s.changes.setLen(0)
+        if ret == -1: raiseIOSelectorsError(osLastError())
 
 proc registerHandle*[T](s: Selector[T], fd: int | SocketHandle,
                         events: set[Event], data: T) =
