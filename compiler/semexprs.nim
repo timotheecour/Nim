@@ -11,7 +11,7 @@
 # included from sem.nim
 
 const
-  errExprXHasNoType = "expression '$1' has no type (or is ambiguous)"
+  errExprXHasNoType = "expression '$1'\n\nhas no type (or is ambiguous)" # TODO: only \n if $1 is multiline (\n\n helps for large multiline expressions)
   errXExpectsTypeOrValue = "'$1' expects a type or value"
   errVarForOutParamNeededX = "for a 'var' type a variable needs to be passed; but '$1' is immutable"
   errXStackEscape = "address of '$1' may not escape its stack frame"
