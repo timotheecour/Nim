@@ -92,8 +92,11 @@ else:
         var gEnv = NSGetEnviron()[]
       var i = 0
       while true:
-        if gEnv[i] == nil: break
-        add environment, $gEnv[i]
+        when defined(js):
+          doAssert false
+        else:
+          if gEnv[i] == nil: break
+          add environment, $gEnv[i]
         inc(i)
       envComputed = true
 
