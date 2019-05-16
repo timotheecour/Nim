@@ -183,11 +183,13 @@ proc presentFailedCandidates(c: PContext, n: PNode, errors: CandidateErrors):
     if filterOnlyFirst and err.firstMismatch == 1:
       inc skipped
       continue
-    if err.sym.kind in routineKinds and err.sym.ast != nil:
-      add(candidates, renderTree(err.sym.ast,
-            {renderNoBody, renderNoComments, renderNoPragmas}))
-    else:
-      add(candidates, getProcHeader(c.config, err.sym, prefer))
+    # if err.sym.kind in routineKinds and err.sym.ast != nil:
+    #   add(candidates, renderTree(err.sym.ast,
+    #         {renderNoBody, renderNoComments, renderNoPragmas}))
+    # else:
+    #   add(candidates, getProcHeader(c.config, err.sym, prefer))
+    ## more context shown
+    add(candidates, getProcHeader(c.config, err.sym, prefer))
     add(candidates, "\n")
     if err.firstMismatch != 0 and n.len > 1:
       let cond = n.len > 2
