@@ -127,6 +127,10 @@ proc `$`*(msg: Message): string =
   result.add("\c\L")
   result.add(msg.msgBody)
 
+# TODO: D20190514T222224 some parts should be usable without -d:ssl
+# when not compiledWithSsl:
+#   type SSLContext = ref object
+
 proc newSmtp*(useSsl = false, debug=false,
               sslContext: SSLContext = nil): Smtp =
   ## Creates a new ``Smtp`` instance.
