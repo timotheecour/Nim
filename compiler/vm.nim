@@ -1052,8 +1052,12 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
             if ai == nil:
               continue
             let ai2 = newNode(nkSym)
-            ai2.sym = ai # TODO: copyTree?
+            ai2.sym = ai
+            # TODO
+            # ai2.typ = ai.typ # CHECKME
+            # TODO: copyTree?
             node.sons.add ai2
+            # node.sons.add copyTree(ai2)
 
           regs[ra].node = node
           # TODO: do we need regs[ra].node.flags.incl nfIsRef or recSetFlagIsRef?
