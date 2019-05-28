@@ -322,7 +322,16 @@ template newPackageCache*(): untyped =
                  else:
                    modeCaseSensitive)
 
+# HACK IMPROVE D20190523T145504
+# TODO: threadvar?
+var confGlobal: ConfigRef
+proc getGlobalConfigRef(): ConfigRef {.exportc.} =
+  return confGlobal
+
 proc newConfigRef*(): ConfigRef =
+  if confGlobal!=nil:
+    doAssert false, "TODO"
+
   result = ConfigRef(
     selectedGC: gcRefc,
     cCompiler: ccGcc,
@@ -378,6 +387,8 @@ proc newConfigRef*(): ConfigRef =
   # enable colors by default on terminals
   if terminal.isatty(stderr):
     incl(result.globalOptions, optUseColors)
+
+  confGlobal = result
 
 proc newPartialConfigRef*(): ConfigRef =
   ## create a new ConfigRef that is only good enough for error reporting.

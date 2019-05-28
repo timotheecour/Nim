@@ -150,6 +150,8 @@ type
     opcMarshalLoad, opcMarshalStore,
     opcSymOwner,
     opcModuleSymbols,
+    opcGetPNodePointer,
+    opcFromPNodePointer,
     opcSymIsInstantiationOf,
 
   TBlock* = object

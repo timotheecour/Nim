@@ -1222,6 +1222,8 @@ proc genMagic(c: PCtx; n: PNode; dest: var TDest; m: TMagic) =
   of mSymOwner: genUnaryABC(c, n, dest, opcSymOwner)
   of mSymIsInstantiationOf: genBinaryABC(c, n, dest, opcSymIsInstantiationOf)
   of mModuleSymbols: genUnaryABC(c, n, dest, opcModuleSymbols)
+  of mGetPNodePointer: genUnaryABC(c, n, dest, opcGetPNodePointer)
+  of mFromPNodePointer: genUnaryABC(c, n, dest, opcFromPNodePointer)
   of mNChild: genBinaryABC(c, n, dest, opcNChild)
   of mNSetChild: genVoidABC(c, n, dest, opcNSetChild)
   of mNDel: genVoidABC(c, n, dest, opcNDel)
