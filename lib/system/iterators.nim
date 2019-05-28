@@ -49,9 +49,13 @@ iterator items*(a: cstring): char {.inline.} =
       inc(i)
   else:
     var i = 0
-    while a[i] != '\0':
-      yield a[i]
-      inc(i)
+    when nimvm: # D20190524T003854 otherwise will give bounds error
+      for i in 0..<len(a):
+        yield a[i]
+    else:
+      while a[i] != '\0':
+        yield a[i]
+        inc(i)
 
 iterator mitems*(a: var cstring): var char {.inline.} =
   ## Iterates over each item of `a` so that you can modify the yielded value.
