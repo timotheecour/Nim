@@ -508,6 +508,12 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         "ra", regDescr("ra", ra), "rb", regDescr("rb", instr.regB),
         "rc", regDescr("rc", instr.regC)]
 
+    template checkCond(cond: typed, msg = "") =
+      # TODO: more general
+      # TODO: show stacktrace in both compiler and user code
+      # assert2 false # BUG: how come this doesn't crash? (unlike doAssert)
+      if not cond: stackTrace(c, tos, pc, astToStr(cond) & " " & msg)
+
     case instr.opcode
     of opcEof: return regs[ra]
     of opcRet:
@@ -1053,7 +1059,45 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
             # node.sons.add copyTree(ai2)
 
           regs[ra].node = node
-          # TODO: do we need regs[ra].node.flags.incl nfIsRef or recSetFlagIsRef?
+          # TODO: do we need regs[ra].node.flags.incl nfIsRef or recSetFlagIsRef? SEE D20190524T210155
+
+    of opcGetPNodePointer:
+      decodeB(rkInt)
+      let kind = regs[rb].kind
+
+      var node: PNode
+      let info = c.debug[pc]
+      case kind
+      of rkInt:
+        node = newNodeI(nkIntLit, info)
+        node.intVal = regs[rb].intVal
+      of rkFloat:
+        node = newNodeI(nkFloatLit, info)
+        node.floatVal = regs[rb].floatVal
+      of rkNode:
+        node = regs[rb].node
+      else: checkCond false
+
+      regs[ra].intVal = cast[int](node)
+
+    of opcFromPNodePointer:
+      let rb = instr.regB
+      let bkind = regs[rb].kind
+      checkCond bkind == rkInt, $bkind
+      let node = cast[Pnode](regs[rb].intVal)
+
+      case node.kind
+      of {nkCharLit..nkUInt64Lit}:
+        ensureKind rkInt
+        regs[ra].intVal = node.intVal
+      of {nkFloatLit..nkFloat128Lit}:
+        ensureKind rkFloat
+        regs[ra].floatVal = node.floatVal
+      else:
+        # note: nkStrLit doesn't seem needed, it would end up here
+        ensureKind rkNode
+        regs[ra].node = node
+
     of opcEcho:
       let rb = instr.regB
       if rb == 1:

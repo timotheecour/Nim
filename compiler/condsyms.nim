@@ -83,6 +83,7 @@ proc initDefines*(symbols: StringTableRef) =
   defineSymbol("nimHasInstantiationOfInMacro")
   defineSymbol("nimHasHotCodeReloading")
   defineSymbol("nimHasModuleSymbols")
+  defineSymbol("nimHasGetPNodePointer")
   defineSymbol("nimHasNilSeqs")
   defineSymbol("nimHasSignatureHashInMacro")
   defineSymbol("nimHasDefault")
