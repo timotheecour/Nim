@@ -335,7 +335,13 @@ proc cmpStrings(a, b: string): int {.asmNoStackFrame, compilerProc.} =
   """
 
 proc cmp(x, y: string): int =
-  return cmpStrings(x, y)
+  when nimvm:
+    # fixes D20190529T151719 TODO: FACTOR with system.cmp
+    if x < y: result = -1
+    elif x > y: result = 1
+    else: result = 0
+  else:
+    return cmpStrings(x, y)
 
 proc eqStrings(a, b: string): bool {.asmNoStackFrame, compilerProc.} =
   asm """
