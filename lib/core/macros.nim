@@ -537,21 +537,26 @@ proc internalErrorFlag*(): string {.magic: "NError", noSideEffect.}
   ## Some builtins set an error flag. This is then turned into a proper
   ## exception. **Note**: Ordinary application code should not call this.
 
+proc formatParseError(error: string, input: string): string =
+  result = error
+  when defined(timn_parseExp_verbose):
+    const delim = "\n-----\n"
+    result.add "\ninput:" & delim & input & delim
+
 proc parseExpr*(s: string): NimNode {.noSideEffect, compileTime.} =
   ## Compiles the passed string to its AST representation.
   ## Expects a single expression. Raises ``ValueError`` for parsing errors.
   result = internalParseExpr(s)
   let x = internalErrorFlag()
   if x.len > 0:
-    # debugEcho "\nparseExpr:\n", s, "\nEND\n\n" # PRTEMP
-    raise newException(ValueError, x)
+    raise newException(ValueError, x.formatParseError(s))
 
 proc parseStmt*(s: string): NimNode {.noSideEffect, compileTime.} =
   ## Compiles the passed string to its AST representation.
   ## Expects one or more statements. Raises ``ValueError`` for parsing errors.
   result = internalParseStmt(s)
   let x = internalErrorFlag()
-  if x.len > 0: raise newException(ValueError, x)
+  if x.len > 0: raise newException(ValueError, x.formatParseError(s))
 
 proc getAst*(macroOrTemplate: untyped): NimNode {.magic: "ExpandToAst", noSideEffect.}
   ## Obtains the AST nodes returned from a macro or template invocation.
