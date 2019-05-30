@@ -306,8 +306,7 @@ template newPackageCache*(): untyped =
 # HACK IMPROVE D20190523T145504
 # TODO: threadvar?
 var confGlobal: ConfigRef
-proc getGlobalConfigRef(): ConfigRef {.exportc.} =
-  return confGlobal
+proc getGlobalConfigRef(): ConfigRef {.exportc.} = return confGlobal
 
 proc newConfigRef*(): ConfigRef =
   if confGlobal!=nil:
