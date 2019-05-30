@@ -68,9 +68,15 @@ proc getCurrentExceptionMsg*(): string =
         return $msg
   return ""
 
+const nimJsStackframeVerbose = defined(nimJsStackframeVerbose)
 proc auxWriteStackTrace(f: PCallFrame): string =
   type
-    TempFrame = tuple[procname: cstring, line: int]
+    TempFrame = object
+      procname: cstring
+      line: int
+      when nimJsStackframeVerbose:
+        filename: cstring
+
   var
     it = f
     i = 0
@@ -79,6 +85,9 @@ proc auxWriteStackTrace(f: PCallFrame): string =
   while it != nil and i <= high(tempFrames):
     tempFrames[i].procname = it.procname
     tempFrames[i].line = it.line
+    when nimJsStackframeVerbose:
+      tempFrames[i].filename = it.filename
+
     inc(i)
     inc(total)
     it = it.prev
@@ -92,10 +101,18 @@ proc auxWriteStackTrace(f: PCallFrame): string =
     add(result, $(total-i))
     add(result, " calls omitted) ...\n")
   for j in countdown(i-1, 0):
-    add(result, tempFrames[j].procname)
-    if tempFrames[j].line > 0:
-      add(result, ", line: ")
-      add(result, $tempFrames[j].line)
+    when nimJsStackframeVerbose:
+      add(result, tempFrames[j].filename)
+      if tempFrames[j].line > 0:
+        add(result, ":")
+        add(result, $tempFrames[j].line)
+      add(result, " ")
+      add(result, tempFrames[j].procname)
+    else:
+      add(result, tempFrames[j].procname)
+      if tempFrames[j].line > 0:
+        add(result, ", line: ")
+        add(result, $tempFrames[j].line)
     add(result, "\n")
 
 proc rawWriteStackTrace(): string =
