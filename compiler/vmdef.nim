@@ -234,7 +234,7 @@ proc getGlobalContext(): PCtx {.exportc.} = return evalContextGlobal
 proc newCtx*(module: PSym; cache: IdentCache; g: ModuleGraph): PCtx =
   when false:
     # this shows this is called once per nims and once for system.nim
-    template fun(a: varargs[untyped]): untyped = when declared echo2: echo2(a) else: echo(a)
+    template fun(a: varargs[untyped]): untyped = (when declared echo2: echo2(a) else: echo(a))
     fun (name: module.name.s, file: toFullPath(g.config, module.info))
   result = PCtx(code: @[], debug: @[],
     globals: newNode(nkStmtListExpr), constants: newNode(nkStmtList), types: @[],
