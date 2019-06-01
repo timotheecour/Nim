@@ -14,7 +14,7 @@ import
   strutils, options, ast, astalgo, llstream, msgs, platform, os,
   condsyms, idents, renderer, types, extccomp, math, magicsys, nversion,
   nimsets, syntaxes, times, idgen, modulegraphs, reorder, rod,
-  lineinfos, pathutils
+  lineinfos, pathutils, strtabs
 
 type
   TPassData* = tuple[input: PNode, closeOutput: PNode]
@@ -113,6 +113,18 @@ const
     nkMacroDef, nkConverterDef, nkIteratorDef, nkFuncDef, nkPragma,
     nkExportStmt, nkExportExceptStmt, nkFromStmt, nkImportStmt, nkImportExceptStmt}
 
+proc toFqname*(sym: PSym): string =
+  #[
+  FACTOR w D20190601T003633; MOVE
+  ]#
+  var sym = sym
+  while sym != nil:
+    if result.len == 0:
+      result = sym.name.s
+    else:
+      result = sym.name.s & "." & result
+    sym = sym.owner
+
 proc processModule*(graph: ModuleGraph; module: PSym, stream: PLLStream): bool {.discardable.} =
   if graph.stopCompile(): return true
   var
@@ -145,7 +157,15 @@ proc processModule*(graph: ModuleGraph; module: PSym, stream: PLLStream): bool {
   else:
     openPasses(graph, a, module)
     if stream == nil:
-      let filename = toFullPathConsiderDirty(graph.config, fileIdx)
+      let fqname = toFqname(module)
+      # TODO: cache this value as patchedFile for the module?
+      var filename: AbsoluteFile
+      var filename0 = graph.config.patchedFiles.getOrDefault fqname
+      if filename0.len != 0:
+        doAssert filename0.isAbsolute
+        filename = filename0.AbsoluteFile
+      else:
+        filename = toFullPathConsiderDirty(graph.config, fileIdx)
       s = llStreamOpen(filename, fmRead)
       if s == nil:
         rawMessage(graph.config, errCannotOpenFile, filename.string)

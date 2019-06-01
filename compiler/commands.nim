@@ -608,6 +608,14 @@ proc processSwitch*(switch, arg: string, pass: TCmdLinePass, info: TLineInfo;
     expectArg(conf, switch, arg, pass, info)
     if pass in {passCmd2, passPP}:
       conf.implicitIncludes.add findModule(conf, arg, toFullPath(conf, info)).string
+  of "patchfile":
+    expectArg(conf, switch, arg, pass, info)
+    if pass in {passCmd2, passPP}:
+      # TODO: findModule(conf, arg, toFullPath(conf, info)).string
+      let args = split(arg, ":", maxsplit=1)
+      doAssert args.len == 2, $(args, arg)
+      # conf.patchedFiles.add (args[0], args[1])
+      conf.patchedFiles[args[0]] = args[1]
   of "listcmd":
     processOnOffSwitchG(conf, {optListCmd}, arg, pass, info)
   of "genmapping":
