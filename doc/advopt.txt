@@ -47,6 +47,7 @@ Advanced options:
   --lib:PATH                set the system library path
   --import:PATH             add an automatically imported module
   --include:PATH            add an automatically included module
+  --patchfile:src:dst       patch a file, preserving its filename but changing its source
   --nimcache:PATH           set the path used for generated files
   -c, --compileOnly:on|off  compile Nim files only; do not assemble or link
   --noLinking:on|off        compile Nim and generated files but do not link

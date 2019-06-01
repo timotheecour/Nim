@@ -157,15 +157,15 @@ proc processModule*(graph: ModuleGraph; module: PSym, stream: PLLStream): bool {
   else:
     openPasses(graph, a, module)
     if stream == nil:
+      var filename = toFullPathConsiderDirty(graph.config, fileIdx)
       let fqname = toFqname(module)
       # TODO: cache this value as patchedFile for the module?
-      var filename: AbsoluteFile
       var filename0 = graph.config.patchedFiles.getOrDefault fqname
+      if filename0.len == 0:
+        filename0 = graph.config.patchedFiles.getOrDefault $filename
       if filename0.len != 0:
         doAssert filename0.isAbsolute
         filename = filename0.AbsoluteFile
-      else:
-        filename = toFullPathConsiderDirty(graph.config, fileIdx)
       s = llStreamOpen(filename, fmRead)
       if s == nil:
         rawMessage(graph.config, errCannotOpenFile, filename.string)
