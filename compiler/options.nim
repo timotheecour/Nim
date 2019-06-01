@@ -251,6 +251,7 @@ type
     keepComments*: bool # whether the parser needs to keep comments
     implicitImports*: seq[string] # modules that are to be implicitly imported
     implicitIncludes*: seq[string] # modules that are to be implicitly included
+    patchedFiles*: StringTableRef # modules that are to be patched
     docSeeSrcUrl*: string # if empty, no seeSrc will be generated. \
     # The string uses the formatting variables `path` and `line`.
 
@@ -367,6 +368,7 @@ proc newConfigRef*(): ConfigRef =
     keepComments: true, # whether the parser needs to keep comments
     implicitImports: @[], # modules that are to be implicitly imported
     implicitIncludes: @[], # modules that are to be implicitly included
+    patchedFiles: newStringTable(modeStyleInsensitive),
     docSeeSrcUrl: "",
     cIncludes: @[],   # directories to search for included files
     cLibs: @[],       # directories to search for lib files
