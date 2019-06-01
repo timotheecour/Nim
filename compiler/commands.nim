@@ -627,11 +627,14 @@ proc processSwitch*(switch, arg: string, pass: TCmdLinePass, info: TLineInfo;
   of "patchfile":
     expectArg(conf, switch, arg, pass, info)
     if pass in {passCmd2, passPP}:
-      # TODO: findModule(conf, arg, toFullPath(conf, info)).string
       let args = split(arg, ":", maxsplit=1)
       doAssert args.len == 2, $(args, arg)
-      # conf.patchedFiles.add (args[0], args[1])
-      conf.patchedFiles[args[0]] = args[1]
+      var first = args[0]
+      if first.isAbsolute:
+        first.normalizePath
+      else:
+        discard # TODO: check that it's in `pkg.mod` form
+      conf.patchedFiles[first] = args[1]
   of "listcmd":
     processOnOffSwitchG(conf, {optListCmd}, arg, pass, info)
   of "asm":
