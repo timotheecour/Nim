@@ -2509,7 +2509,17 @@ proc shouldBeBracketExpr(n: PNode): bool =
           n.sons[0] = be
           return true
 
+when defined(timn_compiler_log_semExpr):
+  # import timn/echo_simple
+  import timn/echo2
+  import timn/util_compiler_simple
+  import timn/nimplugin/visit
+
 proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
+  when defined(timn_compiler_log_semExpr):
+    if debugEnabled(c.graph.config, n.info):
+      echo2 toLocPrettySimple(c.graph.config, n.info), n.kind
+
   result = n
   if c.config.cmd == cmdIdeTools: suggestExpr(c, n)
   if nfSem in n.flags: return
