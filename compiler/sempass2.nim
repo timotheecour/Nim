@@ -1017,7 +1017,10 @@ proc trackProc*(c: PContext; s: PSym, body: PNode) =
 
   let tagsSpec = effectSpec(p, wTags)
   if not isNil(tagsSpec):
-    checkRaisesSpec(g, tagsSpec, t.tags, "can have an unlisted effect: ",
+    when defined(timn_compiler_ignore_unlisted_effect):# PRTEMP
+      echo "timn_compiler_ignore_unlisted_effect"
+    else:
+      checkRaisesSpec(g, tagsSpec, t.tags, "can have an unlisted effect: ",
                     hints=off, subtypeRelation)
     # after the check, use the formal spec:
     effects.sons[tagEffects] = tagsSpec
