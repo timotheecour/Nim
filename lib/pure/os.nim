@@ -65,6 +65,7 @@ else:
   {.error: "OS module not ported to your operating system!".}
 
 when weirdTarget and defined(nimErrorProcCanHaveBody):
+# when weirdTarget and defined(nimErrorProcCanHaveBody) and false: # D20190602T200118
   {.pragma: noNimScript, error: "this proc is not available on the NimScript target".}
 else:
   {.pragma: noNimScript.}
