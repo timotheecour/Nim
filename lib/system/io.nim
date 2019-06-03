@@ -154,15 +154,26 @@ proc readBuffer*(f: File, buffer: pointer, len: Natural): int {.
   ## reads `len` bytes into the buffer pointed to by `buffer`. Returns
   ## the actual number of bytes that have been read which may be less than
   ## `len` (if not as many bytes are remaining), but not greater.
+  var buffer2 = buffer
+  var result2 = 0
+  var len2 = len
   while true:
-    result = cast[int](c_fread(buffer, 1, cast[csize_t](len), f))
+    when not defined(NimScript):
+      # TODO: print errno in case != 0, before resetting; i observered a lot of "file not found or file exists errors"
+      errno = 0 # BUGFIX:D20190603T150207:fix but this should be checked after each syscall
+    result2 = cast[int](c_fread(buffer2, 1, cast[csize_t](len2), f))
+    if result2 > 0: result += result2
     if result == len: return result
     when not defined(NimScript):
+      doAssert errno == EINTR or errno == 0 # CHECKME
       if errno == EINTR:
         errno = 0
         c_clearerr(f)
-        doAssert result == 0 # TODO: do we need to handle result > 0 (ie short read)?
-        # https://stackoverflow.com/questions/35224048/can-read-fail-with-eintr-when-reading-from-regular-file
+        if result2 > 0:
+          # note: both result=0 and result>0 have been observed; not sure about -1
+          # https://stackoverflow.com/questions/35224048/can-read-fail-with-eintr-when-reading-from-regular-file
+          len2 -= result2
+          buffer2 = cast[pointer](cast[int](buffer) + result2)
         continue
     checkErr(f)
     break
