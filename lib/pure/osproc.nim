@@ -70,6 +70,16 @@ const poDemon* {.deprecated.} = poDaemon ## Nim versions before 0.20
                                          ## Now `ProcessOption` uses the correct spelling ("daemon"),
                                          ## and this is needed just for backward compatibility.
 
+when defined(posix):
+  template syscall_EINTR*(fun: untyped): untyped =
+    # D20190603T234658
+    var ret: type(fun)
+    while true:
+      errno = 0
+      ret = fun
+      if ret != -1 or errno != EINTR:
+        break
+    ret
 
 proc execProcess*(command: string, workingDir: string = "",
     args: openArray[string] = [], env: StringTableRef = nil,
@@ -1113,7 +1123,7 @@ elif not defined(useNimRtl):
 
       if timeout == -1:
         var status: cint = 1
-        if waitpid(p.id, status, 0) < 0:
+        if syscall_EINTR(waitpid(p.id, status, 0)) < 0:
           raiseOSError(osLastError())
         p.exitFlag = true
         p.exitStatus = status
