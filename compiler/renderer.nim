@@ -524,7 +524,7 @@ proc lsub(g: TSrcGen; n: PNode): int =
   else: result = MaxLineLen + 1
 
 proc fits(g: TSrcGen, x: int): bool =
-  result = x + g.lineLen <= MaxLineLen
+  result = g.indent + x <= MaxLineLen
 
 type
   TSubFlag = enum
@@ -1129,7 +1129,8 @@ proc gsub(g: var TSrcGen, n: PNode, c: TContext) =
     infixArgument(g, n, 1)
     put(g, tkSpaces, Space)
     gsub(g, n, 0)        # binary operator
-    if n.len == 3 and not fits(g, lsub(g, n.sons[2]) + lsub(g, n.sons[0]) + 1):
+    # will overfit for larger operators than "+", eg "<="
+    if n.len == 3 and not fits(g, lsub(g, n.sons[1]) + lsub(g, n.sons[2]) + len(" + ")):
       optNL(g, g.indent + longIndentWid)
     else:
       put(g, tkSpaces, Space)
