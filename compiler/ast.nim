@@ -1190,8 +1190,7 @@ proc newSymNode*(sym: PSym, info: TLineInfo): PNode =
   result.info = info
 
 proc newNodeI*(kind: TNodeKind, info: TLineInfo): PNode =
-  new(result)
-  result.kind = kind
+  result = PNode(kind: kind)
   result.info = info
   when defined(useNodeIds):
     result.id = gNodeId
@@ -1201,8 +1200,7 @@ proc newNodeI*(kind: TNodeKind, info: TLineInfo): PNode =
     inc gNodeId
 
 proc newNodeI*(kind: TNodeKind, info: TLineInfo, children: int): PNode =
-  new(result)
-  result.kind = kind
+  result = PNode(kind: kind)
   result.info = info
   if children > 0:
     newSeq(result.sons, children)
@@ -1215,8 +1213,7 @@ proc newNodeI*(kind: TNodeKind, info: TLineInfo, children: int): PNode =
 
 proc newNode*(kind: TNodeKind, info: TLineInfo, sons: TNodeSeq = @[],
              typ: PType = nil): PNode =
-  new(result)
-  result.kind = kind
+  result = PNode(kind: kind)
   result.info = info
   result.typ = typ
   # XXX use shallowCopy here for ownership transfer:
@@ -1285,8 +1282,7 @@ proc `$`*(s: PSym): string =
     result = "<nil>"
 
 proc newType*(kind: TTypeKind, owner: PSym): PType =
-  new(result)
-  result.kind = kind
+  result = PType(kind: kind)
   result.owner = owner
   result.size = -1
   result.align = -1            # default alignment
