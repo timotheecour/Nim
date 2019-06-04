@@ -55,4 +55,5 @@ proc opGorge*(cmd, input, cache: string, info: TLineInfo; conf: ConfigRef): (str
         p.inputStream.close()
       result = p.readOutput
     except IOError, OSError:
+      write(stderr, getCurrentExceptionMsg())
       result = ("", -1)
