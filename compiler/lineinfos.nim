@@ -96,7 +96,7 @@ const
     warnCaseTransition: "Potential object case transition, instantiate new object instead",
     warnUser: "$1",
     hintSuccess: "operation successful: $#",
-    hintSuccessX: "operation successful ($# lines compiled; $# sec total; $#; $#)",
+    hintSuccessX: "operation successful ($# lines compiled; $# sec total; $#; $#) $#",
     hintCC: "CC: \'$1\'", # unused
     hintLineTooLong: "line too long",
     hintXDeclaredButNotUsed: "'$1' is declared but not used",
