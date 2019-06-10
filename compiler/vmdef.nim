@@ -229,20 +229,14 @@ type
 
   PEvalContext* = PCtx
 
-var evalContextGlobal: PCtx
-proc getGlobalContext(): PCtx {.exportc.} = return evalContextGlobal
-
+import timn/nimimport/extend
 proc newCtx*(module: PSym; cache: IdentCache; g: ModuleGraph): PCtx =
-  when false:
-    # this shows this is called once per nims and once for system.nim
-    template fun(a: varargs[untyped]): untyped = (when declared echo2: echo2(a) else: echo(a))
-    fun (name: module.name.s, file: toFullPath(g.config, module.info))
   result = PCtx(code: @[], debug: @[],
     globals: newNode(nkStmtListExpr), constants: newNode(nkStmtList), types: @[],
     prc: PProc(blocks: @[]), module: module, loopIterations: MaxLoopIterations,
     comesFromHeuristic: unknownLineInfo(), callbacks: @[], errorFlag: "",
     cache: cache, config: g.config, graph: g)
-  evalContextGlobal = result
+  callback_newCtx_wrap(result)
 
 proc refresh*(c: PCtx, module: PSym) =
   c.module = module

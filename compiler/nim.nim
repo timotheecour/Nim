@@ -24,6 +24,8 @@ import
   scriptconfig, idents, modulegraphs, lineinfos, cmdlinehelper,
   pathutils
 
+from timn/nimimport/extend_impl import nil
+
 include nodejs
 
 when hasTinyCBackend:

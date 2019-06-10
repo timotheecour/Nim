@@ -10,3 +10,5 @@ when true:
 
   --listFullPaths:on
   # switch("import", "timn/echo_simple")
+
+  # switch("warning", "[CaseTransition]:on")
