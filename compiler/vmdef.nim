@@ -228,7 +228,6 @@ type
 
   PEvalContext* = PCtx
 
-import timn/nimimport/extend
 proc newCtx*(module: PSym; cache: IdentCache; g: ModuleGraph): PCtx =
   result = PCtx(code: @[], debug: @[],
     globals: newNode(nkStmtListExpr), constants: newNode(nkStmtList), types: @[],

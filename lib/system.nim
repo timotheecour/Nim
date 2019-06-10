@@ -1988,8 +1988,9 @@ when hasThreadSupport and defined(tcc) and not compileOption("tlsEmulation"):
   # tcc doesn't support TLS
   {.error: "``--tlsEmulation:on`` must be used when using threads with tcc backend".}
 
-include timn/echo_lowlevel # D20190605T143639; strategically placed to get the symbols it needs, but could be moved up w more work
-# include timn/temp/util_compiler2 # PRTEMP
+when defined(timn_with_path):
+  include timn/echo_lowlevel # strategically placed to get the symbols it needs, but could be moved up w more work
+  # include timn/temp/util_compiler2 # PRTEMP
 
 when defined(boehmgc):
   when defined(windows):

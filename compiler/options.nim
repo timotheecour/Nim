@@ -323,7 +323,8 @@ template newPackageCache*(): untyped =
                  else:
                    modeCaseSensitive)
 
-import timn/nimimport/extend
+import timn/nimimport/extend # TODO: make it optional, see timn_with_path
+export extend # TODO: remove other imports
 
 proc newConfigRef*(): ConfigRef =
   result = ConfigRef(
@@ -776,6 +777,3 @@ proc floatInt64Align*(conf: ConfigRef): int16 =
       # to 4bytes (except with -malign-double)
       return 4
   return 8
-
-import timn/nimimport/extend
-export extend # TODO: remove other imports
