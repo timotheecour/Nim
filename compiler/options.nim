@@ -323,15 +323,9 @@ template newPackageCache*(): untyped =
                  else:
                    modeCaseSensitive)
 
-# HACK IMPROVE D20190523T145504
-# TODO: threadvar?
-var confGlobal: ConfigRef
-proc getGlobalConfigRef(): ConfigRef {.exportc.} = return confGlobal
+import timn/nimimport/extend
 
 proc newConfigRef*(): ConfigRef =
-  if confGlobal!=nil:
-    doAssert false, "TODO"
-
   result = ConfigRef(
     selectedGC: gcRefc,
     cCompiler: ccGcc,
@@ -389,7 +383,7 @@ proc newConfigRef*(): ConfigRef =
   if terminal.isatty(stderr):
     incl(result.globalOptions, optUseColors)
 
-  confGlobal = result
+  callback_newConfigRef_wrap(result)
 
 proc newPartialConfigRef*(): ConfigRef =
   ## create a new ConfigRef that is only good enough for error reporting.
@@ -782,3 +776,6 @@ proc floatInt64Align*(conf: ConfigRef): int16 =
       # to 4bytes (except with -malign-double)
       return 4
   return 8
+
+import timn/nimimport/extend
+export extend # TODO: remove other imports

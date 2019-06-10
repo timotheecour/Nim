@@ -109,7 +109,8 @@ proc codeListing(c: PCtx, result: var string, start=0; last = -1) =
 proc echoCode*(c: PCtx; start=0; last = -1) {.deprecated.} =
   var buf = ""
   codeListing(c, buf, start, last)
-  echo buf
+  callback_vmgen_echoCode_wrap(buf)
+  # echo buf
 
 proc gABC(ctx: PCtx; n: PNode; opc: TOpcode; a, b, c: TRegister = 0) =
   ## Takes the registers `b` and `c`, applies the operation `opc` to them, and

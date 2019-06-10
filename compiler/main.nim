@@ -364,6 +364,7 @@ proc mainCommand*(graph: ModuleGraph) =
                if isDefined(conf, "danger"): "Dangerous Release Build"
                elif isDefined(conf, "release"): "Release Build"
                else: "Debug Build", $(conf.outDir / conf.outFile)])
+    callback_onSuccessX_wrap(conf)
 
   when PrintRopeCacheStats:
     echo "rope cache stats: "
