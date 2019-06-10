@@ -102,11 +102,13 @@ var
 when not defined(useNimRtl):
   instantiateForRegion(gch.region)
 
-template gcAssert(cond: bool, msg: string) =
+template gcAssert(cond: bool, msg: string, p: PCell = nil) =
   when defined(useGcAssert):
     if not cond:
       cstderr.rawWrite "[GCASSERT] "
       cstderr.rawWrite msg
+      cstderr.rawWrite "\n" # otherwise didn't end in newline
+      # echo0 ("gcAssert failed", p)
       when defined(logGC):
         cstderr.rawWrite "[GCASSERT] statistics:\L"
         cstderr.rawWrite GC_getStatistics()
@@ -148,6 +150,7 @@ template setColor(c, col) =
     c.refcount = c.refcount and not colorMask or col
 
 when defined(logGC):
+  include timn/temp/util_compiler2 # PRTEMP
   proc writeCell(msg: cstring, c: PCell) =
     var kind = -1
     var typName: cstring = "nil"
@@ -157,12 +160,22 @@ when defined(logGC):
         if not c.typ.name.isNil:
           typName = c.typ.name
 
-    when leakDetector:
-      c_printf("[GC] %s: %p %d %s rc=%ld from %s(%ld)\n",
-                msg, c, kind, typName, c.refcount shr rcShift, c.filename, c.line)
-    else:
-      c_printf("[GC] %s: %p %d %s rc=%ld; thread=%ld\n",
-                msg, c, kind, typName, c.refcount shr rcShift, gch.gcThreadId)
+    if c.filename.enabled1:
+      #[
+      EG output: /Users/timothee/git_clone/nim/Nim/lib/system/gc.nim:167:12 [v2] incRef, 0xd7b5350(4521153360), 22, nil, 14, 0, /Users/timothee/git_clone/nim/Nim/compiler/idents.nim, 87;
+      TODO: use extend callback or similar?; nimTypeNames, kind2
+      avoids D20190608T094147 as given by c_fprintf
+      var kind2 = c.typ.kind.type.default
+      if c.typ != nil: kind2 = c.typ.kind
+      ]#
+      echo0 (msg, c, kind, typName, c.refcount shr rcShift, gch.gcThreadId, c.filename, c.line)
+    # var stdout {.importc: "stdout", header: "<stdio.h>".}: CFilePtr
+    # when leakDetector:
+    #   c_printf("[GC] %s: %p %d %s rc=%ld from %s(%ld)\n",
+    #             msg, c, kind, typName, c.refcount shr rcShift, c.filename, c.line)
+    # else:
+    # c_printf("[GC] %s: %p %d %s rc=%ld; thread=%ld\n",
+    #           msg, c, kind, typName, c.refcount shr rcShift, gch.gcThreadId)
 
 template logCell(msg: cstring, c: PCell) =
   when defined(logGC):
@@ -180,7 +193,7 @@ proc forAllChildrenAux(dest: pointer, mt: PNimType, op: WalkOp) {.benign.}
 # we need the prototype here for debugging purposes
 
 proc incRef(c: PCell) {.inline.} =
-  gcAssert(isAllocatedPtr(gch.region, c), "incRef: interiorPtr")
+  gcAssert(isAllocatedPtr(gch.region, c), "incRef: interiorPtr", c)
   c.refcount = c.refcount +% rcIncrement
   # and not colorMask
   logCell("incRef", c)
@@ -196,7 +209,7 @@ proc rtlAddZCT(c: PCell) {.rtl, inl.} =
   addZCT(gch.zct, c)
 
 proc decRef(c: PCell) {.inline.} =
-  gcAssert(isAllocatedPtr(gch.region, c), "decRef: interiorPtr")
+  gcAssert(isAllocatedPtr(gch.region, c), "decRef: interiorPtr", c)
   gcAssert(c.refcount >=% rcIncrement, "decRef")
   c.refcount = c.refcount -% rcIncrement
   if c.refcount <% rcIncrement:
