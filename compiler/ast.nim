@@ -1584,11 +1584,15 @@ proc copyTree*(src: PNode): PNode =
     for i in 0 ..< len(src):
       result.sons[i] = copyTree(src.sons[i])
 
-proc copyTreeForeign*(src: PNode, depth = 0): PNode = # PRTEMP
-  # copy a whole syntax tree; performs deep copying
+proc copyTreeForeign*(src: PNode, depth = 0): PNode =
+  #[
+  similar to `copyTree` copy a whole syntax tree; performs deep copying
+  TODO:use hash to handle identical nodes and avoiding creating 2 nodes a a node + its reference
+  TODO: remove depth
+  ]#
   if src == nil:
     return nil
-  echo ". ".repeat(depth) & "copyTreeForeign:" & $src.kind & ":" & $(cast[int](src))
+  # echo ". ".repeat(depth) & "copyTreeForeign:" & $src.kind & ":" & $(cast[int](src))
   result = newNode(src.kind)
   result.info = src.info
   result.typ = src.typ
