@@ -304,7 +304,8 @@ template newPackageCache*(): untyped =
                  else:
                    modeCaseSensitive)
 
-import timn/nimimport/extend
+import timn/nimimport/extend # TODO: make it optional, see timn_with_path
+export extend # TODO: remove other imports
 
 proc newConfigRef*(): ConfigRef =
   result = ConfigRef(
@@ -715,7 +716,3 @@ proc `$`*(c: IdeCmd): string =
   of ideOutline: "outline"
   of ideKnown: "known"
   of ideMsg: "msg"
-
-import timn/nimimport/extend
-export extend # TODO: remove other imports
-

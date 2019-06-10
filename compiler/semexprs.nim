@@ -2509,7 +2509,6 @@ proc shouldBeBracketExpr(n: PNode): bool =
           n.sons[0] = be
           return true
 
-import timn/nimimport/extend
 proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   callback_onSemExpr_wrap(c, n, flags, true)
   defer: callback_onSemExpr_wrap(c, n, flags, false)
