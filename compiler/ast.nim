@@ -1063,8 +1063,7 @@ when defined(useNodeIds):
   var gNodeId: int
 
 proc newNode*(kind: TNodeKind): PNode =
-  new(result)
-  result.kind = kind
+  result = PNode(kind: kind)
   #result.info = UnknownLineInfo() inlined:
   result.info.fileIndex = InvalidFileIdx
   result.info.col = int16(-1)
@@ -1572,6 +1571,30 @@ proc copyTree*(src: PNode): PNode =
     newSeq(result.sons, sonsLen(src))
     for i in 0 ..< sonsLen(src):
       result.sons[i] = copyTree(src.sons[i])
+
+proc copyTreeForeign*(src: PNode, depth = 0): PNode = # PRTEMP
+  # copy a whole syntax tree; performs deep copying
+  if src == nil:
+    return nil
+  echo ". ".repeat(depth) & "copyTreeForeign:" & $src.kind & ":" & $(cast[int](src))
+  result = newNode(src.kind)
+  result.info = src.info
+  result.typ = src.typ
+  result.flags = src.flags * PersistentNodeFlags
+  result.comment = src.comment
+  when defined(useNodeIds):
+    if result.id == nodeIdToDebug:
+      echo "COMES FROM ", src.id
+  case src.kind
+  of nkCharLit..nkUInt64Lit: result.intVal = src.intVal
+  of nkFloatLiterals: result.floatVal = src.floatVal
+  of nkSym: result.sym = src.sym
+  of nkIdent: result.ident = src.ident
+  of nkStrLit..nkTripleStrLit: result.strVal = src.strVal
+  else:
+    newSeq(result.sons, sonsLen(src))
+    for i in 0 ..< sonsLen(src):
+      result.sons[i] = copyTreeForeign(src.sons[i], depth+1)
 
 proc hasSonWith*(n: PNode, kind: TNodeKind): bool =
   for i in 0 ..< sonsLen(n):
