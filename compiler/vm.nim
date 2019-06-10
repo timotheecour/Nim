@@ -24,9 +24,13 @@ from evaltempl import evalTemplate
 const
   traceCode = defined(nimVMDebug)
 
+const timn_temp = false
+when timn_temp:
+  import timn/echo_simple
+
 when hasFFI:
   import evalffi
-
+include timn/includes/privateaccess_simple
 type
   TRegisterKind = enum
     rkNone, rkNode, rkInt, rkFloat, rkRegisterAddr, rkNodeAddr
@@ -114,6 +118,7 @@ template ensureKind(k: untyped) {.dirty.} =
   if regs[ra].kind != k:
     myreset(regs[ra])
     regs[ra].kind = k
+    # TODO: regs[ra] = type(regs[ra])(kind: k)
 
 template decodeB(k: untyped) {.dirty.} =
   let rb = instr.regB
@@ -513,10 +518,12 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         let kind = if r < regs.len: $regs[r].kind else: ""
         let ret = name & ": " & $r & " " & $kind
         alignLeft(ret, 15)
-      echo "PC:$pc $opcode $ra $rb $rc" % [
+      let msg = "PC:$pc $opcode $ra $rb $rc" % [
         "pc", $pc, "opcode", alignLeft($c.code[pc].opcode, 15),
         "ra", regDescr("ra", ra), "rb", regDescr("rb", instr.regB),
         "rc", regDescr("rc", instr.regC)]
+      # echo msg
+      callback_vm_PC_wrap(msg, regs, instr.regB, instr.regC, c.debug[pc])
 
     template checkCond(cond: typed, msg = "") =
       # TODO: more general
@@ -1061,15 +1068,16 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
             ai2.sym = ai
             # TODO
             # ai2.typ = ai.typ # CHECKME
-            # TODO: copyTree?
+            # TODO: copyTree? might avoid corresponding bugs
             node.sons.add ai2
             # node.sons.add copyTree(ai2)
 
           regs[ra].node = node
-          # TODO: do we need regs[ra].node.flags.incl nfIsRef or recSetFlagIsRef? SEE D20190524T210155
+          # TODO: do we need regs[ra].node.flags.incl nfIsRef or recSetFlagIsRef? SEE D20190524T210155; maybe relates to D20190603T094014
 
     of opcGetPNodePointer:
-      decodeB(rkInt)
+      ## for: proc getPNodePointer[T](a: T): PNodePointer
+      decodeB(rkInt) # note: see also evalffi hack with nkPtrLit
       let kind = regs[rb].kind
 
       var node: PNode
@@ -1085,13 +1093,22 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         node = regs[rb].node
       else: checkCond false
 
-      regs[ra].intVal = cast[int](node)
+      regs[ra].intVal = cast[ByteAddress](node)
+      # TODO: MEMORY maybe also add destroy that would release resource; maybe instead use protect/dispose?
+      GC_ref node
+      when timn_temp:
+        echo1 "opcGetPNodePointer", regs[ra].intVal, toFileLineCol(c.config, info)
 
     of opcFromPNodePointer:
       let rb = instr.regB
       let bkind = regs[rb].kind
       checkCond bkind == rkInt, $bkind
+
       let node = cast[Pnode](regs[rb].intVal)
+      # callback_vm_custom()
+      when timn_temp:
+        let info = c.debug[pc]
+        echo1 "opcFromPNodePointer", regs[rb].intVal, toFileLineCol(c.config, info), regs[ra].kind, toFileLineCol(c.config, node.info)
 
       case node.kind
       of {nkCharLit..nkUInt64Lit}:
@@ -1103,7 +1120,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
       else:
         # note: nkStrLit doesn't seem needed, it would end up here
         ensureKind rkNode
-        regs[ra].node = node
+        regs[ra].node = copyTreeForeign(node)
 
     of opcEcho:
       let rb = instr.regB
@@ -1179,6 +1196,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
                                              rb+1, rc-1, c.debug[pc])
           if newValue.kind != nkEmpty:
             assert instr.opcode == opcIndCallAsgn
+            myreset(regs[ra]) # TODO: ensureKind(???)
             putIntoReg(regs[ra], newValue)
         else:
           globalError(c.config, c.debug[pc], "VM not built with FFI support")
