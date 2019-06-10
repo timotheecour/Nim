@@ -64,29 +64,42 @@ proc importcSymbol*(conf: ConfigRef, sym: PSym): PNode =
     let lib = sym.annex
     if lib != nil and lib.path.kind notin {nkStrLit..nkTripleStrLit}:
       globalError(conf, sym.info, "dynlib needs to be a string lit")
-    var theAddr: pointer
-    # D20190523T170947 HACK for CT FFI with user defined libs ; note that dynlib:path doesn't work
-    if lib != nil and lib.kind == libHeader:
-      let path = lib.path.strVal
-      let prefix = "dynlib@"
-      if path.startsWith prefix:
-        let libname = path[prefix.len .. ^1]
-        let dllhandle = loadLib(libname)
-        if dllhandle.isNil:
-          globalError(conf, sym.info, "cannot load: " & libname)
-        else:
+    proc getAddr(): pointer =
+      # TODO: MOVE to extend
+      if lib != nil and lib.kind == libHeader:
+        let path = lib.path.strVal
+        # D20190523T170947 HACK for CT FFI with user defined libs ; note that dynlib:path doesn't work
+        let prefix = "dynlib@"
+        if path.startsWith prefix:
+          let libname = path[prefix.len .. ^1]
+          doAssert libname.len > 0
+          var dllhandle = getOrDefault(gDllCache, libname)
+          if dllhandle == nil:
+            echo ("importcSymbol:loadLib", libname)
+            dllhandle = loadLib(libname)
+            if dllhandle.isNil:
+              globalError(conf, sym.info, "cannot load: " & libname)
+              return
+            gDllCache[libname] = dllhandle
+          result = dllhandle.symAddr(name)
+          if result.isNil: globalError(conf, sym.info, "cannot import: " & sym.name.s & " from " & libname)
+          return
+
+      var theAddr: pointer
+      if (lib.isNil or lib.kind == libHeader) and not gExehandle.isNil:
+        # first try this exe itself:
+        theAddr = gExehandle.symAddr(name)
+        # then try libc:
+        if theAddr.isNil:
+          let dllhandle = getDll(conf, gDllCache, libcDll, sym.info)
           theAddr = dllhandle.symAddr(name)
-    if (lib.isNil or lib.kind == libHeader) and not gExehandle.isNil:
-      # first try this exe itself:
-      theAddr = gExehandle.symAddr(name)
-      # then try libc:
-      if theAddr.isNil:
-        let dllhandle = getDll(conf, gDllCache, libcDll, sym.info)
+      elif not lib.isNil:
+        let dll = if lib.kind == libHeader: libcDll else: lib.path.strVal
+        let dllhandle = getDll(conf, gDllCache, dll, sym.info)
         theAddr = dllhandle.symAddr(name)
-    elif not lib.isNil:
-      let dll = if lib.kind == libHeader: libcDll else: lib.path.strVal
-      let dllhandle = getDll(conf, gDllCache, dll, sym.info)
-      theAddr = dllhandle.symAddr(name)
+      return theAddr
+
+    let theAddr = getAddr()
     if theAddr.isNil: globalError(conf, sym.info, "cannot import: " & sym.name.s)
     result.intVal = cast[ByteAddress](theAddr)
 
