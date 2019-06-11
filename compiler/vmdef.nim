@@ -153,6 +153,7 @@ type
     opcModuleSymbols,
     opcGetPNodePointer,
     opcFromPNodePointer,
+    opcRegisterModule,
     opcSymIsInstantiationOf,
 
   TBlock* = object

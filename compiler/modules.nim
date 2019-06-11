@@ -146,6 +146,20 @@ proc compileProject*(graph: ModuleGraph; projectFileIdx = InvalidFileIDX) =
     graph.compileSystemModule()
     discard graph.compileModule(projectFile, {sfMainModule})
 
+  while true:
+    # we take care to avoid mutating collection while iterating on it
+    var found = false
+    var fileIdx: FileIndex
+    for key, val in graph.modulesExtra:
+      if not val: continue
+      fileIdx = key
+      if graph.getModule(fileIdx) == nil:
+        found = true
+        break
+    if not found: break # we're done
+    graph.modulesExtra[fileIdx] = false
+    discard graph.compileModule(fileIdx,{})
+
 proc makeModule*(graph: ModuleGraph; filename: AbsoluteFile): PSym =
   result = graph.newModule(fileInfoIdx(graph.config, filename))
   result.id = getID()

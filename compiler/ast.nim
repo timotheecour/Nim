@@ -669,6 +669,7 @@ type
     mSymIsInstantiationOf,
     mModuleSymbols, # TODO: is that obsoleted by mNGetPNodePointer ?
     mGetPNodePointer,
+    mRegisterModule,
     mFromPNodePointer,
 
 # things that we can evaluate safely at compile time, even if not asked for it:

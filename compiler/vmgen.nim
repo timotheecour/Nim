@@ -1199,9 +1199,13 @@ proc genMagic(c: PCtx; n: PNode; dest: var TDest; m: TMagic) =
   of mGetImplTransf: genUnaryABC(c, n, dest, opcGetImplTransf)
   of mSymOwner: genUnaryABC(c, n, dest, opcSymOwner)
   of mSymIsInstantiationOf: genBinaryABC(c, n, dest, opcSymIsInstantiationOf)
+
+  # TODO: just use 1 code for all my extensions, less diff, but maybe less typesafe
   of mModuleSymbols: genUnaryABC(c, n, dest, opcModuleSymbols)
   of mGetPNodePointer: genUnaryABC(c, n, dest, opcGetPNodePointer)
   of mFromPNodePointer: genUnaryABC(c, n, dest, opcFromPNodePointer)
+  of mRegisterModule: genUnaryABC(c, n, dest, opcRegisterModule)
+
   of mNChild: genBinaryABC(c, n, dest, opcNChild)
   of mNSetChild: genVoidABC(c, n, dest, opcNSetChild)
   of mNDel: genVoidABC(c, n, dest, opcNDel)
