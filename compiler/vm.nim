@@ -1075,6 +1075,22 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
           regs[ra].node = node
           # TODO: do we need regs[ra].node.flags.incl nfIsRef or recSetFlagIsRef? SEE D20190524T210155; maybe relates to D20190603T094014
 
+    of opcRegisterModule: # MODIF
+      decodeB(rkNode)
+      # decodeB(rkNode)
+      checkCond regs[rb].kind == rkNode, $regs[rb].kind
+      let node = regs[rb].node
+      checkCond node.kind in {nkStrLit..nkTripleStrLit}, $node.kind
+      let path = node.strVal
+      let config = c.graph.config
+      let file = findModule(config, path, toFullPath(config, node.info))
+      let fileIdx = fileInfoIdx(config, file)
+      if fileIdx notin c.graph.modulesExtra:
+        c.graph.modulesExtra[fileIdx] = true
+
+      createStr regs[ra]
+      regs[ra].node.strVal = $file # just to return smthg and keep similar interface to my VM modifications in case i group them
+
     of opcGetPNodePointer:
       ## for: proc getPNodePointer[T](a: T): PNodePointer
       decodeB(rkInt) # note: see also evalffi hack with nkPtrLit
