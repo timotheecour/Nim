@@ -147,6 +147,10 @@ proc len*(t: StringTableRef): int {.rtlFunc, extern: "nst$1".} =
   ## Returns the number of keys in `t`.
   result = t.counter
 
+proc getMode*(t: StringTableRef): StringTableMode =
+  ## Returns `t`'s mode
+  t.mode
+
 proc `[]`*(t: StringTableRef, key: string): var string {.
            rtlFunc, extern: "nstTake".} =
   ## Retrieves the location at ``t[key]``.
