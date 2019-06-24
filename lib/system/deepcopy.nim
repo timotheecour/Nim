@@ -85,6 +85,7 @@ proc genericDeepCopyAux(dest, src: pointer, mt: PNimType; tab: var PtrTable) =
     d = cast[ByteAddress](dest)
     s = cast[ByteAddress](src)
   sysAssert(mt != nil, "genericDeepCopyAux 2")
+  # echo0 ("ok1:genericDeepCopyAux", mt.kind, dest, src)
   case mt.kind
   of tyString:
     var x = cast[PPointer](dest)
@@ -125,6 +126,7 @@ proc genericDeepCopyAux(dest, src: pointer, mt: PNimType; tab: var PtrTable) =
       genericDeepCopyAux(cast[pointer](d +% i *% mt.base.size),
                          cast[pointer](s +% i *% mt.base.size), mt.base, tab)
   of tyRef:
+    # echo0 ("ok1:genericDeepCopyAux", mt.kind)
     let s2 = cast[PPointer](src)[]
     if s2 == nil:
       unsureAsgnRef(cast[PPointer](dest), s2)
@@ -137,11 +139,14 @@ proc genericDeepCopyAux(dest, src: pointer, mt: PNimType; tab: var PtrTable) =
         when declared(usrToCell):
           let x = usrToCell(s2)
           let realType = x.typ
+          # echo0 realType
           let z = newObj(realType, realType.base.size)
           unsureAsgnRef(cast[PPointer](dest), z)
           tab.put(s2, z)
+          # echo0 (s2, z)
           genericDeepCopyAux(z, s2, realType.base, tab)
         else:
+          # echo0()
           when false:
             # addition check disabled
             let x = usrToCell(s2)
@@ -154,6 +159,7 @@ proc genericDeepCopyAux(dest, src: pointer, mt: PNimType; tab: var PtrTable) =
           tab.put(s2, z)
           genericDeepCopyAux(z, s2, typ, tab)
       else:
+        # echo0()
         unsureAsgnRef(cast[PPointer](dest), z)
   of tyPtr:
     # no cycle check here, but also not really required

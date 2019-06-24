@@ -262,7 +262,7 @@ proc getPointer*(x: Any): pointer =
   ## ``akString``, ``akCString``, ``akProc``, ``akRef``, ``akPtr``,
   ## ``akPointer``, ``akSequence``.
   assert x.rawType.kind in {tyString, tyCString, tyRef, tyPtr, tyPointer,
-                            tySequence, tyProc}
+                            tySequence, tyProc}, $x.rawType.kind
   result = cast[ppointer](x.value)[]
 
 proc setPointer*(x: Any, y: pointer) =
