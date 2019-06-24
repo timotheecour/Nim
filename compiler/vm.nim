@@ -457,6 +457,8 @@ proc compile(c: PCtx, s: PSym): int =
   #c.echoCode
 
 template handleJmpBack() {.dirty.} =
+  callback_counter_max_wrap "handleJmpBack.max", MaxLoopIterations - c.loopIterations + 1
+  callback_counter_inc_wrap "handleJmpBack.total"
   if c.loopIterations <= 0:
     if allowInfiniteLoops in c.features:
       c.loopIterations = MaxLoopIterations
@@ -499,6 +501,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
   move(regs, tos.slots)
   #echo "NEW RUN ------------------------"
   while true:
+    callback_counter_inc_wrap "rawExecute:while"
     #{.computedGoto.}
     let instr = c.code[pc]
     let ra = instr.regA
