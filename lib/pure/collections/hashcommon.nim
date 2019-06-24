@@ -27,6 +27,7 @@ proc isFilled(hcode: Hash): bool {.inline.} =
   result = hcode != 0
 
 proc nextTry(h, maxHash: Hash): Hash {.inline.} =
+  # TODO: quadratic probing instead?
   result = (h + 1) and maxHash
 
 proc mustRehash(length, counter: int): bool {.inline.} =
@@ -42,6 +43,7 @@ template rawGetKnownHCImpl() {.dirty.} =
     # zero ==key's for missing (e.g.inserts) and exactly one ==key for present.
     # It does slow down succeeding lookups by one extra Hash cmp&and..usually
     # just a few clock cycles, generally worth it for any non-integer-like A.
+    # TODO:timn: could specialize code for cases where `t.data[h].hcode == hc` check is redundant (eg type(key) == int), but make sure it's correct eg in case of user defined hash
     if t.data[h].hcode == hc and t.data[h].key == key:
       return h
     h = nextTry(h, maxHash(t))
