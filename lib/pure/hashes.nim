@@ -48,6 +48,8 @@
 import
   strutils
 
+# import timn/murmur
+
 type
   Hash* = int  ## A hash value. Hash tables using these values should
                ## always have a size of a power of two and can use the ``and``
@@ -55,16 +57,32 @@ type
 
 const
   IntSize = sizeof(int)
-
 proc `!&`*(h: Hash, val: int): Hash {.inline.} =
+  ## Mixes a hash value `h` with `val` to produce a new hash value.
+  ##
+  ## This is only needed if you need to implement a hash proc for a new datatype.
+  ## See https://en.wikipedia.org/wiki/Jenkins_hash_function
+  let h = cast[uint](h)
+  let val = cast[uint](val)
+  var res = h + val
+  res = res + res shl 10
+  res = res xor (res shr 6)
+  result = cast[Hash](res)
+
+when false:
+ proc `!&`*(h: Hash, val: int): Hash {.inline.} =
   ## Mixes a hash value `h` with `val` to produce a new hash value.
   ##
   ## This is only needed if you need to implement a hash proc for a new datatype.
   let h = cast[uint](h)
   let val = cast[uint](val)
   var res = h + val
-  res = res + res shl 10
-  res = res xor (res shr 6)
+  const numBits = IntSize*8
+  const left = 10
+  res = res + res shl left + res shr (numBits - left)
+  # res = res xor (res shr 6)
+  const right = 6
+  res = res xor (res shr right) xor (res shl(numBits - right))
   result = cast[Hash](res)
 
 proc `!$`*(h: Hash): Hash {.inline.} =
@@ -160,7 +178,10 @@ template bytewiseHashing(result: Hash, x: typed, start, stop: int) =
     result = result !& hash(x[i])
   result = !$result
 
-template hashImpl(result: Hash, x: typed, start, stop: int) =
+when true:
+ # import std/strutils
+ # const NumBin = 64
+ template hashImpl(result: Hash, x: typed, start, stop: int) =
   let
     elementSize = sizeof(x[start])
     stepSize = IntSize div elementSize
@@ -170,12 +191,20 @@ template hashImpl(result: Hash, x: typed, start, stop: int) =
     when nimvm:
       # we cannot cast in VM, so we do it manually
       for j in countdown(stepsize-1, 0):
-        n = (n shl (8*elementSize)) or ord(x[i+j])
+        n = (n shl (8*elementSize)) or ord(x[i+j]) # does x[i+j] work for type(x) other than char?
     else:
+      # TODO: isn't unaligned cast undefined behavior on some platforms?
       n = cast[ptr Hash](unsafeAddr x[i])[]
     result = result !& n
     i += stepSize
   bytewiseHashing(result, x, i, stop) # hash the remaining elements and finish
+elif true:
+  template hashImpl(result: Hash, x: typed, start, stop: int) =
+    bytewiseHashing(result, x, start, stop)
+else:
+  template hashImpl(result: Hash, x: typed, start, stop: int) =
+    # TODO: upgrade nimc: VM is only allowed to 'cast' between integers and/or floats of same size
+    result = cast[Hash](MurmurHash3_x64_128(cast[ptr uint8](x[start].unsafeAddr), stop - start + 1)[0])
 
 proc hash*(x: string): Hash =
   ## Efficient hashing of strings.
