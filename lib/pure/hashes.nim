@@ -53,11 +53,28 @@ proc `!&`*(h: Hash, val: int): Hash {.inline.} =
   ## Mixes a hash value `h` with `val` to produce a new hash value.
   ##
   ## This is only needed if you need to implement a hash proc for a new datatype.
+  ## See https://en.wikipedia.org/wiki/Jenkins_hash_function
   let h = cast[uint](h)
   let val = cast[uint](val)
   var res = h + val
   res = res + res shl 10
   res = res xor (res shr 6)
+  result = cast[Hash](res)
+
+when false:
+ proc `!&`*(h: Hash, val: int): Hash {.inline.} =
+  ## Mixes a hash value `h` with `val` to produce a new hash value.
+  ##
+  ## This is only needed if you need to implement a hash proc for a new datatype.
+  let h = cast[uint](h)
+  let val = cast[uint](val)
+  var res = h + val
+  const numBits = sizeof(int)*8
+  const left = 10
+  res = res + res shl left + res shr (numBits - left)
+  # res = res xor (res shr 6)
+  const right = 6
+  res = res xor (res shr right) xor (res shl(numBits - right))
   result = cast[Hash](res)
 
 proc `!$`*(h: Hash): Hash {.inline.} =
@@ -175,6 +192,10 @@ proc murmurHash(x: openArray[byte]): Hash =
     n1 = 0xe6546b64'u32
     m1 = 0x85ebca6b'u32
     m2 = 0xc2b2ae35'u32
+when true:
+ # import std/strutils
+ # const NumBin = 64
+ template hashImpl(result: Hash, x: typed, start, stop: int) =
   let
     size = len(x)
     stepSize = 4 # 32-bit
@@ -192,6 +213,7 @@ proc murmurHash(x: openArray[byte]): Hash =
         dec j
         k1 = (k1 shl 8) or (ord(x[i+j])).uint32
     else:
+      # TODO: isn't unaligned cast undefined behavior on some platforms?
       k1 = cast[ptr uint32](unsafeAddr x[i])[]
     inc i, stepSize
 
@@ -222,6 +244,13 @@ proc murmurHash(x: openArray[byte]): Hash =
   h1 = imul(h1, m2)
   h1 = h1 xor (h1 shr 16)
   return cast[Hash](h1)
+elif true: # TODO: REMOVE
+  template hashImpl(result: Hash, x: typed, start, stop: int) =
+    bytewiseHashing(result, x, start, stop)
+else:
+  template hashImpl(result: Hash, x: typed, start, stop: int) =
+    # TODO: upgrade nimc: VM is only allowed to 'cast' between integers and/or floats of same size
+    result = cast[Hash](MurmurHash3_x64_128(cast[ptr uint8](x[start].unsafeAddr), stop - start + 1)[0])
 
 proc hashVmImpl(x: string, sPos, ePos: int): Hash =
   doAssert false, "implementation override in compiler/vmops.nim"
