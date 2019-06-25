@@ -803,8 +803,7 @@ proc execCmdsInParallel(conf: ConfigRef; cmds: seq[string]; prettyCb: proc (idx:
     let exitCode = p.peekExitCode
     if exitCode != 0:
       rawMessage(conf, errGenerated, "execution of an external compiler program '" &
-        cmds[idx] & "' failed with exit code: " & $exitCode & "\n\n" &
-        p.outputStream.readAll.strip)
+        cmds[idx] & "' failed with exit code: " & $exitCode & "\n\n")
   if conf.numberOfProcessors == 0: conf.numberOfProcessors = countProcessors()
   var res = 0
   if conf.numberOfProcessors <= 1:
@@ -816,14 +815,16 @@ proc execCmdsInParallel(conf: ConfigRef; cmds: seq[string]; prettyCb: proc (idx:
           cmds[i])
   else:
     tryExceptOSErrorMessage(conf, "invocation of external compiler program failed."):
+      # keep writing errors/warnings to stderr
+      let defaultOpt = {poParentStreams, poUsePath}
       if optListCmd in conf.globalOptions or conf.verbosity > 1:
-        res = execProcesses(cmds, {poEchoCmd, poStdErrToStdOut, poUsePath},
+        res = execProcesses(cmds, {poEchoCmd} + defaultOpt,
                             conf.numberOfProcessors, afterRunEvent=runCb)
       elif conf.verbosity == 1:
-        res = execProcesses(cmds, {poStdErrToStdOut, poUsePath},
+        res = execProcesses(cmds, defaultOpt,
                             conf.numberOfProcessors, prettyCb, afterRunEvent=runCb)
       else:
-        res = execProcesses(cmds, {poStdErrToStdOut, poUsePath},
+        res = execProcesses(cmds, defaultOpt,
                             conf.numberOfProcessors, afterRunEvent=runCb)
   if res != 0:
     if conf.numberOfProcessors <= 1:
