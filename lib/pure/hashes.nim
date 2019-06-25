@@ -167,6 +167,11 @@ proc hash*(x: float): Hash {.inline.} =
 proc hash*[A](x: openArray[A]): Hash
 proc hash*[A](x: set[A]): Hash
 
+when true: # TODO: REMOVE; should not be needed anymore
+  template bytewiseHashing*(result: Hash, x: typed, start, stop: int) =
+    for i in start .. stop:
+      result = result !& hash(x[i])
+    result = !$result
 
 when defined(JS):
   proc imul(a, b: uint32): uint32 =
@@ -213,7 +218,7 @@ when true:
         dec j
         k1 = (k1 shl 8) or (ord(x[i+j])).uint32
     else:
-      # TODO: isn't unaligned cast undefined behavior on some platforms?
+      # TODO: isn't unaligned cast undefined behavior on some platforms? see D20190624T193609
       k1 = cast[ptr uint32](unsafeAddr x[i])[]
     inc i, stepSize
 
@@ -245,12 +250,18 @@ when true:
   h1 = h1 xor (h1 shr 16)
   return cast[Hash](h1)
 elif true: # TODO: REMOVE
+  import timn/murmur
+  template hashImpl(result: Hash, x: typed, start, stop: int) =
+    # error: VM is only allowed to 'cast' between integers and/or floats of same size
+    let x1 = x[start].unsafeAddr
+    static: echo (sizeof(type(x1)), sizeof(ptr uint8))
+    let x2 = cast[ptr uint8](x1)
+    let x3 = MurmurHash3_x64_128(x2, stop - start + 1)[0]
+    result = cast[Hash](x3)
+    # result = cast[Hash](MurmurHash3_x64_128(cast[ptr uint8](x[start].unsafeAddr), stop - start + 1)[0])
+elif true:
   template hashImpl(result: Hash, x: typed, start, stop: int) =
     bytewiseHashing(result, x, start, stop)
-else:
-  template hashImpl(result: Hash, x: typed, start, stop: int) =
-    # TODO: upgrade nimc: VM is only allowed to 'cast' between integers and/or floats of same size
-    result = cast[Hash](MurmurHash3_x64_128(cast[ptr uint8](x[start].unsafeAddr), stop - start + 1)[0])
 
 proc hashVmImpl(x: string, sPos, ePos: int): Hash =
   doAssert false, "implementation override in compiler/vmops.nim"
