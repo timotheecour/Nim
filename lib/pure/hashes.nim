@@ -48,8 +48,6 @@
 import
   strutils
 
-# import timn/murmur
-
 type
   Hash* = int  ## A hash value. Hash tables using these values should
                ## always have a size of a power of two and can use the ``and``
@@ -173,7 +171,7 @@ proc hash*(x: float): Hash {.inline.} =
 proc hash*[A](x: openArray[A]): Hash
 proc hash*[A](x: set[A]): Hash
 
-template bytewiseHashing(result: Hash, x: typed, start, stop: int) =
+template bytewiseHashing*(result: Hash, x: typed, start, stop: int) =
   for i in start .. stop:
     result = result !& hash(x[i])
   result = !$result
@@ -191,20 +189,26 @@ when true:
     when nimvm:
       # we cannot cast in VM, so we do it manually
       for j in countdown(stepsize-1, 0):
-        n = (n shl (8*elementSize)) or ord(x[i+j]) # does x[i+j] work for type(x) other than char?
+        n = (n shl (8*elementSize)) or ord(x[i+j])
     else:
-      # TODO: isn't unaligned cast undefined behavior on some platforms?
+      # TODO: isn't unaligned cast undefined behavior on some platforms? see D20190624T193609
       n = cast[ptr Hash](unsafeAddr x[i])[]
     result = result !& n
     i += stepSize
   bytewiseHashing(result, x, i, stop) # hash the remaining elements and finish
 elif true:
+  import timn/murmur
+  template hashImpl(result: Hash, x: typed, start, stop: int) =
+    # error: VM is only allowed to 'cast' between integers and/or floats of same size
+    let x1 = x[start].unsafeAddr
+    static: echo (sizeof(type(x1)), sizeof(ptr uint8))
+    let x2 = cast[ptr uint8](x1)
+    let x3 = MurmurHash3_x64_128(x2, stop - start + 1)[0]
+    result = cast[Hash](x3)
+    # result = cast[Hash](MurmurHash3_x64_128(cast[ptr uint8](x[start].unsafeAddr), stop - start + 1)[0])
+elif true:
   template hashImpl(result: Hash, x: typed, start, stop: int) =
     bytewiseHashing(result, x, start, stop)
-else:
-  template hashImpl(result: Hash, x: typed, start, stop: int) =
-    # TODO: upgrade nimc: VM is only allowed to 'cast' between integers and/or floats of same size
-    result = cast[Hash](MurmurHash3_x64_128(cast[ptr uint8](x[start].unsafeAddr), stop - start + 1)[0])
 
 proc hash*(x: string): Hash =
   ## Efficient hashing of strings.
