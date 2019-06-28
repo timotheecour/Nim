@@ -170,7 +170,7 @@ proc handleHexChar(c: char, x: var int): bool =
   of 'A'..'F': x = (x shl 4) or (ord(c) - ord('A') + 10)
   else: result = false # error
 
-proc parseEscapedUTF16*(buf: cstring, pos: var int): int =
+proc parseEscapedUTF16*(buf: cstring, pos: var int): int = # TODO: isn't that string? won't that cause a temp copy?
   result = 0
   #UTF-16 escape is always 4 bytes.
   for _ in 0..3:
