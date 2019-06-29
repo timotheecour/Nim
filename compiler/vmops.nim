@@ -17,6 +17,9 @@ from os import getEnv, existsEnv, dirExists, fileExists, putEnv, walkDir, getApp
 from md5 import getMD5
 from sighashes import symBodyDigest
 
+when defined(timn_with_vmops2):
+  from timn/nimplugin/vmops2 import timn_registerCallbacks
+
 template mathop(op) {.dirty.} =
   registerCallback(c, "stdlib.math." & astToStr(op), `op Wrapper`)
 
@@ -139,6 +142,8 @@ proc registerAdditionalOps*(c: PCtx) =
 
   registerCallback c, "stdlib.os.getCurrentCompilerExe", proc (a: VmArgs) {.nimcall.} =
     setResult(a, getAppFilename())
+
+  when defined(timn_with_vmops2): timn_registerCallbacks(c)
 
   registerCallback c, "stdlib.macros.symBodyHash", proc (a: VmArgs) {.nimcall.} =
     let n = getNode(a, 0)
