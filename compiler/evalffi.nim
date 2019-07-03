@@ -69,6 +69,9 @@ proc importcSymbol*(conf: ConfigRef, sym: PSym): PNode =
       if lib != nil and lib.kind == libHeader:
         let path = lib.path.strVal
         # D20190523T170947 HACK for CT FFI with user defined libs ; note that dynlib:path doesn't work
+        #[
+        BUG: this will imply lfNoDecl, see pragmas.nim:`of wHeader:`
+        ]#
         let prefix = "dynlib@"
         if path.startsWith prefix:
           let libname = path[prefix.len .. ^1]

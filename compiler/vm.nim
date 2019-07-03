@@ -1122,6 +1122,9 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         let info = c.debug[pc]
         echo1 "opcFromPNodePointer", regs[rb].intVal, toFileLineCol(c.config, info), regs[ra].kind, toFileLineCol(c.config, node.info)
 
+      if node == nil:
+        checkCond false, $(regs[rb].intVal,)
+
       case node.kind
       of {nkCharLit..nkUInt64Lit}:
         ensureKind rkInt
