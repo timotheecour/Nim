@@ -1595,10 +1595,6 @@ proc importcCond*(s: PSym): bool {.inline.} =
     if s.kind in routineKinds:
       return s.ast.sons[bodyPos].kind == nkEmpty
 
-proc importcVMCond*(s: PSym): bool =
-  # merge with importcCond ?
-  sfImportc in s.flags and s.ast == nil
-
 proc importcSym(c: PCtx; info: TLineInfo; s: PSym) =
   when hasFFI:
     if compiletimeFFI in c.config.features:
