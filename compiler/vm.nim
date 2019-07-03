@@ -500,6 +500,10 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
   var regs: seq[TFullReg] # alias to tos.slots for performance
   move(regs, tos.slots)
   #echo "NEW RUN ------------------------"
+  getDebugMsgAdditional = proc() =
+    echo "stacktrace for rawExecute:"
+    stackTraceAux(c, tos, pc)
+  defer: getDebugMsgAdditional = nil
   while true:
     callback_counter_inc_wrap "rawExecute:while"
     #{.computedGoto.}
