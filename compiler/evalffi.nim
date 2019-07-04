@@ -48,8 +48,6 @@ const
 
 var myerrno {.importc: "errno", header: "<errno.h>".}: cint ## error variable
 
-from std/strutils import startsWith
-
 proc importcSymbol*(conf: ConfigRef, sym: PSym): PNode =
   let name = $sym.loc.r
   # the AST does not support untyped pointers directly, so we use an nkIntLit
@@ -61,49 +59,26 @@ proc importcSymbol*(conf: ConfigRef, sym: PSym): PNode =
   of "stderr": result.intVal = cast[ByteAddress](system.stderr)
   of "vmErrnoWrapper": result.intVal = cast[ByteAddress](myerrno)
   else:
+    var libPathMsg = ""
     let lib = sym.annex
     if lib != nil and lib.path.kind notin {nkStrLit..nkTripleStrLit}:
       globalError(conf, sym.info, "dynlib needs to be a string lit")
-    proc getAddr(): pointer =
-      # TODO: MOVE to extend
-      if lib != nil and lib.kind == libHeader:
-        let path = lib.path.strVal
-        # D20190523T170947 HACK for CT FFI with user defined libs ; note that dynlib:path doesn't work
-        #[
-        BUG: this will imply lfNoDecl, see pragmas.nim:`of wHeader:`
-        ]#
-        let prefix = "dynlib@"
-        if path.startsWith prefix:
-          let libname = path[prefix.len .. ^1]
-          doAssert libname.len > 0
-          var dllhandle = getOrDefault(gDllCache, libname)
-          if dllhandle == nil:
-            echo ("importcSymbol:loadLib", libname)
-            dllhandle = loadLib(libname)
-            if dllhandle.isNil:
-              globalError(conf, sym.info, "cannot load: " & libname)
-              return
-            gDllCache[libname] = dllhandle
-          result = dllhandle.symAddr(name)
-          if result.isNil: globalError(conf, sym.info, "cannot import: " & sym.name.s & " from " & libname)
-          return
-
-      var theAddr: pointer
-      if (lib.isNil or lib.kind == libHeader) and not gExeHandle.isNil:
-        # first try this exe itself:
-        theAddr = gExeHandle.symAddr(name)
-        # then try libc:
-        if theAddr.isNil:
-          let dllhandle = getDll(conf, gDllCache, libcDll, sym.info)
-          theAddr = dllhandle.symAddr(name)
-      elif not lib.isNil:
-        let dll = if lib.kind == libHeader: libcDll else: lib.path.strVal
-        let dllhandle = getDll(conf, gDllCache, dll, sym.info)
+    var theAddr: pointer
+    if (lib.isNil or lib.kind == libHeader) and not gExeHandle.isNil:
+      libPathMsg = "current exe: " & getAppFilename() & " nor libc: " & libcDll
+      # first try this exe itself:
+      theAddr = gExeHandle.symAddr(name)
+      # then try libc:
+      if theAddr.isNil:
+        let dllhandle = getDll(conf, gDllCache, libcDll, sym.info)
         theAddr = dllhandle.symAddr(name)
-      return theAddr
-
-    let theAddr = getAddr()
-    if theAddr.isNil: globalError(conf, sym.info, "cannot import: " & sym.name.s)
+    elif not lib.isNil:
+      let dll = if lib.kind == libHeader: libcDll else: lib.path.strVal
+      libPathMsg = dll
+      let dllhandle = getDll(conf, gDllCache, dll, sym.info)
+      theAddr = dllhandle.symAddr(name)
+    if theAddr.isNil: globalError(conf, sym.info,
+      "cannot import symbol: " & sym.name.s & " from " & libPathMsg)
     result.intVal = cast[ByteAddress](theAddr)
 
 proc mapType(conf: ConfigRef, t: ast.PType): ptr libffi.TType =
