@@ -220,6 +220,7 @@ proc auxWriteStackTrace(f: PFrame; s: var seq[StackTraceEntry]) =
     s[last] = StackTraceEntry(procname: it.procname,
                               line: it.line,
                               filename: it.filename)
+    when nimHasFrameCallback: s[last].frameCallback = f.frameCallback
     it = it.prev
     dec last
 
@@ -232,6 +233,15 @@ template addFrameEntry(s, f: untyped) =
     add(s, ')')
   for k in 1..max(1, 25-(s.len-oldLen)): add(s, ' ')
   add(s, f.procname)
+
+  when type(f) is StackTraceEntry:
+    when nimHasFrameCallback:
+      if f.frameCallback != nil:
+        proc frameCallbackDummy(a: pointer){.importc.}
+        type FrameCallbackDummy = type(frameCallbackDummy)
+        let fun = cast[FrameCallbackDummy](f.frameCallback)
+        # TODO: dynlib
+        fun(s.addr)
   add(s, "\n")
 
 proc `$`(s: seq[StackTraceEntry]): string =
@@ -460,7 +470,18 @@ proc callDepthLimitReached() {.noinline.} =
       "recursions instead.\n")
   quitOrDebug()
 
+when nimHasFrameCallback:
+  proc frameCallbackDummy2(a: pointer) =
+    var count {.threadvar.}: int
+    count.inc
+    let s2 = cast[ptr string](a)
+    # s2[].add " in frameCallbackDummy2:" & $count
+    s2[].add " ;"
+
 proc nimFrame(s: PFrame) {.compilerRtl, inl.} =
+  when nimHasFrameCallback:
+    # s.frameCallback = nil
+    s.frameCallback = frameCallbackDummy2
   s.calldepth = if framePtr == nil: 0 else: framePtr.calldepth+1
   s.prev = framePtr
   framePtr = s
