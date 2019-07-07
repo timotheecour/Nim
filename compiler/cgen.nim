@@ -602,7 +602,7 @@ proc initFrame(p: BProc, procname, filename: Rope): Rope =
       FR_.procname = proc; FR_.filename = file; FR_.line = 0; FR_.len = 0; #nimFrame(&FR_);
 
   $1  define nimfrs_(proc, file, slots, length) \
-      struct {TFrame* prev;NCSTRING procname;NI line;NCSTRING filename; NI len; VarSlot s[slots];} FR_; \
+      struct {TFrame* prev;NCSTRING procname;NI line;NCSTRING filename; NI16 len; NI16 calldepth; VarSlot s[slots];} FR_; \
       FR_.procname = proc; FR_.filename = file; FR_.line = 0; FR_.len = length; #nimFrame((TFrame*)&FR_);
 
   $1  define nimln_(n, file) \
