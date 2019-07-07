@@ -4,7 +4,7 @@ template formatErrorIndexBound*[T](i, a, b: T): string =
   when defined(standalone):
     "indexOutOfBounds"
   else:
-    if b < a: "index out of bounds, the container is empty"
+    if b < a: "index " & $i & " out of bounds, the container is empty"
     else: "index " & $i & " not in " & $a & " .. " & $b
 
 template formatErrorIndexBound*[T](i, n: T): string =
