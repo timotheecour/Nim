@@ -438,6 +438,8 @@ proc typeToString(typ: PType, prefer: TPreferedDesc = preferName): string =
       result = typeToString(t.sons[0])
     elif prefer in {preferName, preferTypeName} or t.sym.owner.isNil:
       result = t.sym.name.s
+      if t.sym.ast != t.n: # more robust than sring comparison `result != typeToStr[t.kind]:`
+        result.add "{" & typeToStr[t.kind] & "}"
       if t.kind == tyGenericParam and t.sonsLen > 0:
         result.add ": "
         var first = true
