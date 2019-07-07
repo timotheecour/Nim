@@ -98,6 +98,7 @@ proc isFloatLit*(t: PType): bool {.inline.} =
 
 proc getProcHeader*(conf: ConfigRef; sym: PSym; prefer: TPreferedDesc = preferName): string =
   assert sym != nil
+  # TODO: skipGenericOwner otherwise it shows as fun2.fun2 when fun2 is generic
   result = sym.owner.name.s & '.' & sym.name.s
   if sym.kind in routineKinds:
     result.add '('

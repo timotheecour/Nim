@@ -718,12 +718,22 @@ type
   WriteIOEffect* = object of IOEffect  ## Effect describing a write IO operation.
   ExecIOEffect* = object of IOEffect   ## Effect describing an executing IO operation.
 
+const nimHasFrameCallback* = false # D20190704T124439
+# const nimHasFrameCallback* = defined(nimHasFrameCallback)
+# TODO: instead, do like: const NimStackTrace = compileOption("stacktrace")
+when nimHasFrameCallback:
+  # type FrameCallback = proc(a: pointer){.closure.}
+  type FrameCallback = pointer
+
+type
   StackTraceEntry* = object ## In debug mode exceptions store the stack trace that led
                             ## to them. A `StackTraceEntry` is a single entry of the
                             ## stack trace.
     procname*: cstring      ## Name of the proc that is currently executing.
     line*: int              ## Line number of the proc that is currently executing.
     filename*: cstring      ## Filename of the proc that is currently executing.
+    when nimHasFrameCallback:
+      frameCallback*: FrameCallback
 
   Exception* {.compilerproc, magic: "Exception".} = object of RootObj ## \
     ## Base exception class.
@@ -3367,6 +3377,8 @@ type
     filename*: cstring  ## Filename of the proc that is currently executing.
     len*: int16         ## Length of the inspectable slots.
     calldepth*: int16   ## Used for max call depth checking.
+    when nimHasFrameCallback:
+      frameCallback*: FrameCallback
 
 when defined(JS):
   proc add*(x: var string, y: cstring) {.asmNoStackFrame.} =

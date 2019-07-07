@@ -614,6 +614,7 @@ proc initLocExprSingleUse(p: BProc, e: PNode, result: var TLoc) =
 include ccgcalls, "ccgstmts.nim"
 
 proc initFrame(p: BProc, procname, filename: Rope): Rope =
+  # BUG: duplicated definition in nimbase.h? => [[cleanup] nimbase.h: remove dead code which was confusing by timotheecour · Pull Request #11682 · nim-lang/Nim](https://github.com/nim-lang/Nim/pull/11682)
   const frameDefines = """
   $1  define nimfr_(proc, file) \
       TFrame FR_; \

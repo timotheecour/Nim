@@ -437,6 +437,7 @@ struct TFrame_ {
   NCSTRING filename;
   NI16 len;
   NI16 calldepth;
+  // void *frameCallback; // D20190704T124439 ; this needs more care, eg would fail w endb extendedframe etc
 };
 
 #define NIM_POSIX_INIT  __attribute__((constructor))
