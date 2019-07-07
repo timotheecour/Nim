@@ -457,6 +457,7 @@ proc addTypeFlags(name: var string, typ: PType) {.inline.} =
   if tfNotNil in typ.flags: name.add(" not nil")
 
 proc typeToString(typ: PType, prefer: TPreferedDesc = preferName): string =
+  let prefer = preferMixed # PRTEMP
   let preferToplevel = prefer
   proc getPrefer(prefer: TPreferedDesc): TPreferedDesc =
     if preferToplevel in {preferResolved, preferMixed}:

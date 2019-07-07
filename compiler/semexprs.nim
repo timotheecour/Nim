@@ -916,6 +916,7 @@ proc semIndirectOp(c: PContext, n: PNode, flags: TExprFlags): PNode =
         globalError(c.config, n.info, "type mismatch")
         return c.graph.emptyNode
       else:
+        # related to D20190706T172307
         var hasErrorType = false
         var msg = "type mismatch: got <"
         for i in 1 ..< len(n):
