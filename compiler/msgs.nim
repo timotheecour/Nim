@@ -11,6 +11,8 @@ import
   options, strutils, os, tables, ropes, platform, terminal, macros,
   lineinfos, pathutils
 
+proc sourceLine*(conf: ConfigRef; i: TLineInfo): string
+
 proc toCChar*(c: char; result: var string) =
   case c
   of '\0'..'\x1F', '\x7F'..'\xFF':
@@ -371,6 +373,7 @@ proc writeContext(conf: ConfigRef; lastinfo: TLineInfo) =
   for i in 0 ..< len(conf.m.msgContext):
     let context = conf.m.msgContext[i]
     if context.info != lastinfo and context.info != info:
+      let sourceLineMsg = sourceLine(conf, context.info).strip
       if conf.structuredErrorHook != nil:
         conf.structuredErrorHook(conf, context.info, instantiationFrom,
                                  Severity.Error)
@@ -384,7 +387,7 @@ proc writeContext(conf: ConfigRef; lastinfo: TLineInfo) =
                                       coordToStr(context.info.line.int),
                                       coordToStr(context.info.col+ColOffset)],
                          resetStyle,
-                         message)
+                         message, ": ", styleBright, sourceLineMsg, resetStyle)
     info = context.info
 
 proc ignoreMsgBecauseOfIdeTools(conf: ConfigRef; msg: TMsgKind): bool =
