@@ -239,6 +239,8 @@ proc toFileLineCol*(conf: ConfigRef; info: TLineInfo): string {.inline.} =
   # consider calling `helpers.lineInfoToString` instead
   result = toMsgFilename(conf, info) & "(" & $info.line & ", " &
     $(info.col + ColOffset) & ")"
+  if true: # TODO: opt in ...
+    result.add " `" & sourceLine(conf, info).strip & "` " #D20190708T132121:here
 
 proc `$`*(conf: ConfigRef; info: TLineInfo): string = toFileLineCol(conf, info)
 
@@ -379,7 +381,7 @@ proc writeContext(conf: ConfigRef; lastinfo: TLineInfo) =
   for i in 0 ..< len(conf.m.msgContext):
     let context = conf.m.msgContext[i]
     if context.info != lastinfo and context.info != info:
-      let sourceLineMsg = sourceLine(conf, context.info).strip
+      # let sourceLineMsg = sourceLine(conf, context.info).strip
       if conf.structuredErrorHook != nil:
         conf.structuredErrorHook(conf, context.info, instantiationFrom,
                                  Severity.Error)
@@ -388,12 +390,12 @@ proc writeContext(conf: ConfigRef; lastinfo: TLineInfo) =
           instantiationFrom
         else:
           instantiationOfFrom.format(context.detail)
-        styledMsgWriteln(styleBright,
-                         PosFormat % [toMsgFilename(conf, context.info),
-                                      coordToStr(context.info.line.int),
-                                      coordToStr(context.info.col+ColOffset)],
-                         resetStyle,
-                         message, ": ", styleBright, sourceLineMsg, resetStyle)
+        styledMsgWriteln(styleBright, toFileLineCol(conf, context.info),
+                         # PosFormat % [toMsgFilename(conf, context.info),
+                         #              coordToStr(context.info.line.int),
+                         #              coordToStr(context.info.col+ColOffset)],
+                         resetStyle, message)
+                         # message, ": ", styleBright, sourceLineMsg, resetStyle)
     info = context.info
 
 proc ignoreMsgBecauseOfIdeTools(conf: ConfigRef; msg: TMsgKind): bool =
@@ -474,7 +476,7 @@ proc sourceLine*(conf: ConfigRef; i: TLineInfo): string =
 
 proc writeSurroundingSrc(conf: ConfigRef; info: TLineInfo) =
   const indent = "  "
-  msgWriteln(conf, indent & $sourceLine(conf, info))
+  msgWriteln(conf, indent & $sourceLine(conf, info)) # TODO: don't duplicate D20190708T132121
   if info.col >= 0:
     msgWriteln(conf, indent & spaces(info.col) & '^')
 
@@ -483,8 +485,9 @@ proc formatMsg*(conf: ConfigRef; info: TLineInfo, msg: TMsgKind, arg: string): s
               of warnMin..warnMax: WarningTitle
               of hintMin..hintMax: HintTitle
               else: ErrorTitle
-  result = PosFormat % [toMsgFilename(conf, info), coordToStr(info.line.int),
-                        coordToStr(info.col+ColOffset)] &
+  result = toFileLineCol(conf, info) &
+  # result = PosFormat % [toMsgFilename(conf, info), coordToStr(info.line.int),
+  #                       coordToStr(info.col+ColOffset)] &
            title &
            getMessageStr(msg, arg)
 
@@ -521,8 +524,10 @@ proc liMessage(conf: ConfigRef; info: TLineInfo, msg: TMsgKind, arg: string,
     color = HintColor
     if msg != hintUserRaw: kind = HintsToStr[ord(msg) - ord(hintMin)]
     inc(conf.hintCounter)
-  let x = PosFormat % [toMsgFilename(conf, info), coordToStr(info.line.int),
-                       coordToStr(info.col+ColOffset)]
+
+  let x = toFileLineCol(conf, info)
+  # let x = PosFormat % [toMsgFilename(conf, info), coordToStr(info.line.int),
+  #                      coordToStr(info.col+ColOffset)]
   let s = getMessageStr(msg, arg)
 
   if not ignoreMsg:
