@@ -254,8 +254,10 @@ proc genCLineDir(r: var Rope, info: TLineInfo; conf: ConfigRef) =
 
 proc freshLineInfo(p: BProc; info: TLineInfo): bool =
   if p.lastLineInfo.line != info.line or
+     (optExcessiveStackTrace in p.config.globalOptions and p.lastLineInfo.col != info.col) or
      p.lastLineInfo.fileIndex != info.fileIndex:
     p.lastLineInfo.line = info.line
+    p.lastLineInfo.col = info.col
     p.lastLineInfo.fileIndex = info.fileIndex
     result = true
 
@@ -270,8 +272,7 @@ proc genLineDir(p: BProc, t: PNode) =
     if freshLineInfo(p, t.info):
       if optExcessiveStackTrace in p.config.globalOptions:
         var msg = ""
-        msg.addQuoted toFileLineCol(p.config, t.info) &
-          " `" & sourceLine(p.config, t.info).strip & "`"
+        msg.addQuoted toFileLineCol(p.config, t.info)
         # abuses the `filename` field to be the formatted location for simplicity
         linefmt(p, cpsStmts, "nimln_($1, $2);$n", [0, msg])
       else:
