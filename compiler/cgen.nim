@@ -270,8 +270,15 @@ proc genLineDir(p: BProc, t: PNode) =
       {optLineTrace, optStackTrace}) and
       (p.prc == nil or sfPure notin p.prc.flags) and t.info.fileIndex != InvalidFileIDX:
     if freshLineInfo(p, t.info):
-      linefmt(p, cpsStmts, "nimln_($1, $2);$n",
-              [line, quotedFilename(p.config, t.info)])
+      if optExcessiveStackTrace in p.config.globalOptions:
+        var msg = ""
+        msg.addQuoted toFileLineCol(p.config, t.info) &
+          " `" & sourceLine(p.config, t.info).strip & "`"
+        # abuses the `filename` field to be the formatted location for simplicity
+        linefmt(p, cpsStmts, "nimln_($1, $2);$n", [0, msg])
+      else:
+        linefmt(p, cpsStmts, "nimln_($1, $2);$n",
+          [line, quotedFilename(p.config, t.info)])
 
 proc postStmtActions(p: BProc) {.inline.} =
   add(p.s(cpsStmts), p.module.injectStmt)
