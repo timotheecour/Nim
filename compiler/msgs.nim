@@ -133,7 +133,6 @@ proc suggestQuit*() =
 # this format is understood by many text editors: it is the same that
 # Borland and Freepascal use
 const
-  PosFormat    = "$1($2, $3) "
   KindFormat   = " [$1]"
   KindColor    = fgCyan
   ErrorTitle   = "Error: "
@@ -391,11 +390,7 @@ proc writeContext(conf: ConfigRef; lastinfo: TLineInfo) =
         else:
           instantiationOfFrom.format(context.detail)
         styledMsgWriteln(styleBright, toFileLineCol(conf, context.info),
-                         # PosFormat % [toMsgFilename(conf, context.info),
-                         #              coordToStr(context.info.line.int),
-                         #              coordToStr(context.info.col+ColOffset)],
                          resetStyle, message)
-                         # message, ": ", styleBright, sourceLineMsg, resetStyle)
     info = context.info
 
 proc ignoreMsgBecauseOfIdeTools(conf: ConfigRef; msg: TMsgKind): bool =
@@ -485,11 +480,7 @@ proc formatMsg*(conf: ConfigRef; info: TLineInfo, msg: TMsgKind, arg: string): s
               of warnMin..warnMax: WarningTitle
               of hintMin..hintMax: HintTitle
               else: ErrorTitle
-  result = toFileLineCol(conf, info) &
-  # result = PosFormat % [toMsgFilename(conf, info), coordToStr(info.line.int),
-  #                       coordToStr(info.col+ColOffset)] &
-           title &
-           getMessageStr(msg, arg)
+  result = toFileLineCol(conf, info) & title & getMessageStr(msg, arg)
 
 proc liMessage(conf: ConfigRef; info: TLineInfo, msg: TMsgKind, arg: string,
                eh: TErrorHandling) =
@@ -526,8 +517,6 @@ proc liMessage(conf: ConfigRef; info: TLineInfo, msg: TMsgKind, arg: string,
     inc(conf.hintCounter)
 
   let x = toFileLineCol(conf, info)
-  # let x = PosFormat % [toMsgFilename(conf, info), coordToStr(info.line.int),
-  #                      coordToStr(info.col+ColOffset)]
   let s = getMessageStr(msg, arg)
 
   if not ignoreMsg:
