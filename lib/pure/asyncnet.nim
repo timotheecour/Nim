@@ -628,8 +628,8 @@ proc bindAddr*(socket: AsyncSocket, port = Port(0), address = "") {.
 
   var aiList = getAddrInfo(realaddr, port, socket.domain)
   # echo (realaddr, port, socket.domain)
-  if bindAddr(socket.fd, aiList.ai_addr, aiList.ai_addrlen.Socklen) < 0'i32:
-    freeAddrInfo(aiList)
+  if bindAddr(socket.fd, aiList.ai_addr, aiList.ai_addrlen.SockLen) < 0'i32:
+    freeaddrinfo(aiList)
     raiseOSError(osLastError())
   freeaddrinfo(aiList)
 
