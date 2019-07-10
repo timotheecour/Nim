@@ -655,7 +655,7 @@ proc typeToString(typ: PType, prefer: TPreferedDesc = preferName): string =
     else:
       result = typeToStr[t.kind]
     result.addTypeFlags(t)
-  result = typeToString(typ)
+  result = typeToString(typ, prefer)
 
 proc firstOrd*(conf: ConfigRef; t: PType): BiggestInt =
   case t.kind
