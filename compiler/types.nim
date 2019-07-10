@@ -15,8 +15,12 @@ import
 
 type
   TPreferedDesc* = enum
-    preferName, preferDesc, preferExported, preferModuleInfo, preferGenericArg,
-    preferTypeName
+    preferName, # default
+    preferDesc, preferExported,
+    preferModuleInfo, # fully qualified
+    preferGenericArg,
+    preferTypeName,
+    preferResolved # fully resolved symbols
 
 proc typeToString*(typ: PType; prefer: TPreferedDesc = preferName): string
 template `$`*(typ: PType): string = typeToString(typ)
@@ -98,6 +102,7 @@ proc isFloatLit*(t: PType): bool {.inline.} =
 
 proc getProcHeader*(conf: ConfigRef; sym: PSym; prefer: TPreferedDesc = preferName): string =
   assert sym != nil
+  # consider using `skipGenericOwner` to avoid fun2.fun2 when fun2 is generic
   result = sym.owner.name.s & '.' & sym.name.s
   if sym.kind in routineKinds:
     result.add '('
@@ -391,12 +396,12 @@ proc rangeToStr(n: PNode): string =
   result = valueToString(n.sons[0]) & ".." & valueToString(n.sons[1])
 
 const
-  typeToStr: array[TTypeKind, string] = ["None", "bool", "Char", "empty",
+  typeToStr: array[TTypeKind, string] = ["None", "bool", "char", "empty",
     "Alias", "nil", "untyped", "typed", "typeDesc",
     "GenericInvocation", "GenericBody", "GenericInst", "GenericParam",
     "distinct $1", "enum", "ordinal[$1]", "array[$1, $2]", "object", "tuple",
     "set[$1]", "range[$1]", "ptr ", "ref ", "var ", "seq[$1]", "proc",
-    "pointer", "OpenArray[$1]", "string", "CString", "Forward",
+    "pointer", "OpenArray[$1]", "string", "cstring", "Forward",
     "int", "int8", "int16", "int32", "int64",
     "float", "float32", "float64", "float128",
     "uint", "uint8", "uint16", "uint32", "uint64",
@@ -407,7 +412,7 @@ const
     "and", "or", "not", "any", "static", "TypeFromExpr", "FieldAccessor",
     "void"]
 
-const preferToResolveSymbols = {preferName, preferTypeName, preferModuleInfo, preferGenericArg}
+const preferToResolveSymbols = {preferName, preferTypeName, preferModuleInfo, preferGenericArg, preferResolved}
 
 template bindConcreteTypeToUserTypeClass*(tc, concrete: PType) =
   tc.sons.add concrete
@@ -426,8 +431,13 @@ proc addTypeFlags(name: var string, typ: PType) {.inline.} =
   if tfNotNil in typ.flags: name.add(" not nil")
 
 proc typeToString(typ: PType, prefer: TPreferedDesc = preferName): string =
+  proc updatePrefer(prefer2: TPreferedDesc): TPreferedDesc =
+    if prefer == preferResolved: prefer
+    elif prefer == preferModuleInfo: prefer
+    else: prefer2
+
   proc typeToString(typ: PType): string =
-    var t = typ
+    let t = typ
     result = ""
     if t == nil: return
     if prefer in preferToResolveSymbols and t.sym != nil and
@@ -436,6 +446,17 @@ proc typeToString(typ: PType, prefer: TPreferedDesc = preferName): string =
         result = t.sym.name.s & " literal(" & $t.n.intVal & ")"
       elif t.kind == tyAlias and t.sons[0].kind != tyAlias:
         result = typeToString(t.sons[0])
+      elif prefer == preferResolved:
+        case t.kind
+        of IntegralTypes + {tyFloat..tyFloat128} + {tyString, tyCString}:
+          result = typeToStr[t.kind]
+        of tyGenericBody:
+          result = typeToString(t.lastSon)
+        of tyCompositeTypeClass:
+          # avoids showing `A[any]` in `proc fun(a: A)` with `A = object[T]`
+          result = typeToString(t.lastSon.lastSon)
+        else:
+          result = t.sym.name.s
       elif prefer in {preferName, preferTypeName} or t.sym.owner.isNil:
         result = t.sym.name.s
         if t.kind == tyGenericParam and t.sonsLen > 0:
@@ -462,13 +483,13 @@ proc typeToString(typ: PType, prefer: TPreferedDesc = preferName): string =
       result = typeToString(t.sons[0]) & '['
       for i in 1 ..< sonsLen(t)-ord(t.kind != tyGenericInvocation):
         if i > 1: add(result, ", ")
-        add(result, typeToString(t.sons[i], preferGenericArg))
+        add(result, typeToString(t.sons[i], preferGenericArg.updatePrefer))
       add(result, ']')
     of tyGenericBody:
       result = typeToString(t.lastSon) & '['
       for i in 0 .. sonsLen(t)-2:
         if i > 0: add(result, ", ")
-        add(result, typeToString(t.sons[i], preferTypeName))
+        add(result, typeToString(t.sons[i], preferTypeName.updatePrefer))
       add(result, ']')
     of tyTypeDesc:
       if t.sons[0].kind == tyNone: result = "typedesc"
@@ -551,8 +572,7 @@ proc typeToString(typ: PType, prefer: TPreferedDesc = preferName): string =
     of tyOpenArray:
       result = "openarray[" & typeToString(t.sons[0]) & ']'
     of tyDistinct:
-      result = "distinct " & typeToString(t.sons[0],
-        if prefer == preferModuleInfo: preferModuleInfo else: preferTypeName)
+      result = "distinct " & typeToString(t.sons[0], preferTypeName.updatePrefer)
     of tyTuple:
       # we iterate over t.sons here, because t.n may be nil
       if t.n != nil:
