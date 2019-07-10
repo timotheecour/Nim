@@ -98,7 +98,6 @@ proc isFloatLit*(t: PType): bool {.inline.} =
 
 proc getProcHeader*(conf: ConfigRef; sym: PSym; prefer: TPreferedDesc = preferName): string =
   assert sym != nil
-  # TODO: skipGenericOwner otherwise it shows as fun2.fun2 when fun2 is generic
   result = sym.owner.name.s & '.' & sym.name.s
   if sym.kind in routineKinds:
     result.add '('
@@ -438,16 +437,6 @@ proc typeToString(typ: PType, prefer: TPreferedDesc = preferName): string =
       result = typeToString(t.sons[0])
     elif prefer in {preferName, preferTypeName} or t.sym.owner.isNil:
       result = t.sym.name.s
-      if t.sym.owner != nil:
-        # note: should use skipGenericOwner everywhere relevant to avoid
-        # `Foo.Foo` for a generic `Foo`
-        result = t.sym.owner.name.s & '.' & result
-      if t.sym.ast != t.n:
-        # avoids `int{int}`;
-        # comparing node is more robust than sring comparison via typeToStr
-        if t.kind != tyObject:
-          # this will show `type Foo = int` as Foo{int}
-          result.add "{" & typeToStr[t.kind] & "}"
       if t.kind == tyGenericParam and t.sonsLen > 0:
         result.add ": "
         var first = true
