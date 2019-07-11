@@ -261,6 +261,7 @@ proc freshLineInfo(p: BProc; info: TLineInfo): bool =
     p.lastLineInfo.fileIndex = info.fileIndex
     result = true
 
+# import timn/util_compiler_simple
 proc genLineDir(p: BProc, t: PNode) =
   let line = t.info.safeLineNm
 
@@ -271,6 +272,7 @@ proc genLineDir(p: BProc, t: PNode) =
       (p.prc == nil or sfPure notin p.prc.flags) and t.info.fileIndex != InvalidFileIdx:
     if freshLineInfo(p, t.info):
       if optExcessiveStackTrace in p.config.globalOptions:
+      # if timn_env("timn_stacktrace_has_col"): # PRTEMP
         var msg = ""
         msg.addQuoted toFileLineCol(p.config, t.info)
         # abuses the `filename` field to be the formatted location for simplicity
