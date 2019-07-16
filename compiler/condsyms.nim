@@ -89,6 +89,7 @@ proc initDefines*(symbols: StringTableRef) =
   defineSymbol("nimMacrosSizealignof")
   defineSymbol("nimNoZeroExtendMagic")
   defineSymbol("nimMacrosGetNodeId")
+  defineSymbol("nimHasGetCurrentScope")
   for f in low(Feature)..high(Feature):
     defineSymbol("nimHas" & $f)
 

@@ -668,6 +668,7 @@ type
     mGetPNodePointer,
     mRegisterModule,
     mFromPNodePointer,
+    mGetCurrentScope,
 
 # things that we can evaluate safely at compile time, even if not asked for it:
 const
