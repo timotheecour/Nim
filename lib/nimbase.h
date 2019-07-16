@@ -52,7 +52,7 @@ __clang__
 #  pragma GCC diagnostic ignored "-Wpragmas"
 #  pragma GCC diagnostic ignored "-Wwritable-strings"
 #  pragma GCC diagnostic ignored "-Winvalid-noreturn"
-#  pragma GCC diagnostic ignored "-Wformat"
+//#  pragma GCC diagnostic ignored "-Wformat"
 #  pragma GCC diagnostic ignored "-Wlogical-not-parentheses"
 #  pragma GCC diagnostic ignored "-Wlogical-op-parentheses"
 #  pragma GCC diagnostic ignored "-Wshadow"
