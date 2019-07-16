@@ -72,3 +72,9 @@ proc getNode*(a: VmArgs; i: Natural): PNode =
   let s = cast[seq[TFullReg]](a.slots)
   doAssert s[i+a.rb+1].kind == rkNode
   result = s[i+a.rb+1].node
+
+# REMOVE? see utilvm_impl
+proc getKind*(a: VmArgs; i: Natural): TRegisterKind =
+  doAssert i < a.rc-1
+  let s = cast[seq[TFullReg]](a.slots)
+  s[i+a.rb+1].kind

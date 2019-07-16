@@ -1119,6 +1119,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
       regs[ra].intVal = cast[ByteAddress](node)
       # TODO: MEMORY maybe also add destroy that would release resource; maybe instead use protect/dispose?
       GC_ref node
+      # TODO: nfIsRef?
       when timn_temp:
         echo1 "opcGetPNodePointer", regs[ra].intVal, toFileLineCol(c.config, info)
 
@@ -1147,6 +1148,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         # note: nkStrLit doesn't seem needed, it would end up here
         ensureKind rkNode
         regs[ra].node = copyTreeForeign(node)
+      # TODO: nfIsRef?
 
     of opcEcho:
       let rb = instr.regB
