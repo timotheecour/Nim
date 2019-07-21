@@ -16,6 +16,9 @@ import
   syntaxes, idgen, modulegraphs, reorder, rod,
   lineinfos, pathutils
 
+# MODIF
+import std/strtabs # getOrDefault etc
+
 type
   TPassData* = tuple[input: PNode, closeOutput: PNode]
 
@@ -177,7 +180,7 @@ proc processModule*(graph: ModuleGraph; module: PSym, stream: PLLStream): bool {
       if filename0.len == 0:
         filename0 = graph.config.patchedFiles.getOrDefault $filename
       if filename0.len != 0:
-        doAssert filename0.isAbsolute
+        # doAssert filename0.isAbsolute # TODO
         filename = filename0.AbsoluteFile
       s = llStreamOpen(filename, fmRead)
       if s == nil:
