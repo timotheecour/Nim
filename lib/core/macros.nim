@@ -510,8 +510,8 @@ proc genSym*(kind: NimSymKind = nskLet; ident = ""): NimNode {.
   ## Generates a fresh symbol that is guaranteed to be unique. The symbol
   ## needs to occur in a declaration context.
 
-proc callsite*(): NimNode {.magic: "NCallSite", benign, deprecated:
-  "Deprecated since v0.18.1; use varargs[untyped] in the macro prototype instead".}
+# MODIF: undeprecated, see D20190720T160113
+proc callsite*(): NimNode {.magic: "NCallSite", benign.}
   ## Returns the AST of the invocation expression that invoked this macro.
 
 proc toStrLit*(n: NimNode): NimNode {.compileTime.} =
