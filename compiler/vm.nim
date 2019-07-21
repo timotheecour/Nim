@@ -30,19 +30,20 @@ when timn_temp:
 
 when hasFFI:
   import evalffi
-include timn/includes/privateaccess_simple
+# include timn/includes/privateaccess_simple # remove?
+# MODIF: i needed these exported
 type
-  TRegisterKind = enum
+  TRegisterKind* = enum
     rkNone, rkNode, rkInt, rkFloat, rkRegisterAddr, rkNodeAddr
-  TFullReg = object   # with a custom mark proc, we could use the same
+  TFullReg* = object   # with a custom mark proc, we could use the same
                       # data representation as LuaJit (tagged NaNs).
-    case kind: TRegisterKind
+    case kind*: TRegisterKind
     of rkNone: nil
-    of rkInt: intVal: BiggestInt
-    of rkFloat: floatVal: BiggestFloat
-    of rkNode: node: PNode
-    of rkRegisterAddr: regAddr: ptr TFullReg
-    of rkNodeAddr: nodeAddr: ptr PNode
+    of rkInt: intVal*: BiggestInt
+    of rkFloat: floatVal*: BiggestFloat
+    of rkNode: node*: PNode
+    of rkRegisterAddr: regAddr*: ptr TFullReg
+    of rkNodeAddr: nodeAddr*: ptr PNode
 
   PStackFrame* = ref TStackFrame
   TStackFrame* = object
@@ -55,7 +56,7 @@ type
                               # XXX 'break' should perform cleanup actions
                               # What does the C backend do for it?
 
-proc stackTraceAux(c: PCtx; x: PStackFrame; pc: int; recursionLimit=100) =
+proc stackTraceAux*(c: PCtx; x: PStackFrame; pc: int; recursionLimit=100) =
   if x != nil:
     if recursionLimit == 0:
       var calls = 0
@@ -1055,6 +1056,8 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
           else: 0
       else:
         stackTrace(c, tos, pc, "node is not a proc symbol")
+    of opcTimnMagic: # MODIF
+      callback_TimnMagic_wrap(c, pc, regs, tos)
     of opcModuleSymbols:
       decodeB(rkNode)
       let a = regs[rb].node
@@ -1082,7 +1085,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
           regs[ra].node = node
           # TODO: do we need regs[ra].node.flags.incl nfIsRef or recSetFlagIsRef? SEE D20190524T210155; maybe relates to D20190603T094014
 
-    of opcRegisterModule: # MODIF
+    of opcRegisterModule:
       decodeB(rkNode)
       # decodeB(rkNode)
       checkCond regs[rb].kind == rkNode, $regs[rb].kind

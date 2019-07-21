@@ -150,6 +150,8 @@ type
     opcTypeTrait,
     opcMarshalLoad, opcMarshalStore,
     opcSymOwner,
+    # MODIF
+    opcTimnMagic,
     opcModuleSymbols,
     opcGetPNodePointer,
     opcFromPNodePointer,

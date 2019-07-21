@@ -664,6 +664,7 @@ type
     mNimvm, mIntDefine, mStrDefine, mBoolDefine, mRunnableExamples,
     mException, mBuiltinType, mSymOwner, mUncheckedArray, mGetImplTransf,
     mSymIsInstantiationOf, mNodeId
+    mTimnMagic, # MODIF
     mModuleSymbols, # TODO: is that obsoleted by mNGetPNodePointer ?
     mGetPNodePointer,
     mRegisterModule,
