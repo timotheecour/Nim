@@ -44,10 +44,10 @@ proc symBinding(n: PNode): TSymBinding =
       else: discard
 
 type
-  TSymChoiceRule = enum
+  TSymChoiceRule* = enum
     scClosed, scOpen, scForceOpen
 
-proc symChoice(c: PContext, n: PNode, s: PSym, r: TSymChoiceRule;
+proc symChoice*(c: PContext, n: PNode, s: PSym, r: TSymChoiceRule;
                isField = false): PNode =
   var
     a: PSym
