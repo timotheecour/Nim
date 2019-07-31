@@ -396,7 +396,7 @@ proc magicsAfterOverloadResolution(c: PContext, n: PNode,
 
   case n[0].sym.magic
   of mAddr:
-    checkSonsLen(n, 2, c.config)
+    checkSonsLen(n, 2, c.config) # TODO: BUG? what's difference w same thing inside `semMagic`?
     result = n
     result[1] = semAddrArg(c, n[1], n[0].sym.name.s == "unsafeAddr")
     result.typ = makePtrType(c, result[1].typ)

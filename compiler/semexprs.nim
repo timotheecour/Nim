@@ -29,9 +29,11 @@ proc semTemplateExpr(c: PContext, n: PNode, s: PSym,
   onUse(info, s)
   # Note: This is n.info on purpose. It prevents template from creating an info
   # context when called from an another template
+  pushInfoContext(c.config, info, s.detailedInfo) # MODIF; helps w D20190721T033328
   pushInfoContext(c.config, n.info, s.detailedInfo)
   result = evalTemplate(n, s, getCurrOwner(c), c.config, c.cache, efFromHlo in flags)
   if efNoSemCheck notin flags: result = semAfterMacroCall(c, n, result, s, flags)
+  popInfoContext(c.config)
   popInfoContext(c.config)
 
   # XXX: A more elaborate line info rewrite might be needed
@@ -2138,6 +2140,7 @@ proc semSizeof(c: PContext, n: PNode): PNode =
 
 proc semMagic(c: PContext, n: PNode, s: PSym, flags: TExprFlags): PNode =
   # this is a hotspot in the compiler!
+  # see also `magicsAfterOverloadResolution`
   result = n
   case s.magic # magics that need special treatment
   of mAddr:
@@ -2246,6 +2249,8 @@ proc semMagic(c: PContext, n: PNode, s: PSym, flags: TExprFlags): PNode =
   of mSizeOf:
     markUsed(c, n.info, s)
     result = semSizeof(c, setMs(n, s))
+  of mTimnMagicSem:
+    result = callback_semTimnMagicSem_wrap(c, n, s, flags)
   else:
     result = semDirectOp(c, n, flags)
 
@@ -2811,3 +2816,4 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
     localError(c.config, n.info, "invalid expression: " &
                renderTree(n, {renderNoComments}))
   if result != nil: incl(result.flags, nfSem)
+
