@@ -39,7 +39,8 @@ type                          # please make sure we have under 32 options
     optMemTracker,
     optLaxStrings,
     optNilSeqs,
-    optOldAst
+    optOldAst,
+    optPrivateImport,
 
   TOptions* = set[TOption]
   TGlobalOption* = enum       # **keep binary compatible**
@@ -140,6 +141,7 @@ type
       ## This requires building nim with `-d:nimHasLibFFI`
       ## which itself requires `nimble install libffi`, see #10150
       ## Note: this feature can't be localized with {.push.}
+    allowPrivateImport,
 
   LegacyFeature* = enum
     allowSemcheckedAstModification,
