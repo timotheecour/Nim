@@ -1035,10 +1035,13 @@ proc genProcAux(m: BModule, prc: PSym) =
     add(generatedProc, initGCFrame(p))
     if optStackTrace in prc.options:
       add(generatedProc, p.s(cpsLocals))
-      # var procname = makeCString(prc.name.s)
-      # MODIF D20190707T130708 D20190704T154002
-      var msg = " in `" & getProcHeader(m.config, prc) & "`"
-      var procname = makeCString(msg)
+      when true:
+        var procname = makeCString(prc.name.s)
+      else:
+        # too verbose; TODO: allow runtime customization, maybe via extend
+        # MODIF D20190707T130708 D20190704T154002
+        var msg = " in `" & getProcHeader(m.config, prc) & "`"
+        var procname = makeCString(msg)
 
       add(generatedProc, initFrame(p, procname, quotedFilename(p.config, prc.info)))
     else:
