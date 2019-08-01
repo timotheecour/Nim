@@ -1069,7 +1069,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
           stackTrace(c, tos, pc, "node.symKind is not a skModule")
         else:
           let node = newNode(nkBracket)
-          let data = sym.tab.data
+          let data = sym.tab.data # TODO: tabAll
           for i in 0..<data.len:
             let ai = data[i]
             if ai == nil:

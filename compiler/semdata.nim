@@ -83,7 +83,9 @@ type
     friendModules*: seq[PSym]  # friend modules; may access private data;
                                # this is used so that generic instantiations
                                # can access private object fields
-    instCounter*: int          # to prevent endless instantiations
+                               # to prevent endless instantiations
+    friendModulesPrivateImport*: seq[PSym] # enable access to private fields
+    instCounter*: int
 
     ambiguousSymbols*: IntSet  # ids of all ambiguous symbols (cannot
                                # store this info in the syms themselves!)

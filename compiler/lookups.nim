@@ -305,7 +305,7 @@ proc lookUp*(c: PContext, n: PNode): PSym =
 
 type
   TLookupFlag* = enum
-    checkAmbiguity, checkUndeclared, checkModule, checkPureEnumFields
+    checkAmbiguity, checkUndeclared, checkModule, checkPureEnumFields, checkOverridePrivate
 
 proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
   const allExceptModule = {low(TSymKind)..high(TSymKind)}-{skModule,skPackage}
@@ -339,10 +339,14 @@ proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
       elif n.sons[1].kind == nkAccQuoted:
         ident = considerQuotedIdent(c, n.sons[1])
       if ident != nil:
-        if m == c.module:
+        if checkOverridePrivate in flags:
+          echo0 (m == c.module, c.module.name.s, m.name.s, ident.s)
+          # callback_debugScopes2_wrap(m.topLevelScope, limit = 1)
+          result = strTableGet(m.tabAll, ident).skipAlias(n, c.config)
+        elif m == c.module:
           result = strTableGet(c.topLevelScope.symbols, ident).skipAlias(n, c.config)
         else:
-          result = strTableGet(m.tab, ident).skipAlias(n, c.config)
+          result = strTableGet(m.tabOpt, ident).skipAlias(n, c.config)
         if result == nil and checkUndeclared in flags:
           fixSpelling(n.sons[1], ident, searchInScopes)
           errorUndeclaredIdentifier(c, n.sons[1].info, ident.s)
@@ -391,7 +395,7 @@ proc initOverloadIter*(o: var TOverloadIter, c: PContext, n: PNode): PSym =
                                  ident).skipAlias(n, c.config)
           o.mode = oimSelfModule
         else:
-          result = initIdentIter(o.it, o.m.tab, ident).skipAlias(n, c.config)
+          result = initIdentIter(o.it, o.m.tabOpt, ident).skipAlias(n, c.config)
       else:
         noidentError(c.config, n.sons[1], n)
         result = errorSym(c, n.sons[1])
@@ -433,7 +437,7 @@ proc nextOverloadIter*(o: var TOverloadIter, c: PContext, n: PNode): PSym =
   of oimSelfModule:
     result = nextIdentIter(o.it, c.topLevelScope.symbols).skipAlias(n, c.config)
   of oimOtherModule:
-    result = nextIdentIter(o.it, o.m.tab).skipAlias(n, c.config)
+    result = nextIdentIter(o.it, o.m.tabOpt).skipAlias(n, c.config)
   of oimSymChoice:
     if o.symChoiceIndex < len(n):
       result = n.sons[o.symChoiceIndex].sym

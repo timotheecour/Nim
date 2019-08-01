@@ -51,7 +51,9 @@ proc partialInitModule(result: PSym; graph: ModuleGraph; fileIdx: FileIndex; fil
   graph.modules[result.position] = result
 
   initStrTable(result.tab)
+  initStrTable(result.tabAll)
   strTableAdd(result.tab, result) # a module knows itself
+  strTableAdd(result.tabAll, result) # a module knows itself
   strTableAdd(packSym.tab, result)
 
 proc newModule(graph: ModuleGraph; fileIdx: FileIndex): PSym =
@@ -88,6 +90,7 @@ proc compileModule*(graph: ModuleGraph; fileIdx: FileIndex; flags: TSymFlags): P
     result.flags.excl sfDirty
     # reset module fields:
     initStrTable(result.tab)
+    initStrTable(result.tabAll)
     result.ast = nil
     discard processModule(graph, result,
       if sfMainModule in flags and graph.config.projectIsStdin: stdin.llStreamOpen else: nil)

@@ -329,7 +329,7 @@ proc processNote(c: PContext, n: PNode) =
   else:
     invalidPragma(c, n)
 
-proc pragmaToOptions(w: TSpecialWord): TOptions {.inline.} =
+proc pragmaToOptions(c: PContext, info: TLineInfo, w: TSpecialWord): TOptions {.inline.} =
   case w
   of wChecks: ChecksOptions
   of wObjChecks: {optObjCheck}
@@ -354,6 +354,7 @@ proc pragmaToOptions(w: TSpecialWord): TOptions {.inline.} =
   of wByRef: {optByRef}
   of wImplicitStatic: {optImplicitStatic}
   of wPatterns, wTrMacros: {optTrMacros}
+  # TODO: could also do `disableCode` here?
   else: {}
 
 proc processExperimental(c: PContext; n: PNode) =
@@ -386,7 +387,7 @@ proc tryProcessOption(c: PContext, n: PNode, resOptions: var TOptions): bool =
     if sw == wExperimental:
       processExperimental(c, n)
       return true
-    let opts = pragmaToOptions(sw)
+    let opts = pragmaToOptions(c, n.info, sw)
     if opts != {}:
       onOff(c, n, opts, resOptions)
     else:

@@ -827,7 +827,9 @@ type
       # No need, just leave it as skModule but set the owner accordingly and
       # check for the owner when touching 'usedGenerics'.
       usedGenerics*: seq[PInstantiation]
-      tab*: TStrTable         # interface table for modules
+      tab* {.deprecated.}: TStrTable
+      # tab*: TStrTable            # interface table for modules
+      tabAll*: TStrTable         # interface table for modules (all top-level)
     of skLet, skVar, skField, skForVar:
       guard*: PSym
       bitsize*: int
@@ -1391,6 +1393,7 @@ proc copySym*(s: PSym): PSym =
   result.magic = s.magic
   if s.kind == skModule:
     copyStrTable(result.tab, s.tab)
+    copyStrTable(result.tabAll, s.tabAll)
   result.options = s.options
   result.position = s.position
   result.loc = s.loc
@@ -1406,6 +1409,7 @@ proc createModuleAlias*(s: PSym, newIdent: PIdent, info: TLineInfo;
   result.id = s.id
   result.flags = s.flags
   system.shallowCopy(result.tab, s.tab)
+  system.shallowCopy(result.tabAll, s.tabAll)
   result.options = s.options
   result.position = s.position
   result.loc = s.loc
@@ -1871,3 +1875,7 @@ proc addParam*(procType: PType; param: PSym) =
 template destructor*(t: PType): PSym = t.attachedOps[attachedDestructor]
 template assignment*(t: PType): PSym = t.attachedOps[attachedAsgn]
 template asink*(t: PType): PSym = t.attachedOps[attachedSink]
+
+template tabOpt*(m: PSym): untyped =
+  if optPrivateImport in m.options: m.tabAll
+  else: m.tab
