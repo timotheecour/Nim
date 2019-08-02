@@ -1877,5 +1877,8 @@ template assignment*(t: PType): PSym = t.attachedOps[attachedAsgn]
 template asink*(t: PType): PSym = t.attachedOps[attachedSink]
 
 template tabOpt*(m: PSym): untyped =
-  if optPrivateImport in m.options: m.tabAll
-  else: m.tab
+  # avoids doing a copy
+  let tab2 =
+    if optPrivateImport in m.options: m.tabAll.addr
+    else: m.tab.addr
+  tab2[]

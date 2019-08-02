@@ -139,8 +139,7 @@ template getC(): untyped =
   else: c
 
 template onDefAux(info: TLineInfo; s0: PSym, c0: untyped, isFwd: bool) =
-  # if s0.kind in ExportableSymKinds:
-  if false and s0.kind in ExportableSymKinds:
+  if s0.kind in ExportableSymKinds:
     let c = c0 # in case c0 is an expression
     var top = true
     case s0.kind

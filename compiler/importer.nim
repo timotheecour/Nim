@@ -73,12 +73,15 @@ proc rawImportSymbol(c: PContext, s, origin: PSym) =
     c.exportIndirections.incl((origin.id, s.id))
 
 template getTab(c: PContext, fromMod: PSym): untyped =
-  if fromMod in c.friendModulesPrivateImport:
-    # so that `privateImport` also works with `import foo` without `as`
-    # another option is to force `createModuleAlias` to remove this branch
-    fromMod.tabAll
-  else:
-    fromMod.tabOpt
+  # avoids doing a copy
+  let tab2 = 
+    if fromMod in c.friendModulesPrivateImport:
+      # so that `privateImport` also works with `import foo` without `as`
+      # another option is to force `createModuleAlias` to remove this branch
+      fromMod.tabAll.addr
+    else:
+      fromMod.tabOpt.addr
+  tab2[]
 
 proc importSymbol(c: PContext, n: PNode, fromMod: PSym) =
   let ident = lookups.considerQuotedIdent(c, n)
@@ -169,7 +172,7 @@ proc transformImportAs(c: PContext; n: PNode): tuple[node: PNode, importFlags: I
     else:
       result = n2
 
-  if callback_debugEnabled_wrap(): callback_debug_multi2(n, depthMax = 20)
+  # if callback_debugEnabled_wrap(): callback_debug_multi2(n, depthMax = 20)
   if n.kind == nkInfix and considerQuotedIdent(c, n[0]).s == "as":
     ret.node = newNodeI(nkImportAs, n.info)
     ret.node.add n.sons[1].processPragma
