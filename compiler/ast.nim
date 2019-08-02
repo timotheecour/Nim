@@ -827,8 +827,8 @@ type
       # No need, just leave it as skModule but set the owner accordingly and
       # check for the owner when touching 'usedGenerics'.
       usedGenerics*: seq[PInstantiation]
-      tab* {.deprecated.}: TStrTable
-      # tab*: TStrTable            # interface table for modules
+      # tab* {.deprecated.}: TStrTable # to find usages; IMPROVE
+      tab*: TStrTable            # interface table for modules
       tabAll*: TStrTable         # interface table for modules (all top-level)
     of skLet, skVar, skField, skForVar:
       guard*: PSym
