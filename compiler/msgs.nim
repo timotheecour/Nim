@@ -221,7 +221,7 @@ proc toMsgFilename*(conf: ConfigRef; info: FileIndex): string =
   result = if (optListFullPaths in conf.globalOptions) or
               (relPath.len > absPath.len) or
               (relPath.count("..") > 2):
-             absPath
+            callback_toLocPrettySimpleFile_wrap(absPath)
            else:
              relPath
 
@@ -566,12 +566,22 @@ proc internalError*(conf: ConfigRef; errMsg: string) =
   writeContext(conf, unknownLineInfo())
   rawMessage(conf, errInternal, errMsg)
 
+# TODO: FACTOR from system/assertions
+type InstantiationInfo = type(instantiationInfo())
+
+proc `$`(info: InstantiationInfo): string =
+  info.filename & "(" & $info.line & ", " & $(info.column+1) & ")"
+
 template assertNotNil*(conf: ConfigRef; e): untyped =
-  if e == nil: internalError(conf, $instantiationInfo())
+  # TODO: optListFullPaths in conf.globalOptions
+  if e == nil: internalError(conf, $instantiationInfo(fullPaths = true))
   e
 
-template internalAssert*(conf: ConfigRef, e: bool) =
-  if not e: internalError(conf, $instantiationInfo())
+template internalAssert*(conf: ConfigRef, e: bool, msg = "") =
+  if not e:
+    var msg2 = $instantiationInfo(fullPaths = true)
+    if msg.len > 0: msg2.add " " & msg
+    internalError(conf, msg2)
 
 proc quotedFilename*(conf: ConfigRef; i: TLineInfo): Rope =
   if i.fileIndex.int32 < 0:

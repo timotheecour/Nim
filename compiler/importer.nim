@@ -44,7 +44,7 @@ proc rawImportSymbol(c: PContext, s, origin: PSym) =
   # thanks to 'export' feature, it could be we import the same symbol from
   # multiple sources, so we need to call 'StrTableAdd' here:
   strTableAdd(c.importTable.symbols, s)
-  if s.kind == skType:
+  if s.kind == skType and sfImportStub notin s.flags:
     var etyp = s.typ
     if etyp.kind in {tyBool, tyEnum}:
       for j in 0 ..< len(etyp.n):
@@ -83,9 +83,26 @@ template getTab(c: PContext, fromMod: PSym): untyped =
       fromMod.tabOpt.addr
   tab2[]
 
+proc newSymStub2(c: PContext, n: PNode, fromMod: PSym, ident: PIdent): PSym =
+  #[
+  TODO: give actual kind? could be passed as pragma in n
+  however, it's a bit more complicated, eg, we may want to distinguish bw `ref object` vs `object`, so that some things can become legal if we're not accessing a type's implementation, eg sizeof etc
+  ]#
+  # echo0 (ident.s, fromMod.name.s)
+  let options: TOptions = {}
+  # let symKind: TSymKind = skStub2
+  let symKind: TSymKind = skType
+  result = newSym(symKind, name = ident, owner = fromMod, info = n.info, options = options)
+  # CHECKME
+  result.flags.incl sfForward
+  result.flags.incl sfImportStub
+
 proc importSymbol(c: PContext, n: PNode, fromMod: PSym) =
   let ident = lookups.considerQuotedIdent(c, n)
-  let s = strTableGet(c.getTab(fromMod), ident)
+  let s = if sfLazyImport in fromMod.flags:
+    newSymStub2(c, n, fromMod, ident)
+  else:
+    strTableGet(c.getTab(fromMod), ident)
   if s == nil:
     errorUndeclaredIdentifier(c, n.info, ident.s)
   else:
@@ -141,7 +158,9 @@ proc importForwarded(c: PContext, n: PNode, exceptSet: IntSet; fromMod: PSym) =
 
 type
   ImportFlag = enum
+    ifInvalid
     ifPrivateImport
+    ifLazyImport
   ImportFlags = set[ImportFlag]
 
 proc importModuleAs(c: PContext; n: PNode, realModule: PSym, importFlags: ImportFlags): PSym =
@@ -161,13 +180,22 @@ proc importModuleAs(c: PContext; n: PNode, realModule: PSym, importFlags: Import
 proc transformImportAs(c: PContext; n: PNode): tuple[node: PNode, importFlags: ImportFlags] =
   var ret: typeof(result)
   proc processPragma(n2: PNode): PNode =
+    var word: TSpecialWord = wInvalid
     if n2.kind == nkPragmaExpr:
-      if n2.len == 2 and n2[1].kind == nkPragma and n2[1].len == 1 and n2[1][0].kind == nkIdent and whichKeyword(n2[1][0].ident) == wPrivateImport: discard
+      template bailout() =
+        globalError(c.config, n.info, "invalid import pragma, expected: " & ${wPrivateImport, wLazyImport})
+      if n2.len == 2 and n2[1].kind == nkPragma and n2[1].len == 1 and n2[1][0].kind == nkIdent:
+        word = whichKeyword(n2[1][0].ident)
+        if word notin {wPrivateImport, wLazyImport}: bailout()
       else:
-        globalError(c.config, n.info, "invalid import pragma, expected: " & wPrivateImport.canonPragmaSpelling)
+        bailout()
       if allowPrivateImport notin c.features:
         globalError(c.config, n.info, "requires --experimental:" & $allowPrivateImport)
-      ret.importFlags.incl ifPrivateImport
+      ret.importFlags.incl:
+        case word
+        of wPrivateImport: ifPrivateImport
+        of wLazyImport: ifLazyImport
+        else: bailout(); ifInvalid
       result = n2[0]
     else:
       result = n2
@@ -198,7 +226,8 @@ proc myImportModule(c: PContext, n: var PNode, importStmtResult: PNode): PSym =
                 toFullPath(c.config, c.graph.importStack[i+1])
       c.recursiveDep = err
     discard pushOptionEntry(c)
-    result = importModuleAs(c, n, c.graph.importModuleCallback(c.graph, c.module, f), importFlags)
+    let modImported = c.graph.importModuleCallback(c.graph, c.module, f, lazy = ifLazyImport in importFlags)
+    result = importModuleAs(c, n, modImported, importFlags)
     popOptionEntry(c)
     #echo "set back to ", L
     c.graph.importStack.setLen(L)

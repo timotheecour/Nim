@@ -62,7 +62,7 @@ type
     incr*: IncrementalCtx
     canonTypes*: Table[SigHash, PType]
     symBodyHashes*: Table[int, SigHash] # symId to digest mapping
-    importModuleCallback*: proc (graph: ModuleGraph; m: PSym, fileIdx: FileIndex): PSym {.nimcall.}
+    importModuleCallback*: proc (graph: ModuleGraph; m: PSym, fileIdx: FileIndex, lazy=false): PSym {.nimcall.}
     includeFileCallback*: proc (graph: ModuleGraph; m: PSym, fileIdx: FileIndex): PNode {.nimcall.}
     recordStmt*: proc (graph: ModuleGraph; m: PSym; n: PNode) {.nimcall.}
     cacheSeqs*: Table[string, PNode] # state that is shared to support the 'macrocache' API

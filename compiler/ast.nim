@@ -286,6 +286,8 @@ type
     sfTemplateParam   # symbol is a template parameter
     sfCursor          # variable/field is a cursor, see RFC 177 for details
     sfInjectDestructors # whether the proc needs the 'injectdestructors' transformation
+    sfLazyImport      # module is lazy imported
+    sfImportStub      # symbol is from lazy imported module
 
   TSymFlags* = set[TSymFlag]
 
@@ -574,6 +576,7 @@ type
     skPackage,            # symbol is a package (used for canonicalization)
     skAlias,              # an alias (needs to be resolved immediately)
     skAliasDeprecated,    # an skAlias for a deprecated symbol
+    skStub2,              # see lazyImport + skStub
   TSymKinds* = set[TSymKind]
 
 const
@@ -986,7 +989,7 @@ const
     tyProc, tyError}
   ExportableSymKinds* = {skVar, skConst, skProc, skFunc, skMethod, skType,
     skIterator, skMacro, skTemplate, skConverter, skEnumField, skLet, skStub,
-    skAlias, skAliasDeprecated}
+    skAlias, skAliasDeprecated, skStub2}
   PersistentNodeFlags*: TNodeFlags = {nfBase2, nfBase8, nfBase16,
                                       nfDotSetter, nfDotField,
                                       nfIsRef, nfPreventCg, nfLL,

@@ -71,6 +71,14 @@ proc newModule(graph: ModuleGraph; fileIdx: FileIndex): PSym =
 
 proc compileModule*(graph: ModuleGraph; fileIdx: FileIndex; flags: TSymFlags): PSym =
   result = graph.getModule(fileIdx)
+
+  template processModuleMaybe() =
+    if sfLazyImport in flags:
+      result.flags.incl sfLazyImport
+    else:
+      discard processModule(graph, result,
+        if sfMainModule in flags and graph.config.projectIsStdin: stdin.llStreamOpen else: nil)
+
   if result == nil:
     let filename = AbsoluteFile toFullPath(graph.config, fileIdx)
     let (r, id) = loadModuleSym(graph, fileIdx, filename)
@@ -84,22 +92,22 @@ proc compileModule*(graph: ModuleGraph; fileIdx: FileIndex; flags: TSymFlags): P
       partialInitModule(result, graph, fileIdx, filename)
       result.id = id
       assert result.id < 0
-    discard processModule(graph, result,
-      if sfMainModule in flags and graph.config.projectIsStdin: stdin.llStreamOpen else: nil)
+    processModuleMaybe()
+  elif sfLazyImport notin flags and sfLazyImport in result.flags:
+    processModuleMaybe()
   elif graph.isDirty(result):
     result.flags.excl sfDirty
     # reset module fields:
     initStrTable(result.tab)
     initStrTable(result.tabAll)
     result.ast = nil
-    discard processModule(graph, result,
-      if sfMainModule in flags and graph.config.projectIsStdin: stdin.llStreamOpen else: nil)
+    processModuleMaybe()
     graph.markClientsDirty(fileIdx)
 
-proc importModule*(graph: ModuleGraph; s: PSym, fileIdx: FileIndex): PSym {.procvar.} =
+proc importModule*(graph: ModuleGraph; s: PSym, fileIdx: FileIndex, lazy: bool): PSym {.procvar.} =
   # this is called by the semantic checking phase
   assert graph.config != nil
-  result = compileModule(graph, fileIdx, {})
+  result = compileModule(graph, fileIdx, if lazy: {sfLazyImport} else: {})
   graph.addDep(s, fileIdx)
   # keep track of import relationships
   if graph.config.hcrOn:

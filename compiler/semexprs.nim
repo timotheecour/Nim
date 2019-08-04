@@ -2777,7 +2777,7 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
     #   compiles:
     #     import x
     #
-    # works:
+    # PRTEMP: allows local import; but need to refine the semantics, eg should go out of scope etc
     if c.currentScope.depthLevel > 2 + c.compilesContextId:
       localError(c.config, n.info, errXOnlyAtModuleScope % "import")
     result = evalImport(c, n)

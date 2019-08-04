@@ -80,7 +80,7 @@ iterator walkScopes*(scope: PScope): PScope =
     yield current
     current = current.parent
 
-proc skipAlias*(s: PSym; n: PNode; conf: ConfigRef): PSym =
+proc skipAlias*(s: PSym; info: TLineInfo; conf: ConfigRef): PSym =
   result = s
   while true:
     if result == nil: return result
@@ -89,12 +89,15 @@ proc skipAlias*(s: PSym; n: PNode; conf: ConfigRef): PSym =
       let old = result
       result=result.owner
       if conf.cmd == cmdPretty:
-        prettybase.replaceDeprecated(conf, n.info, old, result)
+        prettybase.replaceDeprecated(conf, info, old, result)
       else:
-        message(conf, n.info, warnDeprecated, "use " & result.name.s & " instead; " &
+        message(conf, info, warnDeprecated, "use " & result.name.s & " instead; " &
                 old.name.s & " is deprecated")
     else:
       return result
+
+proc skipAlias*(s: PSym; n: PNode; conf: ConfigRef): PSym =
+  skipAlias(s, n.info, conf)
 
 proc localSearchInScope*(c: PContext, s: PIdent): PSym =
   result = strTableGet(c.currentScope.symbols, s)
@@ -339,7 +342,7 @@ proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
       elif n.sons[1].kind == nkAccQuoted:
         ident = considerQuotedIdent(c, n.sons[1])
       if ident != nil:
-        if checkOverridePrivate in flags:
+        if checkOverridePrivate in flags: # REMOVE?
           echo0 (m == c.module, c.module.name.s, m.name.s, ident.s)
           # callback_debugScopes2_wrap(m.topLevelScope, limit = 1)
           result = strTableGet(m.tabAll, ident).skipAlias(n, c.config)

@@ -1021,28 +1021,63 @@ proc typeSectionLeftSidePass(c: PContext, n: PNode) =
     checkSonsLen(a, 3, c.config)
     let name = a.sons[0]
     var s: PSym
-    if name.kind == nkDotExpr and a[2].kind == nkObjectTy:
+    if name.kind == nkDotExpr:
       let pkgName = considerQuotedIdent(c, name[0])
       let typName = considerQuotedIdent(c, name[1])
-      let pkg = c.graph.packageSyms.strTableGet(pkgName)
-      if pkg.isNil or pkg.kind != skPackage:
-        localError(c.config, name.info, "unknown package name: " & pkgName.s)
-      else:
-        let typsym = pkg.tab.strTableGet(typName)
-        if typsym.isNil:
-          s = semIdentDef(c, name[1], skType)
-          onDef(name[1].info, s)
-          s.typ = newTypeS(tyObject, c)
-          s.typ.sym = s
-          s.flags.incl sfForward
-          pkg.tab.strTableAdd s
-          addInterfaceDecl(c, s)
-        elif typsym.kind == skType and sfForward in typsym.flags:
-          s = typsym
-          addInterfaceDecl(c, s)
+      let fromMod = searchInScopes(c, pkgName).skipAlias(n.info, c.config)
+      if fromMod == nil:
+        let pkg = c.graph.packageSyms.strTableGet(pkgName)
+        if a[2].kind != nkObjectTy:
+          # TODO: support more kinds, as in lazyImport branch, and factor common code
+          localError(c.config, name.info, "bad type forward kind: " & $a[2].kind)
         else:
-          localError(c.config, name.info, typsym.name.s & " is not a type that can be forwarded")
-          s = typsym
+          if pkg.isNil or pkg.kind != skPackage:
+            localError(c.config, name.info, "unknown package name: " & pkgName.s)
+          else:
+            let typsym = pkg.tab.strTableGet(typName)
+            if typsym.isNil:
+              s = semIdentDef(c, name[1], skType)
+              onDef(name[1].info, s)
+              s.typ = newTypeS(tyObject, c)
+              s.typ.sym = s
+              s.flags.incl sfForward
+              pkg.tab.strTableAdd s
+              addInterfaceDecl(c, s)
+            elif typsym.kind == skType and sfForward in typsym.flags:
+              s = typsym
+              addInterfaceDecl(c, s)
+            else:
+              localError(c.config, name.info, typsym.name.s & " is not a type that can be forwarded")
+              s = typsym
+      else:
+        if fromMod.kind != skModule:
+          localError(c.config, name.info, "expected module, got " & $fromMod.kind)
+        else:
+          # TODO: MERGE w above?
+          let typsym = fromMod.tab.strTableGet(typName)
+          if typsym.isNil:
+            s = semIdentDef(c, name[1], skType)
+            onDef(name[1].info, s)
+            let akind = a[2].kind
+            # TODO: support more kinds, and automate conversions
+            let tkind = case akind
+            of nkObjectTy: tyObject
+            of nkRefTy: tyRef
+            of nkPtrTy: tyPtr
+            else: globalError(c.config, name.info, errUser, $akind); tyNone
+            # CHECKME: should it be: s.typ = newType(tkind, fromMod); s.owner = fromMod
+            s.typ = newTypeS(tkind, c)
+            s.typ.sym = s
+            s.flags.incl sfForward
+            s.flags.incl sfImportStub
+            fromMod.tab.strTableAdd s
+            addInterfaceDecl(c, s)
+          elif typsym.kind == skType and sfForward in typsym.flags:
+            s = typsym
+            addInterfaceDecl(c, s)
+          else:
+            localError(c.config, name.info, typsym.name.s & " is not a type that can be forwarded with lazyImport")
+            s = typsym
     else:
       s = semIdentDef(c, name, skType)
       onDef(name.info, s)
@@ -1065,6 +1100,17 @@ proc typeSectionLeftSidePass(c: PContext, n: PNode) =
               localError(c.config, name.info, "cannot complete type '" & s.name.s & "' twice; " &
                       "previous type completion was here: " & c.config$typsym.info)
             s = typsym
+      else:
+        let typsym = c.module.tab.strTableGet(s.name)
+        if typsym != nil:
+          if sfImportStub in typsym.flags:
+            doAssert sfForward in typsym.flags and sfNoForward notin typsym.flags
+            typeCompleted(typsym)
+            typsym.info = s.info
+          else:
+            localError(c.config, name.info, "cannot complete lazy import type '" & s.name.s & "' twice; " &
+                    "previous type completion was here: " & c.config$typsym.info)
+          s = typsym
       # add it here, so that recursive types are possible:
       if sfGenSym notin s.flags: addInterfaceDecl(c, s)
       elif s.owner == nil: s.owner = getCurrOwner(c)
@@ -1228,15 +1274,18 @@ proc typeSectionRightSidePass(c: PContext, n: PNode) =
       # give anonymous object a dummy symbol:
       var st = s.typ
       if st.kind == tyGenericBody: st = st.lastSon
-      internalAssert c.config, st.kind in {tyPtr, tyRef}
-      internalAssert c.config, st.lastSon.sym == nil
-      incl st.flags, tfRefsAnonObj
-      let obj = newSym(skType, getIdent(c.cache, s.name.s & ":ObjectType"),
-                              getCurrOwner(c), s.info)
-      if sfPure in s.flags:
-        obj.flags.incl sfPure
-      obj.typ = st.lastSon
-      st.lastSon.sym = obj
+      internalAssert c.config, st.kind in {tyPtr, tyRef}, $st.kind
+      if st.lastSon.sym != nil:
+        doAssert st.sym != nil and sfImportStub in st.sym.flags
+      else:
+        internalAssert c.config, st.lastSon.sym == nil
+        incl st.flags, tfRefsAnonObj
+        let obj = newSym(skType, getIdent(c.cache, s.name.s & ":ObjectType"),
+                                getCurrOwner(c), s.info)
+        if sfPure in s.flags:
+          obj.flags.incl sfPure
+        obj.typ = st.lastSon
+        st.lastSon.sym = obj
 
 
 proc checkForMetaFields(c: PContext; n: PNode) =

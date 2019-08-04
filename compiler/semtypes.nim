@@ -387,6 +387,7 @@ proc semTypeIdent(c: PContext, n: PNode): PSym =
         else:
           localError(c.config, n.info, errTypeExpected)
           return errorSym(c, n)
+      # if result.kind == skStub2: discard
       if result.kind != skType and result.magic notin {mStatic, mType, mTypeOf}:
         # this implements the wanted ``var v: V, x: V`` feature ...
         var ov: TOverloadIter
@@ -849,10 +850,13 @@ proc semAnyRef(c: PContext; n: PNode; kind: TTypeKind; prev: PType): PType =
     let n = if n[0].kind == nkBracket: n[0] else: n
     checkMinSonsLen(n, 1, c.config)
     let body = n.lastSon
+    let prev2 =
+      if prev != nil and prev.sym != nil and sfImportStub in prev.sym.flags and sfNoForward in prev.sym.flags: prev.lastSon
+      else: nil
     var t = if prev != nil and body.kind == nkObjectTy and tfInheritable in prev.flags:
-              semObjectNode(c, body, nil, isInheritable=true)
+              semObjectNode(c, body, prev2, isInheritable=true)
             else:
-              semTypeNode(c, body, nil)
+              semTypeNode(c, body, prev2)
     if t.kind == tyTypeDesc and tfUnresolved notin t.flags:
       t = t.base
     if t.kind == tyVoid:
@@ -877,7 +881,10 @@ proc semAnyRef(c: PContext; n: PNode; kind: TTypeKind; prev: PType): PType =
         else:
           message(c.config, n.info, warnDeprecated, "region for pointer types is deprecated")
           addSonSkipIntLit(result, region)
-    addSonSkipIntLit(result, t)
+    if prev2 == nil:
+      addSonSkipIntLit(result, t)
+    else:
+      propagateToOwner(result, t) # CHECKME
     if tfPartial in result.flags:
       if result.lastSon.kind == tyObject: incl(result.lastSon.flags, tfPartial)
     #if not isNilable: result.flags.incl tfNotNil
