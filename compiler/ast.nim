@@ -286,8 +286,8 @@ type
     sfTemplateParam   # symbol is a template parameter
     sfCursor          # variable/field is a cursor, see RFC 177 for details
     sfInjectDestructors # whether the proc needs the 'injectdestructors' transformation
-    sfLazyImport      # module is lazy imported
     sfImportStub      # symbol is from lazy imported module
+    sfLazySem         # symbol is from lazy semantic
 
   TSymFlags* = set[TSymFlag]
 
@@ -310,7 +310,7 @@ const
     # an expression was hoised to an anonymous variable.
     # the flag is applied to the var/let symbol
 
-  sfNoForward* = sfRegister
+  sfNoForward* = sfRegister # TODO: this conflation seems bad
     # forward declarations are not required (per module)
   sfReorder* = sfForward
     # reordering pass is enabled
@@ -874,6 +874,8 @@ type
                               # deprecated modules.
     when defined(nimsuggest):
       allUsages*: seq[TLineInfo]
+    # PRTEMP
+    scope*: PScope # for lazySem resolve
 
   TTypeSeq* = seq[PType]
   TLockLevel* = distinct int16

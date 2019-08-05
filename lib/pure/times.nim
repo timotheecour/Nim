@@ -361,6 +361,8 @@ type
     Nanoseconds, Microseconds, Milliseconds, Seconds, Minutes, Hours, Days,
     Weeks, Months, Years
 
+  # FixedTimeUnit0* = BAR0
+
   FixedTimeUnit* = range[Nanoseconds..Weeks] ## \
       ## Subrange of ``TimeUnit`` that only includes units of fixed duration.
       ## These are the units that can be represented by a ``Duration``.

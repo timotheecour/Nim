@@ -297,6 +297,10 @@ type
   seq*[T]{.magic: "Seq".}             ## Generic type to construct sequences.
   set*[T]{.magic: "Set".}             ## Generic type to construct bit sets.
 
+
+when defined(nimvarargstyped): # PRTEMP
+  proc debugEcho*(x: varargs[typed, `$`]) {.magic: "Echo", noSideEffect, tags: [], raises: [].}
+
 when defined(nimUncheckedArrayTyp):
   type
     UncheckedArray*[T]{.magic: "UncheckedArray".}
@@ -3153,6 +3157,13 @@ when not defined(JS) and not defined(nimscript):
 when defined(nimV2):
   include core/runtime_v2
 
+when false:
+  proc fun1() = discard
+  # import system/dollars
+  # export dollars
+  proc fun2() = discard
+  static:
+    debugEcho "D20190805T212452"
 import system/assertions
 export assertions
 
@@ -3448,7 +3459,8 @@ when defined(nimvarargstyped):
     ## <manual.html#pragmas-nosideeffect-pragma>`_ you can use `debugEcho
     ## <#debugEcho,varargs[typed,]>`_ instead.
 
-  proc debugEcho*(x: varargs[typed, `$`]) {.magic: "Echo", noSideEffect,
+  when false:
+   proc debugEcho*(x: varargs[typed, `$`]) {.magic: "Echo", noSideEffect,
                                             tags: [], raises: [].}
     ## Same as `echo <#echo,varargs[typed,]>`_, but as a special semantic rule,
     ## ``debugEcho`` pretends to be free of side effects, so that it can be used
@@ -4526,3 +4538,5 @@ export io
 
 when not defined(createNimHcr):
   include nimhcr
+
+const nimEnableLazy* = true # PRTEMP MOVE

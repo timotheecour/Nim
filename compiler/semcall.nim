@@ -585,6 +585,8 @@ proc explicitGenericSym(c: PContext, n: PNode, s: PSym): PNode =
     var arg = n[i].typ
     # try transforming the argument into a static one before feeding it into
     # typeRel
+    # TODO PRTEMP: formal was nil
+    # if formal != nil and formal.kind == tyStatic and arg.kind != tyStatic:
     if formal.kind == tyStatic and arg.kind != tyStatic:
       let evaluated = c.semTryConstExpr(c, n[i])
       if evaluated != nil:

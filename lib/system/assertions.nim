@@ -19,12 +19,37 @@ proc `$`(info: InstantiationInfo): string =
 proc raiseAssert*(msg: string) {.noinline, noreturn.} =
   sysFatal(AssertionError, msg)
 
-proc failedAssertImpl*(msg: string) {.raises: [], tags: [].} =
+# PRTEMP
+# when defined(nimHasLazySemantic):
+when false: # D20190807T170256
+  #[
+  causes:
+  /Users//Users/timothee/git_clone/nim/Nim/lib/pure/times.nim
+  Error: can raise an unlisted exception: ref AssertionError
+  ]#
+  # static:
+  #   debugEcho "D20190805T233149 PRTEMP"
+  proc failedAssertImpl*(msg: string) =
+    raiseAssert(msg)
+else:
+  # type Hide0 = proc (msg: string) {.noinline, raises: [], noSideEffect, tags: [].} # PRTEMP
+ proc failedAssertImpl*(msg: string) {.raises: [], tags: [].} =
   # trick the compiler to not list ``AssertionError`` when called
   # by ``assert``.
   type Hide = proc (msg: string) {.noinline, raises: [], noSideEffect,
                                     tags: [].}
   Hide(raiseAssert)(msg)
+  # # Hide(raiseAssert)(msg)
+  # # const temp = Hide(raiseAssert)
+  # when declared(Hide0):
+  #   discard
+  # const temp = Hide0(raiseAssert)
+  # temp(msg)
+  # # type foo = Hide(raiseAssert)(msg)
+  # # raiseAssert(msg) # PRTEMP
+  # # raiseAssert(msg) # PRTEMP
+  # # Hide0(raiseAssert)(msg)
+  # discard
 
 template assertImpl(cond: bool, msg: string, expr: string, enabled: static[bool]) =
   when enabled:

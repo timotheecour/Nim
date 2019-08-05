@@ -52,3 +52,10 @@ else:
 template since(version, body: untyped) {.dirty.} =
   when version <= (NimMajor, NimMinor):
     body
+
+# when defined(nimHasLazySemantic): # PRTEMP
+#   proc tmp1()=discard
+#   proc tmp2() {.rtl.} = discard
+#   tmp2()
+#   # when true:
+#   #   tmp2()

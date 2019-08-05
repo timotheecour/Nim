@@ -221,7 +221,11 @@ proc toMsgFilename*(conf: ConfigRef; info: FileIndex): string =
   result = if (optListFullPaths in conf.globalOptions) or
               (relPath.len > absPath.len) or
               (relPath.count("..") > 2):
-            callback_toLocPrettySimpleFile_wrap(absPath)
+            when defined timn_disable_nimplugin:
+              # D20190722T100330
+              absPath
+            else:
+              callback_toLocPrettySimpleFile_wrap(absPath)
            else:
              relPath
 
@@ -343,7 +347,8 @@ proc log*(s: string) {.procvar.} =
     close(f)
 
 proc quit(conf: ConfigRef; msg: TMsgKind) {.gcsafe.} =
-  if defined(debug) or msg == errInternal or hintStackTrace in conf.notes:
+  # BUG:D20190805T121142 # TODO: instead of nimStacktraceOnError, make it a runtime param say when compiling a regular nim prog so we don't need to recompile? do smthg general allowing to pass flags
+  if defined(debug) or defined(nimStacktraceOnError) or msg == errInternal or hintStackTrace in conf.notes:
     {.gcsafe.}:
       if stackTraceAvailable() and isNil(conf.writelnHook):
         writeStackTrace()
@@ -373,7 +378,7 @@ proc `==`*(a, b: TLineInfo): bool =
 proc exactEquals*(a, b: TLineInfo): bool =
   result = a.fileIndex == b.fileIndex and a.line == b.line and a.col == b.col
 
-proc writeContext(conf: ConfigRef; lastinfo: TLineInfo) =
+proc writeContext*(conf: ConfigRef; lastinfo: TLineInfo) =
   const instantiationFrom = "template/generic instantiation from here"
   const instantiationOfFrom = "template/generic instantiation of `$1` from here"
   var info = lastinfo

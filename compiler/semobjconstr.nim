@@ -360,6 +360,19 @@ proc semConstructType(c: PContext, initExpr: PNode,
   var t = t
   result = initUnknown
   while true:
+    # proc fun(): string =
+    #   result.add "semConstructType"
+    #   if t == nil: return
+    #   result.add ",ok1"
+    #   if t.sym == nil: return
+    #   result.add ",ok2"
+    #   if t.sym.ast == nil: return
+    #   result.add ",ok3"
+    # echo0 (fun(), t.n == nil)
+    if t.n == nil:
+      t = semTypeNode(c, t.sym.ast.lastSon, t) # IMPROVE
+      # echo0 (fun(), t.n == nil)
+
     let status = semConstructFields(c, t.n, initExpr, flags)
     mergeInitStatus(result, status)
     if status in {initPartial, initNone, initUnknown}:
@@ -377,6 +390,8 @@ proc semObjConstr(c: PContext, n: PNode, flags: TExprFlags): PNode =
     localError(c.config, n.info, errGenerated, "object constructor needs an object type")
     return
 
+  # PRTEMP
+
   t = skipTypes(t, {tyGenericInst, tyAlias, tySink, tyOwned})
   if t.kind == tyRef:
     t = skipTypes(t.sons[0], {tyGenericInst, tyAlias, tySink, tyOwned})
@@ -386,7 +401,7 @@ proc semObjConstr(c: PContext, n: PNode, flags: TExprFlags): PNode =
       # multiple times as long as they don't have closures.
       result.typ.flags.incl tfHasOwned
   if t.kind != tyObject:
-    localError(c.config, n.info, errGenerated, "object constructor needs an object type")
+    localError(c.config, n.info, errGenerated, "object constructor needs an object type: " & $t.kind)
     return
 
   # Check if the object is fully initialized by recursively testing each

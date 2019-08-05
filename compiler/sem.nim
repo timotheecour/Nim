@@ -27,6 +27,7 @@ when not defined(leanCompiler):
   import spawn, semparallel
 
 # implementation
+proc typeSectionRightSidePassInner*(c: PContext, a: PNode) # PRTEMP
 
 proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode {.procvar.}
 proc semExprWithType(c: PContext, n: PNode, flags: TExprFlags = {}): PNode {.
@@ -562,7 +563,8 @@ proc semStmtAndGenerateGenerics(c: PContext, n: PNode): PNode =
       inc c.topStmts
   else:
     inc c.topStmts
-  if sfNoForward in c.module.flags:
+  # if sfNoForward in c.module.flags:
+  when false: # this may be bad, see D20190805T200742
     result = semAllTypeSections(c, n)
   else:
     result = n

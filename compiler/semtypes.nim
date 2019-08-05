@@ -314,6 +314,11 @@ proc semArrayIndex(c: PContext, n: PNode): PType =
         #localError(c.config, n[1].info, errConstExprExpected)
 
 proc semArray(c: PContext, n: PNode, prev: PType): PType =
+  proc semTypeNodeLazyResolve(c: PContext, n: PNode, prev: PType): PType {.importc.}
+  # let prev = semTypeNodeLazyResolve(c, n, prev) # TODO: only do all these in 1 place instead of scattered everywhere
+  # let prev = semTypeNodeLazyResolve(c, n, prev) # TODO: only do all these in 1 place instead of scattered everywhere
+  # let prev = semTypeNodeImpl(c, n, prev) # TODO: only do all these in 1 place instead of scattered everywhere
+
   var base: PType
   if len(n) == 3:
     # 3 = length(array indx base)
@@ -324,7 +329,7 @@ proc semArray(c: PContext, n: PNode, prev: PType): PType =
       if indxB.skipTypes({tyRange}).kind in {tyUInt, tyUInt64}:
         discard
       elif not isOrdinalType(indxB):
-        localError(c.config, n.sons[1].info, errOrdinalTypeExpected)
+        localError(c.config, n.sons[1].info, errOrdinalTypeExpected & " " & $indxB.kind)
       elif enumHasHoles(indxB):
         localError(c.config, n.sons[1].info, "enum '$1' has holes" %
                    typeToString(indxB.skipTypes({tyRange})))
@@ -398,6 +403,16 @@ proc semTypeIdent(c: PContext, n: PNode): PSym =
         else:
           if result.kind != skError: localError(c.config, n.info, errTypeExpected)
           return errorSym(c, n)
+
+      if result.typ == nil:
+        if result.ast == nil:
+          # happens w lazy import; IMPROVE
+          echo0 (result.info.callback_toLocPrettySimple_wrap)
+          echo0 (result.name.s)
+          doAssert false
+        result.typ = semTypeNode(c, result.ast, nil)
+        doAssert result.typ != nil
+
       if result.typ.kind != tyGenericParam:
         # XXX get rid of this hack!
         var oldInfo = n.info
@@ -1460,7 +1475,7 @@ proc semTypeExpr(c: PContext, n: PNode; prev: PType): PType =
         let alias = maybeAliasType(c, result, prev)
         if alias != nil: result = alias
   else:
-    localError(c.config, n.info, "expected type, but got: " & n.renderTree)
+    localError(c.config, n.info, "expected type, but got: " & n.renderTree & " " & $n.typ.kind)
     result = errorType(c)
 
 proc freshType(res, prev: PType): PType {.inline.} =
@@ -1577,7 +1592,48 @@ proc semTypeof2(c: PContext; n: PNode; prev: PType): PType =
   fixupTypeOf(c, prev, t)
   result = t.typ
 
+proc semTypeNodeImpl(c: PContext, n: PNode, prev: PType): PType
+
 proc semTypeNode(c: PContext, n: PNode, prev: PType): PType =
+  callback_onSemTypeNode_wrap(c, n, prev, result, true)
+  defer: callback_onSemTypeNode_wrap(c, n, prev, result, false)
+  result = semTypeNodeImpl(c, n, prev)
+  # PRTEMP
+  var s2 = ""
+  if result != nil and result.sym!=nil: s2 = result.sym.name.s
+  echo0 (c.module.name.s, n.info.callback_toLocPrettySimple_wrap, s2)
+
+  when false: # this caused D20190807T165612 attempt to redefine: 'sival_ptr'
+    # if result == nil: echo0 (n.kind, n.info.callback_toLocPrettySimple_wrap)
+    if result != nil and result.kind == tyForward and result.sym!=nil and sfLazySem in result.sym.flags:
+      #[
+      Note:
+      `type Ordinal* {.magic: Ordinal.}[T]` => result is nil it seems? (and n.kind == nkEmpty)
+      ]#
+      # echo 
+      echo0 ("typeSectionRightSidePassInner", s2)
+      typeSectionRightSidePassInner(c, result.sym.ast)
+      doAssert result.kind != tyForward
+  # PRTEMP
+  # echo0 result.ast.typ.kind
+  # echo0 result.sym.kind
+  # typeSectionRightSidePassInner(c, result.ast)
+  # echo0 result.sym.isNil
+  # echo0 result.sym.ast.isNil
+  #[
+  TODO: typeSectionFinalPass ?
+  ]#
+  # echo0 result.ast.typ.kind
+  # doAssert result.sem.ast.typ.kind != tyForward
+
+proc semTypeNodeLazyResolve(c: PContext, n: PNode, prev: PType): PType {.exportc.} = # PRTEMP
+  echo0 "semTypeNodeLazyResolve"
+  # IMPROVE, make it safer, more checks
+  # if body.kind == tyForward: doAssert 
+  return semTypeNode(c, n, prev)
+
+proc semTypeNodeImpl(c: PContext, n: PNode, prev: PType): PType =
+  echo0 ("semTypeNodeImpl D20190806T010252", n.info.callback_toLocPrettySimple_wrap, n.kind)
   result = nil
   inc c.inTypeContext
 
@@ -1675,6 +1731,7 @@ proc semTypeNode(c: PContext, n: PNode, prev: PType): PType =
     var head = n.sons[0]
     var s = if head.kind notin nkCallKinds: semTypeIdent(c, head)
             else: symFromExpectedTypeNode(c, semExpr(c, head))
+    echo0 ("nkBracketExpr before", n.info.callback_toLocPrettySimple_wrap, s.magic)
     case s.magic
     of mArray: result = semArray(c, n, prev)
     of mOpenArray: result = semContainer(c, n, tyOpenArray, "openarray", prev)
@@ -1712,7 +1769,9 @@ proc semTypeNode(c: PContext, n: PNode, prev: PType): PType =
     of mRef: result = semAnyRef(c, n, tyRef, prev)
     of mPtr: result = semAnyRef(c, n, tyPtr, prev)
     of mTuple: result = semTuple(c, n, prev)
-    else: result = semGeneric(c, n, s, prev)
+    else:
+      result = semGeneric(c, n, s, prev)
+      echo0 ("nkBracketExpr after", result.kind)
   of nkDotExpr:
     let typeExpr = semExpr(c, n)
     if typeExpr.typ.isNil:
@@ -1815,7 +1874,7 @@ proc semTypeNode(c: PContext, n: PNode, prev: PType): PType =
   of nkStmtListType: result = semStmtListType(c, n, prev)
   of nkBlockType: result = semBlockType(c, n, prev)
   else:
-    localError(c.config, n.info, "type expected, but got: " & renderTree(n))
+    localError(c.config, n.info, "type expected, but got: " & renderTree(n) & " kind:" & $n.kind)
     result = newOrPrevType(tyError, prev, c)
   n.typ = result
   dec c.inTypeContext

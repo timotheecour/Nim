@@ -68,19 +68,26 @@ proc searchForProcNew(c: PContext, scope: PScope, fn: PSym): PSym =
   result = initIdentIter(it, scope.symbols, fn.name)
   while result != nil:
     if result.kind == fn.kind: #and sameType(result.typ, fn.typ, flags):
-      case equalParams(result.typ.n, fn.typ.n)
-      of paramsEqual:
-        if (sfExported notin result.flags) and (sfExported in fn.flags):
-          let message = ("public implementation '$1' has non-public " &
-                         "forward declaration at $2") %
-                        [getProcHeader(c.config, result, getDeclarationPath = false), c.config$result.info]
-          localError(c.config, fn.info, message)
-        return
-      of paramsIncompatible:
-        localError(c.config, fn.info, "overloaded '$1' leads to ambiguous calls" % fn.name.s)
-        return
-      of paramsNotEqual:
-        discard
+      # if fn.flags in  == result:
+      if result.typ == nil:
+        doAssert sfLazySem in result.flags
+      # if fn == result:
+        # lazySem; TODO: check
+        echo0 ("searchForProcNew", result.name.s, fn.name.s)
+      else:
+        case equalParams(result.typ.n, fn.typ.n)
+        of paramsEqual:
+          if (sfExported notin result.flags) and (sfExported in fn.flags):
+            let message = ("public implementation '$1' has non-public " &
+                           "forward declaration at $2") %
+                          [getProcHeader(c.config, result, getDeclarationPath = false), c.config$result.info]
+            localError(c.config, fn.info, message)
+          return
+        of paramsIncompatible:
+          localError(c.config, fn.info, "overloaded '$1' leads to ambiguous calls" % fn.name.s)
+          return
+        of paramsNotEqual:
+          discard
     result = nextIdentIter(it, scope.symbols)
 
 proc searchForProc*(c: PContext, scope: PScope, fn: PSym): PSym =

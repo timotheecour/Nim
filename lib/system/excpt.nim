@@ -251,6 +251,49 @@ proc `$`(s: seq[StackTraceEntry]): string =
     elif s[i].line == reraisedFromEnd: result.add "]]\n"
     else: addFrameEntry(result, s[i])
 
+when false: # PRTEMP
+  proc fun2(a: array[3, int]) =
+    for i, ai in a:
+      debugEcho(i, " ", ai)
+  proc fun2b[N](a: array[N, int]) =
+    for i, ai in a:
+      debugEcho(i, " ", ai)
+
+  proc fun2c[T](a: array[3, T]) =
+    for i, ai in a:
+      debugEcho(i, " ", ai)
+
+  proc fun2d[N,T](a: array[N, T]) =
+    for i, ai in a:
+      debugEcho(i, " ", ai)
+
+  proc fun2e[T](a: T) =
+    for i, ai in a:
+      debugEcho(i, " ", ai)
+
+  static: debugEcho("D20190805T225304")
+  static: debugEcho(12,1,'a', "asdf", 2.3, " ")
+  proc fun1() =
+    const s0 = [1,2,3]
+    for i, ai in s0:
+      debugEcho(i, " ", ai)
+    fun2(s0)
+    fun2b(s0)
+    fun2c(s0)
+    fun2d(s0)
+    fun2e(s0)
+
+    # for i, ai in 0..3:
+    for ai in 0..3:
+      debugEcho(defined(nimscipt), " ", defined(c), " " , ai)
+      # debugEcho(defined(nimscipt), " ", defined(c), " " , ai,  " ", i)
+  static: fun1()
+  const s0 = [1,2]
+  const tmp0 = len("adsf")
+  const tmp1 = len(@[1,2])
+  const tmp2 = len([1,2])
+  const tmp3 = len("adsf")
+
 proc auxWriteStackTrace(f: PFrame, s: var string) =
   when hasThreadSupport:
     var

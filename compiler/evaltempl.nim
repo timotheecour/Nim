@@ -73,6 +73,7 @@ proc evalTemplateAux(templ, actual: PNode, c: var TemplCtx, result: PNode) =
       result.add res
     else:
       result.add newNodeI(nkEmpty, templ.info)
+      # result.add templ # part of "fix" for D20190808T141421
   else:
     var isDeclarative = false
     if templ.kind in {nkProcDef, nkFuncDef, nkMethodDef, nkIteratorDef,

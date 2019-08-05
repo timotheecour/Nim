@@ -1005,18 +1005,14 @@ proc typeSectionTypeName(c: PContext; n: PNode): PNode =
     result = n
   if result.kind != nkSym: illFormedAst(n, c.config)
 
-
-proc typeSectionLeftSidePass(c: PContext, n: PNode) =
-  # process the symbols on the left side for the whole type section, before
-  # we even look at the type definitions on the right
-  for i in 0 ..< len(n):
-    var a = n.sons[i]
+proc typeSectionLeftSidePassImpl*(c: PContext, a: PNode) =
     when defined(nimsuggest):
       if c.config.cmd == cmdIdeTools:
         inc c.inTypeContext
         suggestStmt(c, a)
         dec c.inTypeContext
-    if a.kind == nkCommentStmt: continue
+    # if a.kind == nkCommentStmt: continue
+    if a.kind == nkCommentStmt: return # was continue before proc
     if a.kind != nkTypeDef: illFormedAst(a, c.config)
     checkSonsLen(a, 3, c.config)
     let name = a.sons[0]
@@ -1024,7 +1020,7 @@ proc typeSectionLeftSidePass(c: PContext, n: PNode) =
     if name.kind == nkDotExpr:
       let pkgName = considerQuotedIdent(c, name[0])
       let typName = considerQuotedIdent(c, name[1])
-      let fromMod = searchInScopes(c, pkgName).skipAlias(n.info, c.config)
+      let fromMod = searchInScopes(c, pkgName).skipAlias(a.info, c.config)
       if fromMod == nil:
         let pkg = c.graph.packageSyms.strTableGet(pkgName)
         if a[2].kind != nkObjectTy:
@@ -1115,10 +1111,21 @@ proc typeSectionLeftSidePass(c: PContext, n: PNode) =
       if sfGenSym notin s.flags: addInterfaceDecl(c, s)
       elif s.owner == nil: s.owner = getCurrOwner(c)
 
+    s.ast = a # CHECKME
+    if sfNoForward in c.module.flags:
+      s.flags.incl sfLazySem
+
     if name.kind == nkPragmaExpr:
       a.sons[0].sons[0] = newSymNode(s)
     else:
       a.sons[0] = newSymNode(s)
+
+proc typeSectionLeftSidePass(c: PContext, n: PNode) =
+  # process the symbols on the left side for the whole type section, before
+  # we even look at the type definitions on the right
+  for i in 0 ..< len(n):
+    var a = n.sons[i]
+    typeSectionLeftSidePassImpl(c, a)
 
 proc checkCovariantParamsUsages(c: PContext; genericType: PType) =
   var body = genericType[^1]
@@ -1189,7 +1196,11 @@ proc checkCovariantParamsUsages(c: PContext; genericType: PType) =
 proc typeSectionRightSidePass(c: PContext, n: PNode) =
   for i in 0 ..< len(n):
     var a = n.sons[i]
-    if a.kind == nkCommentStmt: continue
+    echo0 (c.module.name.s, i, sonsLen(n), a.info.callback_toLocPrettySimple_wrap)
+    typeSectionRightSidePassInner(c, a)
+
+proc typeSectionRightSidePassInner*(c: PContext, a: PNode) =
+    if a.kind == nkCommentStmt: return # was continue, but moved to proc
     if a.kind != nkTypeDef: illFormedAst(a, c.config)
     checkSonsLen(a, 3, c.config)
     let name = typeSectionTypeName(c, a.sons[0])
@@ -1217,7 +1228,7 @@ proc typeSectionRightSidePass(c: PContext, n: PNode) =
       # so we use tyNone instead of nil to not crash for strange conversions
       # like: mydata.seq
       rawAddSon(s.typ, newTypeS(tyNone, c))
-      s.ast = a
+      # s.ast = a
       inc c.inGenericContext
       var body = semTypeNode(c, a.sons[2], nil)
       dec c.inGenericContext
@@ -1256,7 +1267,7 @@ proc typeSectionRightSidePass(c: PContext, n: PNode) =
         # this can happen for e.g. tcan_alias_specialised_generic:
         assignType(s.typ, t)
         #debug s.typ
-      s.ast = a
+      # s.ast = a
       popOwner(c)
       # If the right hand side expression was a macro call we replace it with
       # its evaluated result here so that we don't execute it once again in the
@@ -1403,7 +1414,29 @@ proc semTypeSection(c: PContext, n: PNode): PNode =
   ## Processes a type section. This must be done in separate passes, in order
   ## to allow the type definitions in the section to reference each other
   ## without regard for the order of their definitions.
-  if sfNoForward notin c.module.flags or nfSem notin n.flags:
+  echo0 (sfNoForward in c.module.flags, nfSem in n.flags, c.module.name.s)
+
+  # if sfNoForward in c.module.flags and nfSem notin n.flags and isTopLevel(c):
+  # if sfNoForward in c.module.flags and nfSem notin n.flags and isTopLevel(c): # PRTEMP
+  when false: # this might cause D20190807T170256 Hide(raiseAssert)(msg)
+    inc c.inTypeContext
+    for ai in n:
+      echo0 ai.info.callback_toLocPrettySimple_wrap
+      typeSectionLeftSidePassImpl(c, ai)
+      if ai.kind != nkTypeDef: continue # comments
+      let name = typeSectionTypeName(c, ai.sons[0])
+      let s = name.sym
+      if ai.lastSon.kind == nkEnumTy or s.magic != mNone:
+        echo0 s.name.s
+        # need to put enum members in scope; and magics are needed to avoid `internal error: wanted: tyInt got: tyForward` for getSysType
+        typeSectionRightSidePassInner(c, ai)
+
+    dec c.inTypeContext
+    result = n
+    return
+
+  # if sfNoForward notin c.module.flags or nfSem notin n.flags:
+  if nfSem notin n.flags:
     inc c.inTypeContext
     typeSectionLeftSidePass(c, n)
     typeSectionRightSidePass(c, n)
@@ -1808,6 +1841,18 @@ proc semMethodPrototype(c: PContext; s: PSym; n: PNode) =
 proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
                 validPragmas: TSpecialWords,
                 phase = stepRegisterSymbol): PNode =
+  # var validPragmas = validPragmas
+  # FACTOR logic PRTEMP
+  when true:
+    let validPragmas = case kind
+    of skIterator: iteratorPragmas
+    of skProc: procPragmas
+    of skFunc: procPragmas
+    of skMethod: methodPragmas
+    of skConverter: converterPragmas
+    of skMacro: macroPragmas
+    else: doAssert(false, $kind); macroPragmas.type.default
+
   result = semProcAnnotation(c, n, validPragmas)
   if result != nil: return result
   result = n
@@ -1817,7 +1862,6 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
   var isAnon = false
   if n[namePos].kind != nkSym:
     assert phase == stepRegisterSymbol
-
     if n[namePos].kind == nkEmpty:
       s = newSym(kind, c.cache.idAnon, getCurrOwner(c), n.info)
       incl(s.flags, sfUsed)
@@ -1826,20 +1870,61 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
       s = semIdentDef(c, n.sons[0], kind)
     n.sons[namePos] = newSymNode(s)
     s.ast = n
-    #s.scope = c.currentScope
-    when false:
-      # disable for now
-      if sfNoForward in c.module.flags and
-         sfSystemModule notin c.module.flags:
+    #s.scope = c.currentScope # TODO: do i need this?
+    when nimEnableLazy:
+      # TODO: only for top-level module?
+      # if sfNoForward in c.module.flags and sfSystemModule notin c.module.flags: # PRTEMP; TODO : maybe just magics?
+
+      proc isImplNeeded(s: PSym, n: PNode): bool =
+        # if s.name.s == "nimCStrLen":
+        #   callback_debug_multi2(n)
+        #   callback_debug_multi2(s)
+        if s.kind == skProc:
+          if n.sons[4].len > 0: return true # PRTEMP
+          for ai in n.sons[4]:
+            # if ai.kind == nkIdent and ai.ident.s == "compilerproc"
+            # TODO: this doesn't work if there's aliasing, eg via inclrtl; need semantic step; maybe need better way; maybe via user pragma?
+            if ai.kind != nkIdent: continue
+            if whichKeyword(ai.ident) == wCompilerProc:
+              # compilerRtl
+              return true
+            # HACK! BAD
+            if ai.ident.s == "compilerRtl":
+              return true
+
+        return false
+
+      if sfNoForward in c.module.flags and sfSystemModule notin c.module.flags and not isImplNeeded(s, n): # PRTEMP; TODO : maybe just magics?
+       # TODO: also need to always compile compilerproc to avoid: `system module needs (eg: echoBinSafe,nimCStrLen)` which are needed eg for codegen
+      # if sfNoForward in c.module.flags:
         addInterfaceOverloadableSymAt(c, c.currentScope, s)
-        s.flags.incl sfForward
+        # s.flags.incl sfForward
+        s.flags.incl sfLazySem
+        # s.validPragmasBackup = validPragmas
+        s.scope = c.currentScope
+        echo0 ("semProcAux lazy", s.name.s, n.info.callback_toLocPrettySimple_wrap, c.module.name.s)
         return
+      echo0 ("semProcAux nonlazy", s.name.s, n.info.callback_toLocPrettySimple_wrap, c.module.name.s)
   else:
     s = n[namePos].sym
     s.owner = getCurrOwner(c)
     typeIsDetermined = s.typ == nil
     s.ast = n
     #s.scope = c.currentScope
+
+  # var oldScope0 = c.currentScope
+  var oldScope0: PScope = nil
+   # = c.currentScope
+  if sfLazySem in s.flags:
+    # TODO: newContext ? what about stuff like `s.options = c.config.options` ?
+    # 
+    oldScope0 = c.currentScope
+    c.currentScope = s.scope
+    echo0 ("semProcAux resolve", s.name.s, n.info.callback_toLocPrettySimple_wrap(), c.module.name.s)
+  defer:
+    if oldScope0 != nil:
+      echo0 "semProcAux: reset scope"
+      c.currentScope = oldScope0
 
   s.options = c.config.options
 
@@ -1875,6 +1960,10 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     incl(s.typ.flags, tfNoSideEffect)
   var proto: PSym = if isAnon: nil
                     else: searchForProc(c, oldScope, s)
+  if proto == s:
+    doAssert sfLazySem in s.flags
+    proto = nil
+
   if proto == nil:
     if s.kind == skIterator:
       if s.typ.callConv != ccClosure:
@@ -1910,7 +1999,7 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
           ("'" & proto.name.s & "' from " & c.config$proto.info))
     styleCheckDef(c.config, s)
     onDefResolveForward(n[namePos].info, proto)
-    if sfForward notin proto.flags and proto.magic == mNone:
+    if sfForward notin proto.flags and sfLazySem notin proto.flags and proto.magic == mNone:
       wrongRedefinition(c, n.info, proto.name.s, proto.info)
     excl(proto.flags, sfForward)
     closeScope(c)         # close scope with wrong parameter symbols
@@ -2025,6 +2114,7 @@ proc semIterator(c: PContext, n: PNode): PNode =
   # sem'checked already. (Or not, if the macro skips it.)
   if result.kind != n.kind: return
   var s = result.sons[namePos].sym
+  determineType(c, s) # bugfix, for lazySem
   var t = s.typ
   if t.sons[0] == nil and s.typ.callConv != ccClosure:
     localError(c.config, n.info, "iterator needs a return type")
@@ -2094,7 +2184,9 @@ proc semMacroDef(c: PContext, n: PNode): PNode =
   # sem'checked already. (Or not, if the macro skips it.)
   if result.kind != nkMacroDef: return
   var s = result.sons[namePos].sym
+  determineType(c, s) # CHECKME
   var t = s.typ
+
   var allUntyped = true
   for i in 1 .. t.n.len-1:
     let param = t.n.sons[i].sym

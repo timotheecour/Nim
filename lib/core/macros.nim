@@ -1279,13 +1279,19 @@ proc `body=`*(someProc: NimNode, val: NimNode) {.compileTime.} =
   else:
     badNodeKind someProc, "body="
 
-proc basename*(a: NimNode): NimNode {.compileTime, benign.}
+# when not defined(nimHasLazySemantic): # PRTEMP
+# when true: # PRTEMP
+when false: # PRTEMP
+  proc basename*(a: NimNode): NimNode {.compileTime, benign.} # CHECKME:commenting out makes lazySem work
+# when not defined(nimHasLazySemantic): # PRTEMP
+proc basename*(a: NimNode): NimNode
 
 proc `$`*(node: NimNode): string {.compileTime.} =
   ## Get the string of an identifier node.
   case node.kind
   of nnkPostfix:
-    result = node.basename.strVal & "*"
+    # result = node.basename.strVal & "*"
+    result = basename(node).strVal & "*"
   of nnkStrLit..nnkTripleStrLit, nnkCommentStmt, nnkSym, nnkIdent:
     result = node.strVal
   of nnkOpenSymChoice, nnkClosedSymChoice:

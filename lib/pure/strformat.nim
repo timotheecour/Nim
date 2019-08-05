@@ -532,6 +532,7 @@ proc strformatImpl(pattern: NimNode; openChar, closeChar: char): NimNode =
   var i = 0
   let res = genSym(nskVar, "fmtRes")
   result = newNimNode(nnkStmtListExpr, lineInfoFrom = pattern)
+  # TODO: update this now that i fixed #8405
   # XXX: https://github.com/nim-lang/Nim/issues/8405
   # When compiling with -d:useNimRtl, certain procs such as `count` from the strutils
   # module are not accessible at compile-time:

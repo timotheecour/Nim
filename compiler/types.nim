@@ -130,20 +130,21 @@ proc getProcHeader*(conf: ConfigRef; sym: PSym; prefer: TPreferedDesc = preferNa
   # consider using `skipGenericOwner` to avoid fun2.fun2 when fun2 is generic
   result = sym.owner.name.s & '.' & sym.name.s
   if sym.kind in routineKinds:
-    result.add '('
-    var n = sym.typ.n
-    for i in 1 ..< len(n):
-      let p = n.sons[i]
-      if p.kind == nkSym:
-        add(result, p.sym.name.s)
-        add(result, ": ")
-        add(result, typeToString(p.sym.typ, prefer))
-        if i != len(n)-1: add(result, ", ")
-      else:
-        result.add renderTree(p)
-    add(result, ')')
-    if n.sons[0].typ != nil:
-      result.add(": " & typeToString(n.sons[0].typ, prefer))
+    if sfLazySem notin sym.flags:
+      result.add '('
+      var n = sym.typ.n
+      for i in 1 ..< len(n):
+        let p = n.sons[i]
+        if p.kind == nkSym:
+          add(result, p.sym.name.s)
+          add(result, ": ")
+          add(result, typeToString(p.sym.typ, prefer))
+          if i != len(n)-1: add(result, ", ")
+        else:
+          result.add renderTree(p)
+      add(result, ')')
+      if n.sons[0].typ != nil:
+        result.add(": " & typeToString(n.sons[0].typ, prefer))
   if getDeclarationPath:
     result.add " [declared in "
     result.add(conf$sym.info)

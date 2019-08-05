@@ -91,7 +91,8 @@ when defined(nimpretty):
     result = minmaxLine(b)[0] - minmaxLine(a)[1]
 
 const
-  MaxLineLen = 80
+  # MaxLineLen = 80
+  MaxLineLen = 256 # PRTEMP
   LineCommentColumn = 30
 
 proc initSrcGen(g: var TSrcGen, renderFlags: TRenderFlags; config: ConfigRef) =

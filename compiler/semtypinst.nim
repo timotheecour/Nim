@@ -318,8 +318,12 @@ proc handleGenericInvocation(cl: var TReplTypeVars, t: PType): PType =
   # tyGenericInvocation[A, tyGenericInvocation[A, B]]
   # is difficult to handle:
   var body = t.sons[0]
-  if body.kind != tyGenericBody:
-    internalError(cl.c.config, cl.info, "no generic body")
+  # if body.kind == tyForward: body = semTypeNodeLazyResolve(cl.c, body.sym.ast, body)
+  # if body.kind != tyGenericBody:
+  if body.kind notin {tyGenericBody, tyForward}: # CHECKME
+    callback_debug_multi2(t)
+    callback_debug_multi2(body)
+    internalError(cl.c.config, cl.info, "no generic body: " & $body.kind)
   var header: PType = t
   # search for some instantiation here:
   if cl.allowMetaTypes:

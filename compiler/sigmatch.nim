@@ -1487,7 +1487,19 @@ proc typeRel(c: var TCandidate, f, aOrig: PType,
     if x.kind in {tyGenericInst, tyArray} and
        c.calleeSym != nil and
        c.calleeSym.kind in {skProc, skFunc} and c.call != nil and not preventHack:
+
+      # PRTEMP
+      # if body.kind == tyForward: body = semTypeNodeLazyResolve(cl.c, body.sym.ast, body)
+      # f = semTypeNodeLazyResolve(c.c, body.sym.ast, f)
+      # f = semTypeNodeLazyResolve(c.c, f.sym.ast, f)
+      # proc semTypeNodeLazyResolve(c: PContext, n: PNode, prev: PType): PType {.importc.}
+      # echo0 f == nil
+      # echo0 f.sym == nil
+      # if f.sym == nil:
+      # let f = semTypeNodeLazyResolve(c.c, f.sym.ast, f)
+      # let f = semTypeNodeLazyResolve(c.c, f.n, f) # TODO: use .n elsewhere?
       let inst = prepareMetatypeForSigmatch(c.c, c.bindings, c.call.info, f)
+
       #echo "inferred ", typeToString(inst), " for ", f
       return typeRel(c, inst, a)
 
@@ -2166,6 +2178,7 @@ proc paramTypesMatchAux(m: var TCandidate, f, a: PType,
 
 proc paramTypesMatch*(m: var TCandidate, f, a: PType,
                       arg, argOrig: PNode): PNode =
+  # let f = 
   if arg == nil or arg.kind notin nkSymChoices:
     result = paramTypesMatchAux(m, f, a, arg, argOrig)
   else:
@@ -2246,6 +2259,11 @@ proc setSon(father: PNode, at: int, son: PNode) =
 
 # we are allowed to modify the calling node in the 'prepare*' procs:
 proc prepareOperand(c: PContext; formal: PType; a: PNode): PNode =
+  # PRTEMP 
+  # proc semTypeNodeLazyResolve(c: PContext, n: PNode, prev: PType): PType {.importc.}
+  # let formal2 = semTypeNodeLazyResolve(c, a, formal)
+  # doAssert formal2 == formal
+
   if formal.kind == tyUntyped and formal.len != 1:
     # {tyTypeDesc, tyUntyped, tyTyped, tyProxy}:
     # a.typ == nil is valid

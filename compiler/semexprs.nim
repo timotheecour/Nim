@@ -2255,6 +2255,9 @@ proc semMagic(c: PContext, n: PNode, s: PSym, flags: TExprFlags): PNode =
     result = semDirectOp(c, n, flags)
 
 proc semWhen(c: PContext, n: PNode, semCheck = true): PNode =
+  let isPush = hintExtendedContext in c.config.notes
+  if isPush: pushInfoContext(c.config, n.info)
+
   # If semCheck is set to false, ``when`` will return the verbatim AST of
   # the correct branch. Otherwise the AST will be passed through semStmt.
   result = nil
@@ -2313,6 +2316,7 @@ proc semWhen(c: PContext, n: PNode, semCheck = true): PNode =
   # code. Thus we try to ensure here consistent ID allocation after the
   # ``when`` statement.
   idSynchronizationPoint(200)
+  if isPush: popInfoContext(c.config)
 
 proc semSetConstr(c: PContext, n: PNode): PNode =
   result = newNodeI(nkCurly, n.info)
@@ -2547,12 +2551,36 @@ proc shouldBeBracketExpr(n: PNode): bool =
           n.sons[0] = be
           return true
 
+proc semExprLazy(c: PContext, n: PNode, flags: TExprFlags): PNode = # REMOVE
+  # PRTEMP
+  when false:
+    case n.kind
+    of nkIteratorDef: result = semIterator(c, n)
+    of nkProcDef:
+      result = n
+      # namePos
+      # if n[namePos].kind != nkSym: 
+      # semProc(c, n)
+    of nkFuncDef: result = semFunc(c, n)
+    of nkMethodDef: result = semMethod(c, n)
+    of nkConverterDef: result = semConverterDef(c, n)
+    of nkMacroDef: result = semMacroDef(c, n)
+    of nkTemplateDef: result = semTemplateDef(c, n)
+  else:
+    return nil
+
 proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
-  callback_onSemExpr_wrap(c, n, flags, true)
-  defer: callback_onSemExpr_wrap(c, n, flags, false)
+  callback_onSemExpr_wrap(c, n, flags, result, true)
+  defer: callback_onSemExpr_wrap(c, n, flags, result, false)
   result = n
   if c.config.cmd == cmdIdeTools: suggestExpr(c, n)
   if nfSem in n.flags: return
+
+  let nLazy = semExprLazy(c, n, flags)
+  if nLazy != nil: return nLazy
+  # if result != nil: incl(result.flags, nfLazy)
+  # if result != nil: incl(result.flags, nfSem)
+
   case n.kind
   of nkIdent, nkAccQuoted:
     let checks = if efNoEvaluateGeneric in flags:

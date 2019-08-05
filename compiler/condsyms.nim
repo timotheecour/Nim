@@ -80,7 +80,10 @@ proc initDefines*(symbols: StringTableRef) =
   defineSymbol("nimErrorProcCanHaveBody")
   defineSymbol("nimHasInstantiationOfInMacro")
   defineSymbol("nimHasHotCodeReloading")
+
   defineSymbol("nimHasTimnMagics")
+  defineSymbol("nimHasTimnMagics_v2") # just increment w each api? IMPROVE: need to have int instead
+
   defineSymbol("nimHasModuleSymbols")
   defineSymbol("nimHasRegisterModule")
   defineSymbol("nimHasGetPNodePointer")
