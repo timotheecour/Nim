@@ -2139,12 +2139,22 @@ proc semSizeof(c: PContext, n: PNode): PNode =
   result = foldSizeOf(c.config, n, n)
 
 proc semAlias2(c: PContext, n: PNode): PNode =
-  let nodeOrigin = n[1]
+  var nodeOrigin = n[1]
+  if nodeOrigin.kind == nkOpenSymChoice:
+    # this happens with default params pointing to an overload, eg: proc fun(a: aliassym, b: aliassym = alias2(fun1))
+    # see D20190812T201619 
+    nodeOrigin = n[0]
+
+  if nodeOrigin.kind notin {nkIdent, nkAccQuoted, nkSym}:
+    doAssert false, $nodeOrigin.kind
+    return nil
+
   let sym = qualifiedLookUp(c, nodeOrigin, {checkUndeclared, checkModule})
   if sym == nil:
-    globalError(c.config, n.info, errUser, "undeclared symbol:" & renderTree(nodeOrigin))
+    globalError(c.config, n.info, errUser, "undeclared symbol: " & renderTree(nodeOrigin))
+    return nil
 
-  let sc: PNode = symChoice(c, nodeOrigin, sym, scClosed)
+  let sc = symChoice(c, nodeOrigin, sym, scClosed)
   let sym2 = newSym(skAliasGroup, sym.name, owner = c.getCurrOwner, info = n.info)
   sym2.nodeAliasGroup = sc
   result = newSymNode(sym2)
