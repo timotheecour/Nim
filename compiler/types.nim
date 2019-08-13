@@ -1306,9 +1306,9 @@ proc typeAllowedAux(marker: var IntSet, typ: PType, kind: TSymKind,
   of tyStatic:
     if kind notin {skParam}: result = t
   of tyAliasSym:
-    echo0If kind
-    # if kind notin {skParam, skResult}: result = t
-    result = nil
+    if kind notin {skParam, skResult}:
+      # echo0If "D20190812T191240 typeAllowedAux tyAliasSym", kind
+      result = t
   of tyVoid:
     if taField notin flags: result = t
   of tyTypeClasses:

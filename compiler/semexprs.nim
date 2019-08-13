@@ -2151,6 +2151,7 @@ proc semAlias2(c: PContext, n: PNode): PNode =
   result.info = n.info
   result.typ = newTypeS(tyAliasSym, c)
   result.typ.n = result # TODO: maybe `result.typ.n = sc` directly, and get rid of `skAliasGroup`? EDIT: not sure it's feasible
+  # echo0If sym.name, result, result.typ
   #[
   TODO:
   should we pass nodeAliasGroup in the type or in the value?
@@ -2629,7 +2630,9 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   of nkSym:
     # because of the changed symbol binding, this does not mean that we
     # don't have to check the symbol for semantics here again!
-    result = semSym(c, n, n.sym, flags)
+    if n.sym.kind != skAliasGroup:
+      result = semSym(c, n, n.sym, flags)
+    else: discard
   of nkEmpty, nkNone, nkCommentStmt, nkType:
     discard
   of nkNilLit:

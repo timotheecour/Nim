@@ -851,7 +851,6 @@ type
       bitsize*: int
       alignment*: int # for alignas(X) expressions
     of skAliasGroup:
-      # syms*: seq[PSym] # could potentially also point to a PNode that contains a SymChoice, but that's a lot of indirection, and may be less flexible?
       nodeAliasGroup*: PNode
     else: nil
     magic*: TMagic
