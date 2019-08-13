@@ -1841,6 +1841,8 @@ proc getNullValue(typ: PType, info: TLineInfo; conf: ConfigRef): PNode =
     result = newNodeIT(nkNilLit, info, t)
   of tySequence:
     result = newNodeIT(nkBracket, info, t)
+  of tyAliasSym:
+    result = newNodeIT(nkNilLit, info, t)
   else:
     globalError(conf, info, "cannot create null element for: " & $t.kind)
     result = newNodeI(nkEmpty, info)
@@ -2039,6 +2041,8 @@ proc gen(c: PCtx; n: PNode; dest: var TDest; flags: TGenFlags = {}) =
         genRdVar(c, n, dest, flags)
       else:
         globalError(c.config, n.info, "cannot generate code for: " & s.name.s)
+    of skAliasGroup:
+      genLit(c, n, dest)
     else:
       globalError(c.config, n.info, "cannot generate code for: " & s.name.s)
   of nkCallKinds:

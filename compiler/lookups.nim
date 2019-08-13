@@ -86,7 +86,7 @@ proc skipAlias*(s: PSym; info: TLineInfo; conf: ConfigRef): PSym =
   while true:
     if result == nil: return result
     # IMPROVE
-    if result.kind == skParam and result.typ != nil and result.typ.kind == tyAliasSym and result.typ.n != nil:
+    if result.kind in {skParam,skConst} and result.typ != nil and result.typ.kind == tyAliasSym and result.typ.n != nil:
       # TODO: could instead addDecl? meh
       result = result.typ.n.sym
       if result.nodeAliasGroup.kind == nkSym:

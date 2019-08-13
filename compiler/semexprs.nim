@@ -2146,6 +2146,13 @@ proc semAlias2(c: PContext, n: PNode): PNode =
     nodeOrigin = n[0]
 
   if nodeOrigin.kind notin {nkIdent, nkAccQuoted, nkSym}:
+    nodeOrigin = semExprWithType(c, nodeOrigin)
+
+  if nodeOrigin.kind == nkBracketExpr:
+    # see BUG D20190812T234102
+    nodeOrigin = nodeOrigin.sons[0].sons[nodeOrigin.sons[1].intVal]
+
+  if nodeOrigin.kind notin {nkIdent, nkAccQuoted, nkSym}:
     doAssert false, $nodeOrigin.kind
     return nil
 
@@ -2161,7 +2168,6 @@ proc semAlias2(c: PContext, n: PNode): PNode =
   result.info = n.info
   result.typ = newTypeS(tyAliasSym, c)
   result.typ.n = result # TODO: maybe `result.typ.n = sc` directly, and get rid of `skAliasGroup`? EDIT: not sure it's feasible
-  # echo0If sym.name, result, result.typ
   #[
   TODO:
   should we pass nodeAliasGroup in the type or in the value?
