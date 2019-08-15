@@ -289,7 +289,6 @@ type
     # sfLazyImport      # module is lazy imported # CHECKME
     sfImportStub      # symbol is from lazy imported module
     sfLazySem         # symbol is from lazy semantic
-    sfAliasTemplate   # template fun1a {.aliasTemplate.} = fun1
 
   TSymFlags* = set[TSymFlag]
 
@@ -499,7 +498,7 @@ type
     tfFromGeneric,    # type is an instantiation of a generic; this is needed
                       # because for instantiations of objects, structural
                       # type equality has to be used
-    tfUnresolved,     # marks unresolved typedesc/static params: e.g.
+    tfUnresolved,     # marks unresolved typedesc/static/aliasSem params: e.g.
                       # proc foo(T: typedesc, list: seq[T]): var T
                       # proc foo(L: static[int]): array[L, int]
                       # can be attached to ranges to indicate that the range
@@ -1132,7 +1131,7 @@ proc astdef*(s: PSym): PNode =
 
 proc isMetaType*(t: PType): bool =
   return t.kind in tyMetaTypes or
-         (t.kind == tyStatic and t.n == nil) or
+         (t.kind in {tyStatic, tyAliasSym} and t.n == nil) or
          tfHasMeta in t.flags
 
 proc isUnresolvedStatic*(t: PType): bool =

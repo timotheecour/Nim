@@ -932,6 +932,8 @@ proc addParamOrResult(c: PContext, param: PSym, kind: TSymKind) =
       addDecl(c, a)
       #elif param.typ != nil and param.typ.kind == tyTypeDesc:
       #  addDecl(c, param)
+    elif param.typ != nil and param.typ.kind == tyAliasSym:
+      addDecl(c, param) # TODO: skip skParam?
     else:
       # within a macro, every param has the type NimNode!
       let nn = getSysSym(c.graph, param.info, "NimNode")
@@ -1022,6 +1024,7 @@ proc liftParamType(c: PContext, procKind: TSymKind, genericParams: PNode,
       paramTypId = nil
       let t = newTypeS(tyAliasSym, c)
       result = addImplicitGeneric(t)
+      if result != nil: result.flags.incl({tfUnresolved})
 
   of tyDistinct:
     if paramType.len == 1:

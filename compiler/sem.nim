@@ -468,9 +468,45 @@ proc semMacroExpr(c: PContext, n, nOrig: PNode, sym: PSym,
   if suppliedParams < genericParams:
     globalError(c.config, info, errMissingGenericParamsForTemplate % n.renderTree)
 
+  proc evalAux(): PNode =
+  # TODO: only do this for aliassym macros
+    # PRTEMP: only for aliasSem macros; and need to find right place for that; TODO: does this affect original macro? or just its instantiation?
+    # c.p.wasForwarded = proto != nil
+    # TODO: cleanup afterwards?
+    var oldPrc = sym
+    pushProcCon(c, oldPrc)
+    pushOwner(c, oldPrc)
+    pushInfoContext(c.config, oldPrc.info)
+    openScope(c)
+    #[
+    var n = oldPrc.ast
+    n.sons[bodyPos] = copyTree(s.getBody)
+    instantiateBody(c, n, oldPrc.typ.n, oldPrc, s)
+    ]#
+    let procParams = sym.typ.n
+    for i in 1 ..< procParams.len:
+      let pi = procParams[i]
+      # SEE: instantiateBody
+      if pi.kind == nkSym and pi.sym.typ != nil and pi.sym.typ.kind == tyAliasSym:
+        pi.sym.typ = n.sons[i].typ # TODO: undo that after; or operate on different copy
+      addDecl(c, pi.sym)
+    # paramsTypeCheck(c, s.typ) # TODO?
+    maybeAddResult(c, sym, n) # CHECKME: n or sym.ast?
+    sym.ast[bodyPos] = hloBody(c, semProcBody(c, sym.ast[bodyPos]))
+
+    result = evalMacroCall(c.module, c.graph, n, nOrig, sym)
+    # skipping trackProc
+
+    closeScope(c)
+    popInfoContext(c.config)
+    popOwner(c)
+    popProcCon(c)
+  result = evalAux()
+
   #if c.evalContext == nil:
   #  c.evalContext = c.createEvalContext(emStatic)
-  result = evalMacroCall(c.module, c.graph, n, nOrig, sym)
+    # result = evalMacroCall(c.module, c.graph, n, nOrig, sym)
+
   if efNoSemCheck notin flags:
     result = semAfterMacroCall(c, n, result, sym, flags)
   if c.config.macrosToExpand.hasKey(sym.name.s):

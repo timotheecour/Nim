@@ -2498,7 +2498,6 @@ proc exprComplexConst(p: BProc, n: PNode, d: var TLoc) =
 
 proc expr(p: BProc, n: PNode, d: var TLoc) =
   p.currLineInfo = n.info
-
   case n.kind
   of nkSym:
     var sym = n.sym

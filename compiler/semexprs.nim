@@ -1259,11 +1259,7 @@ proc builtinFieldAccess(c: PContext, n: PNode, flags: TExprFlags): PNode =
       suggestExpr(c, n)
       if exactEquals(c.config.m.trackPos, n[1].info): suggestExprNoCheck(c, n)
 
-  # echo0If n, flags
-  # debugIf n
   defer:
-    # echo0If result
-    # echo0If result.typ
     if result!=nil and result.typ != nil and result.typ.kind == tyAliasSym:
       # TODO: fold in qualifiedLookUp?
       result = result.typ.n.sym.nodeAliasGroup
@@ -2148,25 +2144,19 @@ proc semSizeof(c: PContext, n: PNode): PNode =
   result = foldSizeOf(c.config, n, n)
 
 proc semAlias2(c: PContext, n: PNode): PNode =
-  echo0If n
   var nodeOrigin = n[1]
   # let evalIterator =
   #   let evalIterator = semExprWithType(c, n[2])
   #   doAssert evalIterator.kind == nkBool
   #   evalIterator.intVal
 
-  # echo0If nodeOrigin
   if nodeOrigin.kind == nkOpenSymChoice:
     # this happens with default params pointing to an overload, eg: proc fun(a: aliassym, b: aliassym = alias2(fun1))
     # see D20190812T201619 
     nodeOrigin = n[0]
 
   if nodeOrigin.kind notin {nkIdent, nkAccQuoted, nkSym}:
-    # echo0If nodeOrigin
-    # debugIf nodeOrigin
     nodeOrigin = semExprWithType(c, nodeOrigin)
-    # nodeOrigin = semExpr(c, nodeOrigin)
-    # debugIf nodeOrigin
 
   if nodeOrigin.kind == nkBracketExpr:
     # see BUG D20190812T234102
@@ -2642,21 +2632,26 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   defer: callback_onSemExpr_wrap(c, n, flags, result, false)
 
   defer:
-    if result!=nil and result.typ != nil and result.typ.kind == tyAliasSym and result.kind notin {nkStmtListExpr,nkBlockExpr}:
-      # `nkStmtListExpr` reserved to declare lambda helper syntaxes
-      if result.kind == nkSym and result.sym.kind == skAliasGroup:
-        discard
+    if result!=nil and result.typ != nil and result.typ.kind == tyAliasSym:
+      if result.kind in {nkStmtListExpr,nkBlockExpr}:
+        # simplify node
+        # CHECKME
+        let typ = result.typ
+        # result = newSymNode(sym2)
+        result = newSymNode(typ.n.sym)
+        # CHECKME
+        # result.info = n.info
+        result.info = typ.n.info
+        result.typ = typ
       else:
-        echo0If n, flags
-        debugIf n
-        debugIf result
-        # TODO: fold in qualifiedLookUp?
-        if result.typ.n != nil :
-          result = result.typ.n.sym.nodeAliasGroup
+        # `nkStmtListExpr` reserved to declare lambda helper syntaxes
+        if result.kind == nkSym and result.sym.kind == skAliasGroup: # TODO: instead assert result.sym.kind == skAliasGroup
+          discard
         else:
-          echo0If result
-          echo0If result.typ
-          echo0If "D20190813T161946"
+          # TODO: fold in qualifiedLookUp?
+          doAssert result.typ.n != nil
+          # nil would mean a aliasSem param was not instantiated; for macros, this requires macro instantiation
+          result = result.typ.n.sym.nodeAliasGroup
 
   result = n
 
