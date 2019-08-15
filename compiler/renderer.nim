@@ -1593,7 +1593,7 @@ proc getTokSym*(r: TSrcGen): PSym =
   else:
     result = nil
 
-proc quoteExpr*(a: string): string {.inline.} =
+template quoteExpr*(a: string): untyped =
   ## can be used for quoting expressions in error msgs.
   "'" & a & "'"
 
@@ -1601,6 +1601,8 @@ proc genFieldError*(field: PSym, disc: PSym): string =
   ## this needs to be in a module accessible by jsgen, ccgexprs, and vm to
   ## provide this error msg FieldError; msgs would be better but it does not
   ## import ast
-  result = field.name.s.quoteExpr & " is not accessible using discriminant " &
-    disc.name.s.quoteExpr & " of type " &
-    disc.owner.name.s.quoteExpr
+  if field == nil: result.add "field(?)".quoteExpr
+  else: result.add field.name.s.quoteExpr
+  # `types.typeToString` would be better, eg for generics
+  result.add " of type " & disc.owner.name.s.quoteExpr
+  result.add " is not accessible using discriminant " & disc.name.s.quoteExpr

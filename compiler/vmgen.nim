@@ -793,6 +793,16 @@ proc genUnaryStmt(c: PCtx; n: PNode; opc: TOpcode) =
   c.gABC(n, opc, tmp, 0, 0)
   c.freeTemp(tmp)
 
+proc genCustom(c: PCtx; opc: TOpcode, nodes: openArray[PNode]) =
+  ## Usage: genCustom(c, opc, @[n1, n2]); works with 1..3 nodes.
+  const N = 3
+  assert nodes.len <= N and nodes.len >= 1, $nodes.len
+  var temps: array[N, TRegister]
+  let nlen = nodes.len
+  for i in 0..<nlen: temps[i] = c.genx(nodes[i])
+  c.gABC(nodes[0], opc, temps[0], temps[1], temps[2])
+  for i in 0..<nlen: c.freeTemp(temps[i])
+
 proc genVarargsABC(c: PCtx; n: PNode; dest: var TDest; opc: TOpcode) =
   if dest < 0: dest = getTemp(c, n.typ)
   var x = c.getTempRange(n.len-1, slotTempStr)
@@ -1713,7 +1723,8 @@ proc genCheckedObjAccessAux(c: PCtx; n: PNode; dest: var TDest; flags: TGenFlags
   internalAssert c.config, disc.sym.kind == skField
 
   # Load the object in `dest`
-  c.gen(accessExpr[0], dest, flags)
+  let field = accessExpr[0]
+  c.gen(field, dest, flags)
   # Load the discriminant
   var discVal = c.getTemp(disc.typ)
   c.gABC(n, opcLdObj, discVal, dest, genField(c, disc))
@@ -1726,8 +1737,15 @@ proc genCheckedObjAccessAux(c: PCtx; n: PNode; dest: var TDest; flags: TGenFlags
   # If the check fails let the user know
   let lab1 = c.xjmp(n, if negCheck: opcFJmp else: opcTJmp, rs)
   c.freeTemp(rs)
-  # Not ideal but will do for the moment
-  c.gABC(n, opcQuit)
+
+  let msg = genFieldError(if field.kind == nkSym: field.sym else: nil, disc.sym)
+  # instead of `nil`, could track down the `sym` inside `field`
+  # could also report `discVal` (shown as enum)
+  let s = newStrNode(msg, n.info)
+  s.typ = c.graph.getSysType(n.info, tyString)
+  let msgKind = newIntNode(nkIntLit, errUser.int)
+  msgKind.info = n.info
+  c.genCustom(opcStacktrace, [s, msgKind])
   c.patch(lab1)
 
 proc genCheckedObjAccess(c: PCtx; n: PNode; dest: var TDest; flags: TGenFlags) =
