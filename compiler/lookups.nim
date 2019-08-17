@@ -32,8 +32,7 @@ proc considerQuotedIdent*(c: PContext; n: PNode, origin: PNode = nil): PIdent =
 
   case n.kind
   of nkIdent: result = n.ident
-  of nkSym:
-    result = n.sym.name
+  of nkSym: result = n.sym.name
   of nkAccQuoted:
     case n.len
     of 0: handleError(n, origin)
@@ -85,17 +84,11 @@ proc skipAlias*(s: PSym; info: TLineInfo; conf: ConfigRef): PSym =
   result = s
   while true:
     if result == nil: return result
-    # IMPROVE
     if result.kind in {skParam, skConst} and result.typ != nil and result.typ.kind == tyAliasSym and result.typ.n != nil:
-      # note: `result.typ.n` can be nil for a proc decl param of type `fun: aliassym`
-      # TODO: could instead addDecl? meh
+      # `result.typ.n` can be nil for a proc declaration param
       result = result.typ.n.sym
       if result.nodeAliasGroup.kind == nkSym:
         result = result.nodeAliasGroup.sym
-      # elif result.nodeAliasGroup.kind in {nkClosedSymChoice,nkOpenSymChoice}:
-      #   result = result.nodeAliasGroup[0].sym
-      # else:
-      #   doAssert false, $result.nodeAliasGroup.kind
     elif result.kind == skAlias: result=result.owner
     elif result.kind == skAliasDeprecated:
       let old = result
@@ -442,7 +435,7 @@ proc lastOverloadScope*(o: TOverloadIter): int =
   else: result = -1
 
 proc nextOverloadIter*(o: var TOverloadIter, c: PContext, n: PNode): PSym =
-  let n = o.n2 # TODO: remove `n` from arg list
+  let n = o.n2 # consider removing `n` from params
   case o.mode
   of oimDone:
     result = nil

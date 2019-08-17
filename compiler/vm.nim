@@ -2252,7 +2252,6 @@ proc evalMacroCall*(module: PSym; g: ModuleGraph;
   if g.config.evalMacroCounter > evalMacroLimit:
     globalError(g.config, n.info, "macro instantiation too nested")
 
-
   # immediate macros can bypass any type and arity checking so we check the
   # arity here too:
   if sym.typ.len > n.safeLen and sym.typ.len > 1:
@@ -2265,7 +2264,6 @@ proc evalMacroCall*(module: PSym; g: ModuleGraph;
   c.mode = emStaticStmt
   c.comesFromHeuristic.line = 0'u16
   c.callsite = nOrig
-
   let start = genProc(c, sym)
 
   var tos = PStackFrame(prc: sym, comesFrom: 0, next: nil)
@@ -2296,7 +2294,6 @@ proc evalMacroCall*(module: PSym; g: ModuleGraph;
       c.callsite = nil
       localError(c.config, n.info, "expected " & $gp.len &
                  " generic parameter(s)")
-
   # temporary storage:
   #for i in L ..< maxSlots: tos.slots[i] = newNode(nkEmpty)
   result = rawExecute(c, start, tos).regToNode

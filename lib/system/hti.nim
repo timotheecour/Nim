@@ -71,7 +71,7 @@ type
     tyFromExprHidden,
     tyOpt,
     tyVoidHidden,
-    tyAliasSym # D20190811T003919
+    tyAliasSym,
 
   TNimNodeKind = enum nkNone, nkSlot, nkList, nkCase
   TNimNode {.compilerproc.} = object

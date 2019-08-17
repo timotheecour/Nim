@@ -29,6 +29,9 @@ when not defined(leanCompiler):
 # implementation
 proc typeSectionRightSidePassInner*(c: PContext, a: PNode) # PRTEMP
 
+proc isMacroRealGeneric*(s: PSym): bool {.importc.}
+proc semAlias2(c: PContext, n: PNode): PNode {.exportc.}
+
 proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode {.procvar.}
 proc semExprWithType(c: PContext, n: PNode, flags: TExprFlags = {}): PNode {.
   procvar.}
@@ -347,8 +350,6 @@ proc semConstExpr(c: PContext, n: PNode): PNode =
   if e == nil:
     localError(c.config, n.info, errConstExprExpected)
     return n
-  if e.kind == nkSym and e.sym.kind == skAliasGroup: # REMOVE?
-    return e
   result = getConstExpr(c.module, e, c.graph)
   if result == nil:
     #if e.kind == nkEmpty: globalError(n.info, errConstExprExpected)
@@ -468,11 +469,11 @@ proc semMacroExpr(c: PContext, n, nOrig: PNode, sym: PSym,
   if suppliedParams < genericParams:
     globalError(c.config, info, errMissingGenericParamsForTemplate % n.renderTree)
 
-  proc evalAux(): PNode =
-  # TODO: only do this for aliassym macros
-    # PRTEMP: only for aliasSem macros; and need to find right place for that; TODO: does this affect original macro? or just its instantiation?
+  #if c.evalContext == nil:
+  #  c.evalContext = c.createEvalContext(emStatic)
+  proc evalAux(): PNode = # MOVE
     # c.p.wasForwarded = proto != nil
-    # TODO: cleanup afterwards?
+    # TODO: cleanup afterwards the changes to avoid affecting original macro
     var oldPrc = sym
     pushProcCon(c, oldPrc)
     pushOwner(c, oldPrc)
@@ -489,7 +490,8 @@ proc semMacroExpr(c: PContext, n, nOrig: PNode, sym: PSym,
       # SEE: instantiateBody
       if pi.kind == nkSym and pi.sym.typ != nil and pi.sym.typ.kind == tyAliasSym:
         pi.sym.typ = n.sons[i].typ # TODO: undo that after; or operate on different copy
-      addDecl(c, pi.sym)
+      doAssert sym.kind == skMacro
+      addParamOrResult(c, pi.sym, sym.kind)
     # paramsTypeCheck(c, s.typ) # TODO?
     maybeAddResult(c, sym, n) # CHECKME: n or sym.ast?
     sym.ast[bodyPos] = hloBody(c, semProcBody(c, sym.ast[bodyPos]))
@@ -501,11 +503,11 @@ proc semMacroExpr(c: PContext, n, nOrig: PNode, sym: PSym,
     popInfoContext(c.config)
     popOwner(c)
     popProcCon(c)
-  result = evalAux()
 
-  #if c.evalContext == nil:
-  #  c.evalContext = c.createEvalContext(emStatic)
-    # result = evalMacroCall(c.module, c.graph, n, nOrig, sym)
+  if isMacroRealGeneric(sym):
+    result = evalAux()
+  else:
+    result = evalMacroCall(c.module, c.graph, n, nOrig, sym)
 
   if efNoSemCheck notin flags:
     result = semAfterMacroCall(c, n, result, sym, flags)

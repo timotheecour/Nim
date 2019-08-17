@@ -1810,15 +1810,13 @@ proc typeRel(c: var TCandidate, f, aOrig: PType,
 
   of tyAliasSym:
     if (aOrig != nil) and aOrig.kind in {tyAliasSym, tyNil}:
-      # let prev = PType(idTableGet(c.bindings, f)) # TODO
+      # consider using: `let prev = PType(idTableGet(c.bindings, f))`
       put(c, f, aOrig)
       result = isGeneric
     else:
       result = isNone
-
   of tyProxy:
     result = isEqual
-
 
   of tyFromExpr:
     # fix the expression, so it contains the already instantiated types
@@ -1983,7 +1981,6 @@ proc paramTypesMatchAux(m: var TCandidate, f, a: PType,
     arg = argSemantized
     a = a
     c = m.c
-
 
   if tfHasStatic in fMaybeStatic.flags:
     # XXX: When implicit statics are the default

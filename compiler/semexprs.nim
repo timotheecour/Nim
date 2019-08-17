@@ -1259,11 +1259,6 @@ proc builtinFieldAccess(c: PContext, n: PNode, flags: TExprFlags): PNode =
       suggestExpr(c, n)
       if exactEquals(c.config.m.trackPos, n[1].info): suggestExprNoCheck(c, n)
 
-  defer:
-    if result!=nil and result.typ != nil and result.typ.kind == tyAliasSym:
-      # TODO: fold in qualifiedLookUp?
-      result = result.typ.n.sym.nodeAliasGroup
-
   var s = qualifiedLookUp(c, n, {checkAmbiguity, checkUndeclared, checkModule})
   if s != nil:
     if s.kind in OverloadableSyms:
@@ -2145,15 +2140,14 @@ proc semSizeof(c: PContext, n: PNode): PNode =
 
 proc semAlias2(c: PContext, n: PNode): PNode =
   var nodeOrigin = n[1]
-  # let evalIterator =
-  #   let evalIterator = semExprWithType(c, n[2])
-  #   doAssert evalIterator.kind == nkBool
-  #   evalIterator.intVal
-
   if nodeOrigin.kind == nkOpenSymChoice:
-    # this happens with default params pointing to an overload, eg: proc fun(a: aliassym, b: aliassym = alias2(fun1))
-    # see D20190812T201619 
+    # might originate from `semGenericStmtSymbol` which generates symChoice
+    # this can with default params pointing to an overload, eg:
+    #   proc fun(a: aliassym, b: aliassym = alias2(fun1))
     nodeOrigin = n[0]
+
+  if nodeOrigin.kind in {nkSym} and nodeOrigin.sym.kind == skUnknown:
+    doAssert false
 
   if nodeOrigin.kind notin {nkIdent, nkAccQuoted, nkSym}:
     nodeOrigin = semExprWithType(c, nodeOrigin)
@@ -2306,7 +2300,7 @@ proc semMagic(c: PContext, n: PNode, s: PSym, flags: TExprFlags): PNode =
   of mSizeOf:
     markUsed(c, n.info, s)
     result = semSizeof(c, setMs(n, s))
-  of mAlias2: result = semAlias2(c, n) # MODIF
+  of mAlias2: result = semAlias2(c, n)
   of mTimnMagicSem:
     result = callback_semTimnMagicSem_wrap(c, n, s, flags)
   else:
@@ -2630,31 +2624,9 @@ proc semExprLazy(c: PContext, n: PNode, flags: TExprFlags): PNode = # REMOVE
 proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   callback_onSemExpr_wrap(c, n, flags, result, true)
   defer: callback_onSemExpr_wrap(c, n, flags, result, false)
-
-  defer:
-    if result!=nil and result.typ != nil and result.typ.kind == tyAliasSym:
-      if result.kind in {nkStmtListExpr,nkBlockExpr}:
-        # simplify node
-        # CHECKME
-        let typ = result.typ
-        # result = newSymNode(sym2)
-        result = newSymNode(typ.n.sym)
-        # CHECKME
-        # result.info = n.info
-        result.info = typ.n.info
-        result.typ = typ
-      else:
-        # `nkStmtListExpr` reserved to declare lambda helper syntaxes
-        if result.kind == nkSym and result.sym.kind == skAliasGroup: # TODO: instead assert result.sym.kind == skAliasGroup
-          discard
-        else:
-          # TODO: fold in qualifiedLookUp?
-          doAssert result.typ.n != nil
-          # nil would mean a aliasSem param was not instantiated; for macros, this requires macro instantiation
-          result = result.typ.n.sym.nodeAliasGroup
-
   result = n
-
+  defer:
+    result = resolveAliasSym(result)
 
   if c.config.cmd == cmdIdeTools: suggestExpr(c, n)
   if nfSem in n.flags: return
@@ -2689,7 +2661,7 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   of nkSym:
     # because of the changed symbol binding, this does not mean that we
     # don't have to check the symbol for semantics here again!
-    if n.sym.kind != skAliasGroup:
+    if n.sym.kind != skAliasGroup: # fold inside semSym?
       result = semSym(c, n, n.sym, flags)
     else: discard
   of nkEmpty, nkNone, nkCommentStmt, nkType:

@@ -433,13 +433,13 @@ type
     tyVoid
       # now different from tyEmpty, hurray!
 
-    tyAliasSym # D20190811T003919
+    tyAliasSym
 
 static:
-  # remind us when TTypeKind stops to fit in a single 64-bit word
-  # assert TTypeKind.high.ord <= 63
-  # PRTEMP
-  discard
+  when false:
+    # remind us when TTypeKind stops to fit in a single 64-bit word
+    assert TTypeKind.high.ord <= 63
+      # consider merging some types if profiling shows a slowdown
 
 const
   tyPureObject* = tyTuple
@@ -581,11 +581,8 @@ type
     skPackage,            # symbol is a package (used for canonicalization)
     skAlias,              # an alias (needs to be resolved immediately)
     skAliasDeprecated,    # an skAlias for a deprecated symbol
-
     skStub2,              # see lazyImport + skStub
-    skAliasGroup # nkOpenSymChoice as a symbol
-    # skLambda # a real lambda; TODO: can that just reuse skAliasGroup or something?
-
+    skAliasGroup          # nkOpenSymChoice as a symbol
   TSymKinds* = set[TSymKind]
 
 const
@@ -830,7 +827,7 @@ type
       procInstCache*: seq[PInstantiation]
       gcUnsafetyReason*: PSym  # for better error messages wrt gcsafe
       transformedBody*: PNode  # cached body after transf pass
-      aliasTarget*: PSym # TODO: maybe reuse gcUnsafetyReason or owner; only for skTemplate
+      aliasTarget*: PSym # used for skTemplate
     of skModule, skPackage:
       # modules keep track of the generic symbols they use from other modules.
       # this is because in incremental compilation, when a module is about to
