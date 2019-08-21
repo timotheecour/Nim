@@ -1196,7 +1196,7 @@ proc checkCovariantParamsUsages(c: PContext; genericType: PType) =
 proc typeSectionRightSidePass(c: PContext, n: PNode) =
   for i in 0 ..< len(n):
     var a = n.sons[i]
-    echo0 (c.module.name.s, i, sonsLen(n), a.info.callback_toLocPrettySimple_wrap)
+    # echo0 (c.module.name.s, i, sonsLen(n), a.info.callback_toLocPrettySimple_wrap)
     typeSectionRightSidePassInner(c, a)
 
 proc typeSectionRightSidePassInner*(c: PContext, a: PNode) =
@@ -1414,20 +1414,20 @@ proc semTypeSection(c: PContext, n: PNode): PNode =
   ## Processes a type section. This must be done in separate passes, in order
   ## to allow the type definitions in the section to reference each other
   ## without regard for the order of their definitions.
-  echo0 (sfNoForward in c.module.flags, nfSem in n.flags, c.module.name.s)
+  # echo0 (sfNoForward in c.module.flags, nfSem in n.flags, c.module.name.s)
 
   # if sfNoForward in c.module.flags and nfSem notin n.flags and isTopLevel(c):
   # if sfNoForward in c.module.flags and nfSem notin n.flags and isTopLevel(c): # PRTEMP
   when false: # this might cause D20190807T170256 Hide(raiseAssert)(msg)
     inc c.inTypeContext
     for ai in n:
-      echo0 ai.info.callback_toLocPrettySimple_wrap
+      # echo0 ai.info.callback_toLocPrettySimple_wrap
       typeSectionLeftSidePassImpl(c, ai)
       if ai.kind != nkTypeDef: continue # comments
       let name = typeSectionTypeName(c, ai.sons[0])
       let s = name.sym
       if ai.lastSon.kind == nkEnumTy or s.magic != mNone:
-        echo0 s.name.s
+        # echo0 s.name.s
         # need to put enum members in scope; and magics are needed to avoid `internal error: wanted: tyInt got: tyForward` for getSysType
         typeSectionRightSidePassInner(c, ai)
 
@@ -1877,8 +1877,6 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
 
       proc isImplNeeded(s: PSym, n: PNode): bool =
         # if s.name.s == "nimCStrLen":
-        #   callback_debug_multi2(n)
-        #   callback_debug_multi2(s)
         if s.kind == skProc:
           if n.sons[4].len > 0: return true # PRTEMP
           for ai in n.sons[4]:
@@ -1900,11 +1898,10 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
         addInterfaceOverloadableSymAt(c, c.currentScope, s)
         # s.flags.incl sfForward
         s.flags.incl sfLazySem
-        # s.validPragmasBackup = validPragmas
         s.scope = c.currentScope
-        echo0 ("semProcAux lazy", s.name.s, n.info.callback_toLocPrettySimple_wrap, c.module.name.s)
+        # echo0 ("semProcAux lazy", s.name.s, n.info.callback_toLocPrettySimple_wrap, c.module.name.s)
         return
-      echo0 ("semProcAux nonlazy", s.name.s, n.info.callback_toLocPrettySimple_wrap, c.module.name.s)
+      # echo0 ("semProcAux nonlazy", s.name.s, n.info.callback_toLocPrettySimple_wrap, c.module.name.s)
   else:
     s = n[namePos].sym
     s.owner = getCurrOwner(c)
@@ -1920,10 +1917,10 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     # 
     oldScope0 = c.currentScope
     c.currentScope = s.scope
-    echo0 ("semProcAux resolve", s.name.s, n.info.callback_toLocPrettySimple_wrap(), c.module.name.s)
+    # echo0 ("semProcAux resolve", s.name.s, n.info.callback_toLocPrettySimple_wrap(), c.module.name.s)
   defer:
     if oldScope0 != nil:
-      echo0 "semProcAux: reset scope"
+      # echo0 "semProcAux: reset scope"
       c.currentScope = oldScope0
 
   s.options = c.config.options

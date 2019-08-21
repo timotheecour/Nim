@@ -89,7 +89,7 @@ proc compileModule*(graph: ModuleGraph; fileIdx: FileIndex; flags: TSymFlags): P
       # if graph.config.features.contains lazySemantic:
       if graph.config.features.contains(lazySemantic) and (sfSystemModule notin flags): # TODO:support
         # PRTEMP
-        echo0 (result.name.s, $filename, "lazySemantic")
+        # echo0 (result.name.s, $filename, "lazySemantic")
         incl(result.flags, sfNoForward)
 
       result.id = id

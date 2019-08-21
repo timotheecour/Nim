@@ -1488,16 +1488,6 @@ proc typeRel(c: var TCandidate, f, aOrig: PType,
        c.calleeSym != nil and
        c.calleeSym.kind in {skProc, skFunc} and c.call != nil and not preventHack:
 
-      # PRTEMP
-      # if body.kind == tyForward: body = semTypeNodeLazyResolve(cl.c, body.sym.ast, body)
-      # f = semTypeNodeLazyResolve(c.c, body.sym.ast, f)
-      # f = semTypeNodeLazyResolve(c.c, f.sym.ast, f)
-      # proc semTypeNodeLazyResolve(c: PContext, n: PNode, prev: PType): PType {.importc.}
-      # echo0 f == nil
-      # echo0 f.sym == nil
-      # if f.sym == nil:
-      # let f = semTypeNodeLazyResolve(c.c, f.sym.ast, f)
-      # let f = semTypeNodeLazyResolve(c.c, f.n, f) # TODO: use .n elsewhere?
       let inst = prepareMetatypeForSigmatch(c.c, c.bindings, c.call.info, f)
 
       #echo "inferred ", typeToString(inst), " for ", f
@@ -1821,6 +1811,7 @@ proc typeRel(c: var TCandidate, f, aOrig: PType,
   of tyProxy:
     result = isEqual
 
+
   of tyFromExpr:
     # fix the expression, so it contains the already instantiated types
     if f.n == nil or f.n.kind == nkEmpty: return isGeneric
@@ -1984,6 +1975,7 @@ proc paramTypesMatchAux(m: var TCandidate, f, a: PType,
     arg = argSemantized
     a = a
     c = m.c
+
 
   if tfHasStatic in fMaybeStatic.flags:
     # XXX: When implicit statics are the default

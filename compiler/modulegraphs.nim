@@ -140,7 +140,7 @@ template getC(): untyped =
 
 template onDefAux(info: TLineInfo; s0: PSym, c0: untyped, isFwd: bool) =
   if s0.kind in ExportableSymKinds:
-    echo0 (s0.kind, s0.name.s, s0.owner.name.s, info.callback_toLocPrettySimple_wrap)
+    # echo0 (s0.kind, s0.name.s, s0.owner.name.s, info.callback_toLocPrettySimple_wrap)
     let c = c0 # in case c0 is an expression
     var top = true
     case s0.kind

@@ -407,8 +407,7 @@ proc semTypeIdent(c: PContext, n: PNode): PSym =
       if result.typ == nil:
         if result.ast == nil:
           # happens w lazy import; IMPROVE
-          echo0 (result.info.callback_toLocPrettySimple_wrap)
-          echo0 (result.name.s)
+          # echo0 (result.info.callback_toLocPrettySimple_wrap, result.name.s)
           doAssert false
         result.typ = semTypeNode(c, result.ast, nil)
         doAssert result.typ != nil
@@ -1601,7 +1600,7 @@ proc semTypeNode(c: PContext, n: PNode, prev: PType): PType =
   # PRTEMP
   var s2 = ""
   if result != nil and result.sym!=nil: s2 = result.sym.name.s
-  echo0 (c.module.name.s, n.info.callback_toLocPrettySimple_wrap, s2)
+  # echo0 (c.module.name.s, n.info.callback_toLocPrettySimple_wrap, s2)
 
   when false: # this caused D20190807T165612 attempt to redefine: 'sival_ptr'
     # if result == nil: echo0 (n.kind, n.info.callback_toLocPrettySimple_wrap)
@@ -1611,7 +1610,7 @@ proc semTypeNode(c: PContext, n: PNode, prev: PType): PType =
       `type Ordinal* {.magic: Ordinal.}[T]` => result is nil it seems? (and n.kind == nkEmpty)
       ]#
       # echo 
-      echo0 ("typeSectionRightSidePassInner", s2)
+      # echo0 ("typeSectionRightSidePassInner", s2)
       typeSectionRightSidePassInner(c, result.sym.ast)
       doAssert result.kind != tyForward
   # PRTEMP
@@ -1627,13 +1626,13 @@ proc semTypeNode(c: PContext, n: PNode, prev: PType): PType =
   # doAssert result.sem.ast.typ.kind != tyForward
 
 proc semTypeNodeLazyResolve(c: PContext, n: PNode, prev: PType): PType {.exportc.} = # PRTEMP
-  echo0 "semTypeNodeLazyResolve"
+  # echo0 "semTypeNodeLazyResolve"
   # IMPROVE, make it safer, more checks
   # if body.kind == tyForward: doAssert 
   return semTypeNode(c, n, prev)
 
 proc semTypeNodeImpl(c: PContext, n: PNode, prev: PType): PType =
-  echo0 ("semTypeNodeImpl D20190806T010252", n.info.callback_toLocPrettySimple_wrap, n.kind)
+  # echo0 ("semTypeNodeImpl D20190806T010252", n.info.callback_toLocPrettySimple_wrap, n.kind)
   result = nil
   inc c.inTypeContext
 
@@ -1731,7 +1730,7 @@ proc semTypeNodeImpl(c: PContext, n: PNode, prev: PType): PType =
     var head = n.sons[0]
     var s = if head.kind notin nkCallKinds: semTypeIdent(c, head)
             else: symFromExpectedTypeNode(c, semExpr(c, head))
-    echo0 ("nkBracketExpr before", n.info.callback_toLocPrettySimple_wrap, s.magic)
+    # echo0 ("nkBracketExpr before", n.info.callback_toLocPrettySimple_wrap, s.magic)
     case s.magic
     of mArray: result = semArray(c, n, prev)
     of mOpenArray: result = semContainer(c, n, tyOpenArray, "openarray", prev)
@@ -1771,7 +1770,7 @@ proc semTypeNodeImpl(c: PContext, n: PNode, prev: PType): PType =
     of mTuple: result = semTuple(c, n, prev)
     else:
       result = semGeneric(c, n, s, prev)
-      echo0 ("nkBracketExpr after", result.kind)
+      # echo0 ("nkBracketExpr after", result.kind)
   of nkDotExpr:
     let typeExpr = semExpr(c, n)
     if typeExpr.typ.isNil:

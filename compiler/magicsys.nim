@@ -161,14 +161,15 @@ proc getCompilerProc*(g: ModuleGraph; name: string): PSym =
   result = strTableGet(g.compilerprocs, ident)
   if result == nil and name == "nimFrame":
     # for k,ai in g.compilerprocs.keys:
-    for k in g.compilerprocs.data:
-      if k == nil:
-        echo0 "null!"
-      else:
-        echo0 k.name.s
+    when false:
+      for k in g.compilerprocs.data:
+        if k == nil:
+          echo0 "null!"
+        else:
+          echo0 k.name.s
 
 proc registerCompilerProc*(g: ModuleGraph; s: PSym) =
-  echo0 ("registerCompilerProc", s.name.s)
+  # echo0 ("registerCompilerProc", s.name.s)
   strTableAdd(g.compilerprocs, s)
 
 proc registerNimScriptSymbol*(g: ModuleGraph; s: PSym) =

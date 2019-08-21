@@ -200,7 +200,6 @@ proc transformImportAs(c: PContext; n: PNode): tuple[node: PNode, importFlags: I
     else:
       result = n2
 
-  # if callback_debugEnabled_wrap(): callback_debug_multi2(n, depthMax = 20)
   if n.kind == nkInfix and considerQuotedIdent(c, n[0]).s == "as":
     ret.node = newNodeI(nkImportAs, n.info)
     ret.node.add n.sons[1].processPragma
