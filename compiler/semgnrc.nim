@@ -176,6 +176,9 @@ proc addTempDecl(c: PContext; n: PNode; kind: TSymKind) =
 
 proc semGenericStmt(c: PContext, n: PNode,
                     flags: TSemGenericFlags, ctx: var GenericCtx): PNode =
+  callback_onSemCustom_wrap(c, n, $(orig: "semGenericStmt", flags: flags), true)
+  defer: callback_onSemCustom_wrap(c, n, $(flags: flags), false)
+
   result = n
 
   when defined(nimsuggest):
