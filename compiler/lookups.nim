@@ -322,6 +322,9 @@ type
 
 proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
   const allExceptModule = {low(TSymKind)..high(TSymKind)}-{skModule,skPackage}
+  echo0If n
+  defer:
+    echo0If n, result
   case n.kind
   of nkIdent, nkAccQuoted:
     var ident = considerQuotedIdent(c, n)
@@ -379,6 +382,11 @@ proc initOverloadIter*(o: var TOverloadIter, c: PContext, n: PNode): PSym =
     if result != nil and result.kind == skAliasGroup:
       result = initOverloadIter(o, c, result.nodeAliasGroup)
   o.n2 = n
+  # echo0If n
+  # debugIf n
+  if n.typ != nil and n.typ.kind == tyAliasSym:
+    return initOverloadIter(o, c, n.typ.n.sym.nodeAliasGroup)
+
   case n.kind
   of nkIdent, nkAccQuoted:
     var ident = considerQuotedIdent(c, n)
@@ -414,6 +422,12 @@ proc initOverloadIter*(o: var TOverloadIter, c: PContext, n: PNode): PSym =
       else:
         noidentError(c.config, n.sons[1], n)
         result = errorSym(c, n.sons[1])
+    # elif o.m != nil and o.m.kind == skConst:
+    #   echo0If o.m.typ
+    #   let temp = semExprWithType(c, n)
+    #   echo0If temp
+    #   echo0If temp.typ
+    #   # let m2 = o.m
   of nkClosedSymChoice, nkOpenSymChoice:
     o.mode = oimSymChoice
     if n[0].kind == nkSym:

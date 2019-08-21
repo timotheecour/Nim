@@ -1087,7 +1087,15 @@ proc sameTypeAux(x, y: PType, c: var TSameTypeClosure): bool =
   of tyEmpty, tyChar, tyBool, tyNil, tyPointer, tyString, tyCString,
      tyInt..tyUInt64, tyTyped, tyUntyped, tyVoid:
     result = sameFlags(a, b)
-  of tyStatic, tyFromExpr, tyAliasSym:
+  of tyAliasSym:
+    # required for lambdas (gensym'ed templates) to work
+    template get(x): untyped =
+      x.n.sym.nodeAliasGroup
+    if a.n == nil or b.n == nil:
+      result = (a.n == nil) == (b.n == nil)
+    else:
+      result = get(a) == get(b) and sameFlags(a, b)
+  of tyStatic, tyFromExpr:
     result = exprStructuralEquivalent(a.n, b.n) and sameFlags(a, b)
     if result and a.len == b.len and a.len == 1:
       cycleCheck()

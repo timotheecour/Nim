@@ -695,8 +695,8 @@ proc semTemplateDef(c: PContext, n: PNode): PNode =
     # let n2 = semExpr(c, result[6][0], flags+{efWantValue})
     # let n2 = semExpr(c, result[6], flags+{efWantValue})
     let n2 = semExprWithType(c, result[6], {})
-    callback_debug_multi2(n2)
-    callback_debug_multi2(s) # PRTEMP
+    debugIf(n2)
+    # debugIf(s) # PRTEMP
     # PRTEMP
     if true:
     # if true: return n2
@@ -712,7 +712,7 @@ proc semTemplateDef(c: PContext, n: PNode): PNode =
       # else:
       #   let  = qualifiedLookUp(c, n, flags = {checkUndeclared, checkModule})
       else:
-        callback_debug_multi2(n)
+        debugIf(n)
         doAssert false, $n.kind
 
 proc semPatternBody(c: var TemplCtx, n: PNode): PNode =

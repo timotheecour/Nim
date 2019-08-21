@@ -513,7 +513,7 @@ proc semResolvedCall(c: PContext, x: TCandidate,
         of skType:
           x.call.add newSymNode(s, n.info)
         else:
-          internalAssert c.config, false
+          internalAssert c.config, false, $s.kind
 
   result = x.call
   instGenericConvertersSons(c, result, x)

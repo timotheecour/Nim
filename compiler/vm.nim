@@ -2284,12 +2284,20 @@ proc evalMacroCall*(module: PSym; g: ModuleGraph;
   for i in 1..<sym.typ.len:
     tos.slots[i] = setupMacroParam(n.sons[i], sym.typ.sons[i])
 
+
   let gp = sym.ast[genericParamsPos]
   for i in 0 ..< gp.len:
     let idx = sym.typ.len + i
     if idx < n.len:
       tos.slots[idx] = setupMacroParam(n.sons[idx], gp[i].sym.typ)
     else:
+
+      debugIf n
+      debugIf sym
+      echo0If gp.len, i, idx, sym.typ.len
+      echo0If sym.typ
+      echo0If gp
+
       dec(g.config.evalMacroCounter)
       c.callsite = nil
       localError(c.config, n.info, "expected " & $gp.len &

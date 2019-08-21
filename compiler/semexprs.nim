@@ -1259,6 +1259,15 @@ proc builtinFieldAccess(c: PContext, n: PNode, flags: TExprFlags): PNode =
       suggestExpr(c, n)
       if exactEquals(c.config.m.trackPos, n[1].info): suggestExprNoCheck(c, n)
 
+  # echo0If n, flags
+  # debugIf n
+  defer:
+    # echo0If result
+    # echo0If result.typ
+    if result!=nil and result.typ != nil and result.typ.kind == tyAliasSym:
+      # TODO: fold in qualifiedLookUp?
+      result = result.typ.n.sym.nodeAliasGroup
+
   var s = qualifiedLookUp(c, n, {checkAmbiguity, checkUndeclared, checkModule})
   if s != nil:
     if s.kind in OverloadableSyms:
@@ -2139,18 +2148,36 @@ proc semSizeof(c: PContext, n: PNode): PNode =
   result = foldSizeOf(c.config, n, n)
 
 proc semAlias2(c: PContext, n: PNode): PNode =
+  echo0If n
   var nodeOrigin = n[1]
+  # let evalIterator =
+  #   let evalIterator = semExprWithType(c, n[2])
+  #   doAssert evalIterator.kind == nkBool
+  #   evalIterator.intVal
+
+  # echo0If nodeOrigin
   if nodeOrigin.kind == nkOpenSymChoice:
     # this happens with default params pointing to an overload, eg: proc fun(a: aliassym, b: aliassym = alias2(fun1))
     # see D20190812T201619 
     nodeOrigin = n[0]
 
   if nodeOrigin.kind notin {nkIdent, nkAccQuoted, nkSym}:
+    # echo0If nodeOrigin
+    # debugIf nodeOrigin
     nodeOrigin = semExprWithType(c, nodeOrigin)
+    # nodeOrigin = semExpr(c, nodeOrigin)
+    # debugIf nodeOrigin
 
   if nodeOrigin.kind == nkBracketExpr:
     # see BUG D20190812T234102
     nodeOrigin = nodeOrigin.sons[0].sons[nodeOrigin.sons[1].intVal]
+    doAssert nodeOrigin.kind != nkBracketExpr
+
+  if nodeOrigin.typ != nil and nodeOrigin.typ.kind == tyAliasSym:
+    doAssert nodeOrigin.typ.n != nil
+    let sym2 = nodeOrigin.typ.n.sym
+    doAssert sym2.kind == skAliasGroup
+    return nodeOrigin.typ.n
 
   if nodeOrigin.kind notin {nkIdent, nkAccQuoted, nkSym}:
     doAssert false, $nodeOrigin.kind
@@ -2164,6 +2191,7 @@ proc semAlias2(c: PContext, n: PNode): PNode =
   let sc = symChoice(c, nodeOrigin, sym, scClosed)
   let sym2 = newSym(skAliasGroup, sym.name, owner = c.getCurrOwner, info = n.info)
   sym2.nodeAliasGroup = sc
+
   result = newSymNode(sym2)
   result.info = n.info
   result.typ = newTypeS(tyAliasSym, c)
@@ -2612,7 +2640,27 @@ proc semExprLazy(c: PContext, n: PNode, flags: TExprFlags): PNode = # REMOVE
 proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   callback_onSemExpr_wrap(c, n, flags, result, true)
   defer: callback_onSemExpr_wrap(c, n, flags, result, false)
+
+  defer:
+    if result!=nil and result.typ != nil and result.typ.kind == tyAliasSym and result.kind notin {nkStmtListExpr,nkBlockExpr}:
+      # `nkStmtListExpr` reserved to declare lambda helper syntaxes
+      if result.kind == nkSym and result.sym.kind == skAliasGroup:
+        discard
+      else:
+        echo0If n, flags
+        debugIf n
+        debugIf result
+        # TODO: fold in qualifiedLookUp?
+        if result.typ.n != nil :
+          result = result.typ.n.sym.nodeAliasGroup
+        else:
+          echo0If result
+          echo0If result.typ
+          echo0If "D20190813T161946"
+
   result = n
+
+
   if c.config.cmd == cmdIdeTools: suggestExpr(c, n)
   if nfSem in n.flags: return
 
