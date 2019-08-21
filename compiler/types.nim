@@ -436,7 +436,7 @@ const
     "BuiltInTypeClass", "UserTypeClass",
     "UserTypeClassInst", "CompositeTypeClass", "inferred",
     "and", "or", "not", "any", "static", "TypeFromExpr", "FieldAccessor",
-    "void"]
+    "void", "aliasSym"]
 
 const preferToResolveSymbols = {preferName, preferTypeName, preferModuleInfo,
   preferGenericArg, preferResolved, preferMixed}
@@ -1087,7 +1087,7 @@ proc sameTypeAux(x, y: PType, c: var TSameTypeClosure): bool =
   of tyEmpty, tyChar, tyBool, tyNil, tyPointer, tyString, tyCString,
      tyInt..tyUInt64, tyTyped, tyUntyped, tyVoid:
     result = sameFlags(a, b)
-  of tyStatic, tyFromExpr:
+  of tyStatic, tyFromExpr, tyAliasSym:
     result = exprStructuralEquivalent(a.n, b.n) and sameFlags(a, b)
     if result and a.len == b.len and a.len == 1:
       cycleCheck()
@@ -1305,6 +1305,10 @@ proc typeAllowedAux(marker: var IntSet, typ: PType, kind: TSymKind,
     if kind notin {skParam, skResult} or taNoUntyped in flags: result = t
   of tyStatic:
     if kind notin {skParam}: result = t
+  of tyAliasSym:
+    echo0If kind
+    # if kind notin {skParam, skResult}: result = t
+    result = nil
   of tyVoid:
     if taField notin flags: result = t
   of tyTypeClasses:
@@ -1495,7 +1499,7 @@ proc compatibleEffects*(formal, actual: PType): EffectsCompat =
     result = efLockLevelsDiffer
 
 proc isCompileTimeOnly*(t: PType): bool {.inline.} =
-  result = t.kind in {tyTypeDesc, tyStatic}
+  result = t.kind in {tyTypeDesc, tyStatic, tyAliasSym}
 
 proc containsCompileTimeOnly*(t: PType): bool =
   if isCompileTimeOnly(t): return true

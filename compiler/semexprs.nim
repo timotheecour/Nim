@@ -2138,6 +2138,28 @@ proc semSizeof(c: PContext, n: PNode): PNode =
   n.typ = getSysType(c.graph, n.info, tyInt)
   result = foldSizeOf(c.config, n, n)
 
+proc semAlias2(c: PContext, n: PNode): PNode =
+  let nodeOrigin = n[1]
+  let sym = qualifiedLookUp(c, nodeOrigin, {checkUndeclared, checkModule})
+  if sym == nil:
+    globalError(c.config, n.info, errUser, "undeclared symbol:" & renderTree(nodeOrigin))
+
+  let sc: PNode = symChoice(c, nodeOrigin, sym, scClosed)
+  let sym2 = newSym(skAliasGroup, sym.name, owner = c.getCurrOwner, info = n.info)
+  sym2.nodeAliasGroup = sc
+  result = newSymNode(sym2)
+  result.info = n.info
+  result.typ = newTypeS(tyAliasSym, c)
+  result.typ.n = result # TODO: maybe `result.typ.n = sc` directly, and get rid of `skAliasGroup`? EDIT: not sure it's feasible
+  #[
+  TODO:
+  should we pass nodeAliasGroup in the type or in the value?
+  matters, eg:
+  proc fun(a: sym) =
+    static: echo "some instantiation"
+    a()
+  ]#
+
 proc semMagic(c: PContext, n: PNode, s: PSym, flags: TExprFlags): PNode =
   # this is a hotspot in the compiler!
   # see also `magicsAfterOverloadResolution`
@@ -2249,6 +2271,7 @@ proc semMagic(c: PContext, n: PNode, s: PSym, flags: TExprFlags): PNode =
   of mSizeOf:
     markUsed(c, n.info, s)
     result = semSizeof(c, setMs(n, s))
+  of mAlias2: result = semAlias2(c, n) # MODIF
   of mTimnMagicSem:
     result = callback_semTimnMagicSem_wrap(c, n, s, flags)
   else:

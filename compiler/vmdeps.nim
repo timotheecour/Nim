@@ -95,6 +95,7 @@ proc mapTypeToAstX(cache: IdentCache; t: PType; info: TLineInfo;
   of tyNil: result = atomicType("nil", mNil)
   of tyUntyped: result = atomicType("expr", mExpr)
   of tyTyped: result = atomicType("stmt", mStmt)
+  of tyAliasSym: result = atomicType("aliasSym", mAliasSym)
   of tyVoid: result = atomicType("void", mVoid)
   of tyEmpty: result = atomicType("empty", mNone)
   of tyUncheckedArray:

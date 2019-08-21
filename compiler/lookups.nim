@@ -32,7 +32,8 @@ proc considerQuotedIdent*(c: PContext; n: PNode, origin: PNode = nil): PIdent =
 
   case n.kind
   of nkIdent: result = n.ident
-  of nkSym: result = n.sym.name
+  of nkSym:
+    result = n.sym.name
   of nkAccQuoted:
     case n.len
     of 0: handleError(n, origin)
@@ -84,6 +85,14 @@ proc skipAlias*(s: PSym; info: TLineInfo; conf: ConfigRef): PSym =
   result = s
   while true:
     if result == nil: return result
+    # IMPROVE
+    if result.kind == skParam and result.typ != nil and result.typ.kind == tyAliasSym and result.typ.n != nil:
+      # TODO: could instead addDecl? meh
+      result = result.typ.n.sym
+      if result.nodeAliasGroup.kind == nkSym:
+        result = result.nodeAliasGroup.sym
+    elif sfAliasTemplate in result.flags:
+      result = result.aliasTarget
     elif result.kind == skAlias: result=result.owner
     elif result.kind == skAliasDeprecated:
       let old = result
@@ -155,6 +164,7 @@ type
     symChoiceIndex*: int
     scope*: PScope
     inSymChoice: IntSet
+    n2*: PNode
 
 proc getSymRepr*(conf: ConfigRef; s: PSym): string =
   case s.kind
@@ -343,8 +353,6 @@ proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
         ident = considerQuotedIdent(c, n.sons[1])
       if ident != nil:
         if checkOverridePrivate in flags: # REMOVE?
-          echo0 (m == c.module, c.module.name.s, m.name.s, ident.s)
-          # callback_debugScopes2_wrap(m.topLevelScope, limit = 1)
           result = strTableGet(m.tabAll, ident).skipAlias(n, c.config)
         elif m == c.module:
           result = strTableGet(c.topLevelScope.symbols, ident).skipAlias(n, c.config)
@@ -367,6 +375,10 @@ proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
     if result != nil and result.kind == skStub: loadStub(result)
 
 proc initOverloadIter*(o: var TOverloadIter, c: PContext, n: PNode): PSym =
+  defer:
+    if result != nil and result.kind == skAliasGroup:
+      result = initOverloadIter(o, c, result.nodeAliasGroup)
+  o.n2 = n
   case n.kind
   of nkIdent, nkAccQuoted:
     var ident = considerQuotedIdent(c, n)
@@ -424,6 +436,7 @@ proc lastOverloadScope*(o: TOverloadIter): int =
   else: result = -1
 
 proc nextOverloadIter*(o: var TOverloadIter, c: PContext, n: PNode): PSym =
+  let n = o.n2 # TODO: remove `n` from arg list
   case o.mode
   of oimDone:
     result = nil

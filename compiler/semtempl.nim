@@ -683,6 +683,38 @@ proc semTemplateDef(c: PContext, n: PNode): PNode =
   if n.sons[patternPos].kind != nkEmpty:
     c.patterns.add(s)
 
+  # PRTEMP
+  if sfAliasTemplate in s.flags:
+    # let callExpr = newNode(nkCall, n.info, @[s.newSymNode])
+    # let callExpr = newNode(nkCall, n.info, @[
+    # let callExpr = newNode(nkCall, n.info, @[
+    #  createMagic(c.graph, "getAst", mExpandToAst).newSymNode,
+    # newNode(nkCall, n.info, quotes)])
+    # let n2 = semTemplateExpr(c, callExpr, s, {})
+
+    # let n2 = semExpr(c, result[6][0], flags+{efWantValue})
+    # let n2 = semExpr(c, result[6], flags+{efWantValue})
+    let n2 = semExprWithType(c, result[6], {})
+    callback_debug_multi2(n2)
+    callback_debug_multi2(s) # PRTEMP
+    # PRTEMP
+    if true:
+    # if true: return n2
+    # when false:
+      # let n=result[6][0]
+      let n=n2
+      # checkUndeclared, checkModule, checkPureEnumFields
+      case n.kind
+      of nkSym: s.aliasTarget = n.sym
+      of nkOpenSymChoice:
+        s.aliasTarget = newSym(skAliasGroup, s.name, owner = s.owner, info = n.info)
+        s.aliasTarget.nodeAliasGroup = n
+      # else:
+      #   let  = qualifiedLookUp(c, n, flags = {checkUndeclared, checkModule})
+      else:
+        callback_debug_multi2(n)
+        doAssert false, $n.kind
+
 proc semPatternBody(c: var TemplCtx, n: PNode): PNode =
   template templToExpand(s: untyped): untyped =
     s.kind == skTemplate and (s.typ.len == 1 or sfAllUntyped in s.flags)

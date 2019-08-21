@@ -321,8 +321,6 @@ proc handleGenericInvocation(cl: var TReplTypeVars, t: PType): PType =
   # if body.kind == tyForward: body = semTypeNodeLazyResolve(cl.c, body.sym.ast, body)
   # if body.kind != tyGenericBody:
   if body.kind notin {tyGenericBody, tyForward}: # CHECKME
-    callback_debug_multi2(t)
-    callback_debug_multi2(body)
     internalError(cl.c.config, cl.info, "no generic body: " & $body.kind)
   var header: PType = t
   # search for some instantiation here:
@@ -508,7 +506,7 @@ proc replaceTypeVarsTAux(cl: var TReplTypeVars, t: PType): PType =
   result = t
   if t == nil: return
 
-  if t.kind in {tyStatic, tyGenericParam} + tyTypeClasses:
+  if t.kind in {tyStatic, tyGenericParam, tyAliasSym} + tyTypeClasses:
     let lookup = cl.typeMap.lookup(t)
     if lookup != nil: return lookup
 

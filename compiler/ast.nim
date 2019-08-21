@@ -286,8 +286,10 @@ type
     sfTemplateParam   # symbol is a template parameter
     sfCursor          # variable/field is a cursor, see RFC 177 for details
     sfInjectDestructors # whether the proc needs the 'injectdestructors' transformation
+    # sfLazyImport      # module is lazy imported # CHECKME
     sfImportStub      # symbol is from lazy imported module
     sfLazySem         # symbol is from lazy semantic
+    sfAliasTemplate   # template fun1a {.aliasTemplate.} = fun1
 
   TSymFlags* = set[TSymFlag]
 
@@ -432,9 +434,13 @@ type
     tyVoid
       # now different from tyEmpty, hurray!
 
+    tyAliasSym # D20190811T003919
+
 static:
   # remind us when TTypeKind stops to fit in a single 64-bit word
-  assert TTypeKind.high.ord <= 63
+  # assert TTypeKind.high.ord <= 63
+  # PRTEMP
+  discard
 
 const
   tyPureObject* = tyTuple
@@ -576,7 +582,11 @@ type
     skPackage,            # symbol is a package (used for canonicalization)
     skAlias,              # an alias (needs to be resolved immediately)
     skAliasDeprecated,    # an skAlias for a deprecated symbol
+
     skStub2,              # see lazyImport + skStub
+    skAliasGroup # nkOpenSymChoice as a symbol
+    # skLambda # a real lambda; TODO: can that just reuse skAliasGroup or something?
+
   TSymKinds* = set[TSymKind]
 
 const
@@ -669,6 +679,8 @@ type
     mException, mBuiltinType, mSymOwner, mUncheckedArray, mGetImplTransf,
     mSymIsInstantiationOf, mNodeId
     mTimnMagic, # MODIF
+    mAlias2,
+    mAliasSym,
     mTimnMagicSem, # does it have to be different from mTimnMagic?
     mModuleSymbols, # TODO: is that obsoleted by mNGetPNodePointer ?
     mGetPNodePointer,
@@ -819,6 +831,7 @@ type
       procInstCache*: seq[PInstantiation]
       gcUnsafetyReason*: PSym  # for better error messages wrt gcsafe
       transformedBody*: PNode  # cached body after transf pass
+      aliasTarget*: PSym # TODO: maybe reuse gcUnsafetyReason or owner; only for skTemplate
     of skModule, skPackage:
       # modules keep track of the generic symbols they use from other modules.
       # this is because in incremental compilation, when a module is about to
@@ -837,6 +850,9 @@ type
       guard*: PSym
       bitsize*: int
       alignment*: int # for alignas(X) expressions
+    of skAliasGroup:
+      # syms*: seq[PSym] # could potentially also point to a PNode that contains a SymChoice, but that's a lot of indirection, and may be less flexible?
+      nodeAliasGroup*: PNode
     else: nil
     magic*: TMagic
     typ*: PType

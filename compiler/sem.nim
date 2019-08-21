@@ -347,6 +347,8 @@ proc semConstExpr(c: PContext, n: PNode): PNode =
   if e == nil:
     localError(c.config, n.info, errConstExprExpected)
     return n
+  if e.kind == nkSym and e.sym.kind == skAliasGroup: # REMOVE?
+    return e
   result = getConstExpr(c.module, e, c.graph)
   if result == nil:
     #if e.kind == nkEmpty: globalError(n.info, errConstExprExpected)

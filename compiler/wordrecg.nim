@@ -85,6 +85,7 @@ type
     wBitsize,
     wPrivateImport,
     wLazyImport,
+    wAliasTemplate,
 
   TSpecialWords* = set[TSpecialWord]
 
@@ -172,7 +173,7 @@ const
     "stdin", "stdout", "stderr",
 
     "inout", "bycopy", "byref", "oneway",
-    "bitsize", "privateimport", "lazyimport"
+    "bitsize", "privateimport", "lazyimport", "aliastemplate"
     ]
 
 proc findStr*(a: openArray[string], s: string): int =
@@ -212,6 +213,9 @@ proc canonPragmaSpelling*(w: TSpecialWord): string =
   of wCodegenDecl: "codegenDecl"
   of wLiftLocals: "liftLocals"
   of wLocalPassc: "localPassc"
+  # MODIF
   of wPrivateImport: "privateImport"
   of wLazyImport: "lazyImport"
+  of wAliasTemplate: "aliasTemplate"
+
   else: specialWords[w]

@@ -1016,6 +1016,13 @@ proc liftParamType(c: PContext, procKind: TSymKind, genericParams: PNode,
       incl t.flags, tfCheckedForDestructor
       result = addImplicitGeneric(c, t, paramTypId, info, genericParams, paramName)
 
+  of tyAliasSym:
+    if tfUnresolved notin paramType.flags:
+      # aliasSym are not bindOnce
+      paramTypId = nil
+      let t = newTypeS(tyAliasSym, c)
+      result = addImplicitGeneric(t)
+
   of tyDistinct:
     if paramType.len == 1:
       # disable the bindOnce behavior for the type class
@@ -1941,6 +1948,9 @@ proc processMagicType(c: PContext, m: PSym) =
     setMagicIntegral(c.config, m, tyTyped, 0)
   of mTypeDesc, mType:
     setMagicIntegral(c.config, m, tyTypeDesc, 0)
+    rawAddSon(m.typ, newTypeS(tyNone, c))
+  of mAliasSym:
+    setMagicIntegral(c.config, m, tyAliasSym, 0)
     rawAddSon(m.typ, newTypeS(tyNone, c))
   of mStatic:
     setMagicType(c.config, m, tyStatic, 0)
