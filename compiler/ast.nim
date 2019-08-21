@@ -1857,6 +1857,10 @@ proc canRaise*(fn: PNode): bool =
       (fn.typ.n[0][exceptionEffects] != nil and
       fn.typ.n[0][exceptionEffects].safeLen > 0))
 
+template addPublicSymbol*(module: PSym, s: PSym) =
+  strTableAdd(module.tab, s)
+  strTableAdd(module.tabAll, s)
+
 template tabOpt*(m: PSym): untyped =
   # avoids doing a copy
   let tab2 =
