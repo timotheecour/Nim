@@ -1808,6 +1808,14 @@ proc typeRel(c: var TCandidate, f, aOrig: PType,
       put(c, f, aOrig)
     result = isGeneric
 
+  of tyAliasSym:
+    if (aOrig != nil) and aOrig.kind == tyAliasSym:
+      # let prev = PType(idTableGet(c.bindings, f)) # TODO
+      put(c, f, aOrig)
+      result = isGeneric
+    else:
+      result = isNone
+
   of tyProxy:
     result = isEqual
 
