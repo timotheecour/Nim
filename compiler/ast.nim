@@ -1892,6 +1892,10 @@ template destructor*(t: PType): PSym = t.attachedOps[attachedDestructor]
 template assignment*(t: PType): PSym = t.attachedOps[attachedAsgn]
 template asink*(t: PType): PSym = t.attachedOps[attachedSink]
 
+template addPublicSymbol*(module: PSym, s: PSym) =
+  strTableAdd(module.tab, s)
+  strTableAdd(module.tabAll, s)
+
 template tabOpt*(m: PSym): untyped =
   # avoids doing a copy
   let tab2 =
