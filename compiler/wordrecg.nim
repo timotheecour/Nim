@@ -107,7 +107,7 @@ type
     wStdIn = "stdin", wStdOut = "stdout", wStdErr = "stderr",
 
     wInOut = "inout", wByCopy = "bycopy", wByRef = "byref", wOneWay = "oneway",
-    wBitsize = "bitsize"
+    wBitsize = "bitsize", wEnableIf = "enableIf"
 
   TSpecialWords* = set[TSpecialWord]
 

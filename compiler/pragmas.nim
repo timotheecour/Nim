@@ -22,7 +22,9 @@ const
   declPragmas = {wImportc, wImportObjC, wImportCpp, wImportJs, wExportc, wExportCpp,
     wExportNims, wExtern, wDeprecated, wNodecl, wError, wUsed, wAlign}
     ## common pragmas for declarations, to a good approximation
-  procPragmas* = declPragmas + {FirstCallConv..LastCallConv,
+  routinePragmas* = {wEnableIf}
+    # pragmas common for all routines
+  procPragmas* = declPragmas + routinePragmas + {FirstCallConv..LastCallConv,
     wMagic, wNoSideEffect, wSideEffect, wNoreturn, wNosinks, wDynlib, wHeader,
     wCompilerProc, wNonReloadable, wCore, wProcVar, wVarargs, wCompileTime, wMerge,
     wBorrow, wImportCompilerProc, wThread,
@@ -32,12 +34,12 @@ const
     wRequires, wEnsures}
   converterPragmas* = procPragmas
   methodPragmas* = procPragmas+{wBase}-{wImportCpp}
-  templatePragmas* = {wDeprecated, wError, wGensym, wInject, wDirty,
+  templatePragmas* = routinePragmas + {wDeprecated, wError, wGensym, wInject, wDirty,
     wDelegator, wExportNims, wUsed, wPragma}
-  macroPragmas* = declPragmas + {FirstCallConv..LastCallConv,
+  macroPragmas* = declPragmas + routinePragmas + {FirstCallConv..LastCallConv,
     wMagic, wNoSideEffect, wCompilerProc, wNonReloadable, wCore,
     wDiscardable, wGensym, wInject, wDelegator}
-  iteratorPragmas* = declPragmas + {FirstCallConv..LastCallConv, wNoSideEffect, wSideEffect,
+  iteratorPragmas* = declPragmas + routinePragmas + {FirstCallConv..LastCallConv, wNoSideEffect, wSideEffect,
     wMagic, wBorrow,
     wDiscardable, wGensym, wInject, wRaises,
     wTags, wLocks, wGcSafe, wRequires, wEnsures}
@@ -773,6 +775,10 @@ proc semCustomPragma(c: PContext, n: PNode): PNode =
     # pragma(arg) -> pragma: arg
     result.transitionSonsKind(n.kind)
 
+proc semEnableIfPragma*(c: PContext, n: PNode): PNode =
+  if n.safeLen != 2: invalidPragma(c, n)
+  else: result = n.sons[1]
+
 proc singlePragma(c: PContext, sym: PSym, n: PNode, i: var int,
                   validPragmas: TSpecialWords,
                   comesFromPush, isStatement: bool): bool =
@@ -833,6 +839,7 @@ proc singlePragma(c: PContext, sym: PSym, n: PNode, i: var int,
         recordPragma(c, it, "cppdefine", name)
         processImportCompilerProc(c, sym, name, it.info)
       of wExtern: setExternName(c, sym, expectStrLit(c, it), it.info)
+      of wEnableIf: sym.enableIf = semEnableIfPragma(c, it)
       of wDirty:
         if sym.kind == skTemplate: incl(sym.flags, sfDirty)
         else: invalidPragma(c, it)
