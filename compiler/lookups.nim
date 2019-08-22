@@ -314,7 +314,7 @@ proc lookUp*(c: PContext, n: PNode): PSym =
 
 type
   TLookupFlag* = enum
-    checkAmbiguity, checkUndeclared, checkModule, checkPureEnumFields
+    checkAmbiguity, checkUndeclared, checkModule, checkPureEnumFields, checkOverridePrivate
 
 proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
   const allExceptModule = {low(TSymKind)..high(TSymKind)}-{skModule,skPackage}
@@ -348,7 +348,9 @@ proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
       elif n.sons[1].kind == nkAccQuoted:
         ident = considerQuotedIdent(c, n.sons[1])
       if ident != nil:
-        if m == c.module:
+        if checkOverridePrivate in flags: # REMOVE?
+          result = strTableGet(m.tabAll, ident).skipAlias(n, c.config)
+        elif m == c.module:
           result = strTableGet(c.topLevelScope.symbols, ident).skipAlias(n, c.config)
         else:
           result = strTableGet(m.tabOpt, ident).skipAlias(n, c.config)
