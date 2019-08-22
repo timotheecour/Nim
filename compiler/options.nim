@@ -404,6 +404,10 @@ proc cppDefine*(c: ConfigRef; define: string) =
   c.cppDefines.incl define
 
 proc isDefined*(conf: ConfigRef; symbol: string): bool =
+  # defer:
+  #   if symbol == "js":
+  #     echo0If symbol, result, conf.symbols.hasKey(symbol), CPU[conf.target.targetCPU].name, platform.OS[conf.target.targetOS].name
+  # js, JS
   if conf.symbols.hasKey(symbol):
     result = true
   elif cmpIgnoreStyle(symbol, CPU[conf.target.targetCPU].name) == 0:
