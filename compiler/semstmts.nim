@@ -40,6 +40,11 @@ const
   errInvalidTypeDescAssign = "'typedesc' metatype is not valid here; typed '=' instead of ':'?"
   errInlineIteratorNotFirstClass = "inline iterators are not first-class / cannot be assigned to variables"
 
+type
+  TProcCompilationSteps = enum
+    stepRegisterSymbol,
+    stepDetermineType,
+
 proc semDiscard(c: PContext, n: PNode): PNode =
   result = n
   checkSonsLen(n, 1, c.config)
@@ -1444,7 +1449,14 @@ proc setGenericParamsMisc(c: PContext; n: PNode): PNode =
     n.sons[miscPos].sons[1] = orig
   n.sons[genericParamsPos] = result
 
+proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
+                validPragmas: TSpecialWords,
+                phase = stepRegisterSymbol): PNode
 proc semLambda(c: PContext, n: PNode, flags: TExprFlags): PNode =
+  # semProcAux(c, n, n.kind, lambdaPragmas, phase = stepRegisterSymbol) # CHECKME: phase?
+  semProcAux(c, n, skProc, lambdaPragmas, phase = stepRegisterSymbol) # CHECKME: phase?
+when false:
+ proc semLambda(c: PContext, n: PNode, flags: TExprFlags): PNode =
   # XXX semProcAux should be good enough for this now, we will eventually
   # remove semLambda
   result = semProcAnnotation(c, n, lambdaPragmas)
@@ -1683,11 +1695,6 @@ proc cursorInProcAux(conf: ConfigRef; n: PNode): bool =
 proc cursorInProc(conf: ConfigRef; n: PNode): bool =
   if n.info.fileIndex == conf.m.trackPos.fileIndex:
     result = cursorInProcAux(conf, n)
-
-type
-  TProcCompilationSteps = enum
-    stepRegisterSymbol,
-    stepDetermineType,
 
 proc hasObjParam(s: PSym): bool =
   var t = s.typ
