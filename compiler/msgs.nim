@@ -221,7 +221,7 @@ proc toMsgFilename*(conf: ConfigRef; info: FileIndex): string =
   result = if (optListFullPaths in conf.globalOptions) or
               (relPath.len > absPath.len) or
               (relPath.count("..") > 2):
-            when defined timn_disable_nimplugin:
+            when defined(timn_disable_nimplugin) or defined(timn_testament_compatible):
               # D20190722T100330
               absPath
             else:
@@ -242,7 +242,9 @@ proc toFileLineCol*(conf: ConfigRef; info: TLineInfo): string {.inline.} =
   # consider calling `helpers.lineInfoToString` instead
   result = toMsgFilename(conf, info) & "(" & $info.line & ", " &
     $(info.col + ColOffset) & ")"
-  if true: # TODO: opt in ...
+  if defined(timn_testament_compatible): # TODO: opt in at RT
+    result.add " "
+  else:
     result.add " `" & sourceLine(conf, info).strip & "` " #D20190708T132121:here
 
 proc `$`*(conf: ConfigRef; info: TLineInfo): string = toFileLineCol(conf, info)
