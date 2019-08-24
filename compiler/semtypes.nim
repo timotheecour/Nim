@@ -178,6 +178,16 @@ proc semVarargs(c: PContext, n: PNode, prev: PType): PType =
     addSonSkipIntLit(result, base)
     if len(n) == 3:
       result.n = newIdentNode(considerQuotedIdent(c, n.sons[2]), n.sons[2].info)
+      when false: # WIP
+        let n2 = n.sons[2]
+        case n2.kind
+        of nkCommand, nkCall:
+          # D20190823T170125
+          # TODO: semAlias2Maybe or something
+          # result.n = semExprWithType(c, n2)
+          result.n = semAlias2(c, n2)
+        else:
+          result.n = newIdentNode(considerQuotedIdent(c, n2), n2.info)
   else:
     localError(c.config, n.info, errXExpectsOneTypeParam % "varargs")
     addSonSkipIntLit(result, errorType(c))

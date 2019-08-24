@@ -2172,6 +2172,7 @@ proc semAlias2(c: PContext, n: PNode): PNode =
     globalError(c.config, n.info, errUser, "undeclared symbol: " & renderTree(nodeOrigin))
     return nil
 
+  # TODO: allow customizing `scClosed`? eg for `varargs[untyped, alias2 `$`]`; see D20190823T170125
   let sc = symChoice(c, nodeOrigin, sym, scClosed)
   let sym2 = newSym(skAliasGroup, sym.name, owner = c.getCurrOwner, info = n.info)
   sym2.nodeAliasGroup = sc

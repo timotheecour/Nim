@@ -19,7 +19,7 @@ proc noidentError(conf: ConfigRef; n, origin: PNode) =
   var m = ""
   if origin != nil:
     m.add "in expression '" & origin.renderTree & "': "
-  m.add "identifier expected, but found '" & n.renderTree & "'"
+  m.add "identifier expected, but found '" & n.renderTree & "' of kind " & $n.kind
   localError(conf, n.info, m)
 
 proc considerQuotedIdent*(c: PContext; n: PNode, origin: PNode = nil): PIdent =
