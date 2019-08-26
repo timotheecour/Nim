@@ -2069,7 +2069,7 @@ proc semQuoteAst(c: PContext, n: PNode): PNode =
      newTreeI(nkCall, n.info, quotes))
   result = semExpandToAst(c, result)
 
-proc tryExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
+proc tryExpr(c: PContext, n: PNode, flags: TExprFlags = {}, isSemConstExpr = false): PNode =
   # watch out, hacks ahead:
   when defined(nimsuggest):
     # Remove the error hook so nimsuggest doesn't report errors there
@@ -2102,6 +2102,8 @@ proc tryExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   c.generics = @[]
   var err: string
   try:
+    if isSemConstExpr: result = semConstExpr(c, n)
+    else: result = semExpr(c, n, flags)
     result = semExpr(c, n, flags)
     if result != nil and efNoSem2Check notin flags:
       trackStmt(c, c.module, result, isTopLevel = false)
