@@ -2059,7 +2059,7 @@ proc semQuoteAst(c: PContext, n: PNode): PNode =
     newNode(nkCall, n.info, quotes)])
   result = semExpandToAst(c, result)
 
-proc tryExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
+proc tryExpr(c: PContext, n: PNode, flags: TExprFlags = {}, isSemConstExpr = false): PNode =
   # watch out, hacks ahead:
   let oldErrorCount = c.config.errorCounter
   let oldErrorMax = c.config.errorMax
@@ -2089,7 +2089,8 @@ proc tryExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   c.generics = @[]
   var err: string
   try:
-    result = semExpr(c, n, flags)
+    if isSemConstExpr: result = semConstExpr(c, n)
+    else: result = semExpr(c, n, flags)
     if result != nil and efNoSem2Check notin flags:
       trackStmt(c, c.module, result, isTopLevel = false)
     if c.config.errorCounter != oldErrorCount:
