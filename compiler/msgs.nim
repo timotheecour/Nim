@@ -473,7 +473,7 @@ proc sourceLine*(conf: ConfigRef; i: TLineInfo): string =
   assert i.fileIndex.int32 < conf.m.fileInfos.len
   # can happen if the error points to EOF:
   if i.line.int > conf.m.fileInfos[i.fileIndex.int32].lines.len: return ""
-
+  if i.line.int == 0: return "" # CHECKME
   result = conf.m.fileInfos[i.fileIndex.int32].lines[i.line.int-1]
 
 proc writeSurroundingSrc(conf: ConfigRef; info: TLineInfo) =

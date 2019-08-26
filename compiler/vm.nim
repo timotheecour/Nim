@@ -22,7 +22,8 @@ from semfold import leValueConv, ordinalValToString
 from evaltempl import evalTemplate
 
 const
-  traceCode = defined(nimVMDebug)
+  # traceCode = defined(nimVMDebug)
+  traceCode = true
 
 const timn_temp = false
 when timn_temp:
@@ -522,16 +523,20 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
     let ra = instr.regA
 
     when traceCode:
-      template regDescr(name, r): string =
-        let kind = if r < regs.len: $regs[r].kind else: ""
-        let ret = name & ": " & $r & " " & $kind
-        alignLeft(ret, 15)
-      let msg = "PC:$pc $opcode $ra $rb $rc" % [
-        "pc", $pc, "opcode", alignLeft($c.code[pc].opcode, 15),
-        "ra", regDescr("ra", ra), "rb", regDescr("rb", instr.regB),
-        "rc", regDescr("rc", instr.regC)]
-      # echo msg
-      callback_vm_PC_wrap(msg, regs, instr.regB, instr.regC, c.debug[pc])
+      if getRcfg2().extend.withVMTraceCode:
+        template regDescr(name, r): string =
+          let kind = if r < regs.len: $regs[r].kind else: ""
+          let ret = name & ": " & $r & " " & $kind
+          alignLeft(ret, 15)
+        let msg = "PC:$pc $opcode $ra $rb $rc" % [
+          "pc", $pc, "opcode", alignLeft($c.code[pc].opcode, 15),
+          "ra", regDescr("ra", ra), "rb", regDescr("rb", instr.regB),
+          "rc", regDescr("rc", instr.regC)]
+        # echo msg
+        callback_vm_PC_wrap(msg, regs, instr.regB, instr.regC, c.debug[pc])
+    callback_setLastInfo_wrap(c.debug[pc], "rawExecute")
+
+    # c.debug[pc]
 
     template checkCond(cond: typed, msg = "") =
       # TODO: more general
