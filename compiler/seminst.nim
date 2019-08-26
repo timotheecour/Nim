@@ -324,7 +324,7 @@ proc instantiateProcType(c: PContext, pt: TIdTable,
   prc.typ = result
   popInfoContext(c.config)
 
-proc generateInstanceEnableIf*(c: PContext, fn: PSym, pt: TIdTable, info: TLineInfo, nCond: PNode): PNode {.exportc.} =
+proc generateInstanceEnableIf*(c: PContext, fn: PSym, pt: TIdTable, info: TLineInfo, nCond: PNode, tryCompiles: bool): PNode {.exportc.} =
   let nCond = nCond.copyTree # needed, otherwise subsequent instantiations will
     # use stale data
   let n = fn.ast
@@ -353,7 +353,11 @@ proc generateInstanceEnableIf*(c: PContext, fn: PSym, pt: TIdTable, info: TLineI
     # TODO: would be nice to allow `type(result)` where it makes sense
     # right now gives: maybeAddResult(c, resultFun, resultFun.ast) # gives: getTypeDescAux(tyProxy) or expr: var not init result_427115
 
-  result = c.semConstExpr(c, nCond)
+  # `tryConstExpr(c, nCond)` doesnt' have required semantics; we want `nil` returned
+  # when `nCond` doesn't compile
+  if tryCompiles: result = tryExpr(c, nCond, flags = {}, isSemConstExpr = true)
+  else: result = c.semConstExpr(c, nCond)
+
   popProcCon(c)
   popInfoContext(c.config)
   closeScope(c)
