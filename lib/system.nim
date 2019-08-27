@@ -4217,6 +4217,14 @@ type
   NimNode* {.magic: "PNimrodNode".} = ref NimNodeObj
     ## Represents a Nim AST node. Macros operate on this type.
 
+proc resolveSymbol*(x: untyped): NimNode {.magic: "OverloadResolve", noSideEffect, compileTime.} =
+  ## resolves a symbol given an expression, eg: in `resolveSymbol(foo(args))`
+  ## it will find the symbol that would be called after overload resolution,
+  ## without calling it. Unlike `compiles(foo(args))`, the body is not analyzed.
+  ## Also works with `compiles(mymod.mysym)` to return the symChoice overload
+  ## set.
+  discard
+
 when false:
   template eval*(blk: typed): typed =
     ## Executes a block of code at compile time just as if it was a macro.
