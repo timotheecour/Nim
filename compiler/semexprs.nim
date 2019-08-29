@@ -2673,6 +2673,8 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   # if result != nil: incl(result.flags, nfLazy)
   # if result != nil: incl(result.flags, nfSem)
 
+  if nfPreserve in n.flags: return n
+
   case n.kind
   of nkIdent, nkAccQuoted:
     let checks = if efNoEvaluateGeneric in flags:

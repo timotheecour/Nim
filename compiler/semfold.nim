@@ -543,6 +543,7 @@ proc newSymNodeTypeDesc*(s: PSym; info: TLineInfo): PNode =
 
 proc getConstExpr(m: PSym, n: PNode; g: ModuleGraph): PNode =
   result = nil
+  if nfPreserve in n.flags: return n # CHECKME : can i simplify other code now that i have this?
   case n.kind
   of nkSym:
     var s = n.sym
@@ -551,7 +552,13 @@ proc getConstExpr(m: PSym, n: PNode; g: ModuleGraph): PNode =
       result = newIntNodeT(toInt128(s.position), n, g)
     of skConst:
       case s.magic
-      of mIsMainModule: result = newIntNodeT(toInt128(ord(sfMainModule in m.flags)), n, g)
+      of mIsMainModule:
+        # let fun = g.config.registerMainModuleHook
+        let fun = g.registerMainModuleHook
+        let ret =
+          if fun!=nil: fun(m.name.s)
+          else: sfMainModule in m.flags
+        result = newIntNodeT(toInt128 ord(ret), n, g)
       of mCompileDate: result = newStrNodeT(getDateStr(), n, g)
       of mCompileTime: result = newStrNodeT(getClockStr(), n, g)
       of mCpuEndian: result = newIntNodeT(toInt128(ord(CPU[g.config.target.targetCPU].endian)), n, g)

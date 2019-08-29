@@ -484,6 +484,7 @@ type
                        # the flag is applied to proc default values and to calls
     nfExecuteOnReload  # A top-level statement that will be executed during reloads
     nfOverloadResolve # return resolved `foo` in `foo(args)`
+    nfPreserve # PRTEMP
 
   TNodeFlags* = set[TNodeFlag]
   TTypeFlag* = enum   # keep below 32 for efficiency reasons (now: ~38)
@@ -685,6 +686,7 @@ type
     mFromPNodePointer,
     mGetCurrentScope,
     mOverloadResolve,
+    mRegisterCompilerCallback,
 
 # things that we can evaluate safely at compile time, even if not asked for it:
 const
@@ -1010,7 +1012,7 @@ const
                                       nfDotSetter, nfDotField,
                                       nfIsRef, nfPreventCg, nfLL,
                                       nfFromTemplate, nfDefaultRefsParam,
-                                      nfExecuteOnReload}
+                                      nfExecuteOnReload, nfPreserve}
   namePos* = 0
   patternPos* = 1    # empty except for term rewriting macros
   genericParamsPos* = 2

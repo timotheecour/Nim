@@ -2338,10 +2338,20 @@ proc matchesAux(c: PContext, n, nOrig: PNode,
     arg: PNode # current prepared argument
     formal: PSym # current routine parameter
 
+  proc noMatchAux(m: var TCandidate) = # proc, so we get a stacktrace
+    # debugging: allows sigmatch early error to see where it errors in compiler code
+    # IMPROVE + add hook
+    if m.calleeSym != nil and m.calleeSym.name.s == "foobar":
+      echo0If n, nOrig, a, formal, m.calleeSym
+      debugIf n
+      debugIf nOrig
+      doAssert false
+
   template noMatch() =
     m.state = csNoMatch
     m.firstMismatch.arg = a
     m.firstMismatch.formal = formal
+    when false: noMatchAux(m)
 
   template checkConstraint(n: untyped) {.dirty.} =
     if not formal.constraint.isNil:

@@ -25,8 +25,11 @@
 ## - Its dependent module stays the same.
 ##
 
+
 import ast, intsets, tables, options, lineinfos, hashes, idents,
   incremental, btrees, md5
+
+import compiler/compilerext
 
 type
   SigHash* = distinct MD5Digest
@@ -74,6 +77,11 @@ type
     onUsage*: proc (graph: ModuleGraph; s: PSym; info: TLineInfo) {.nimcall.}
     globalDestructors*: seq[PNode]
     compileExtrasCallback*: proc(graph: ModuleGraph, module: PSym) {.nimcall.}
+
+    ## hooks
+    registerMainModuleHook*: proc (file: string): bool {.closure.} # TODO: nimcall?
+    onDefinitionHook*: proc (graph: ModuleGraph; s: PSym; info: TLineInfo) {.closure.}
+    onUsageHook*: proc (graph: ModuleGraph; s: PSym; info: TLineInfo) {.closure.}
 
   TPassContext* = object of RootObj # the pass's context
   PPassContext* = ref TPassContext
@@ -140,6 +148,8 @@ template getC(): untyped =
   else: c
 
 template onDefAux(info: TLineInfo; s0: PSym, c0: untyped, isFwd: bool) =
+  # IMPROVE: this should also hold for `nimfind`
+  if c0.graph.onDefinitionHook != nil: c0.graph.onDefinitionHook(c0.graph, s0, info)
   if s0.kind in ExportableSymKinds:
     # echo0 (s0.kind, s0.name.s, s0.owner.name.s, info.callback_toLocPrettySimple_wrap)
     let c = c0 # in case c0 is an expression
@@ -170,7 +180,10 @@ when defined(nimfind):
       c2.graph.onDefinitionResolveForward(c2.graph, s, info)
 
 else:
-  template onUse*(info: TLineInfo; s: PSym) = discard
+  template onUse*(info: TLineInfo; s: PSym) =
+    let c0 = getC()
+    if c0.graph.onUsageHook != nil: c0.graph.onUsageHook(c0.graph, s, info)
+
   template onDef*(info: TLineInfo; s: PSym) = onDefAux(info, s, getC(), false)
   template onDefResolveForward*(info: TLineInfo; s: PSym) = onDefAux(info, s, getC(), true)
 

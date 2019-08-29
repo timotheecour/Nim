@@ -30,9 +30,9 @@ when not defined(leanCompiler):
 proc typeSectionRightSidePassInner*(c: PContext, a: PNode) # PRTEMP
 
 proc isMacroRealGeneric*(s: PSym): bool {.importc.}
-proc semAlias2(c: PContext, n: PNode): PNode {.exportc.}
+proc semAlias2(c: PContext, n: PNode): PNode {.exportc.} # REMOVE? or importc?
 
-proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode {.procvar.}
+proc semExpr*(c: PContext, n: PNode, flags: TExprFlags = {}): PNode {.procvar.}
 proc semExprWithType(c: PContext, n: PNode, flags: TExprFlags = {}): PNode {.
   procvar.}
 proc semExprNoType(c: PContext, n: PNode): PNode
@@ -55,7 +55,7 @@ proc semQuoteAst(c: PContext, n: PNode): PNode
 proc finishMethod(c: PContext, s: PSym)
 proc evalAtCompileTime(c: PContext, n: PNode): PNode
 proc indexTypesMatch(c: PContext, f, a: PType, arg: PNode): PNode
-proc semStaticExpr(c: PContext, n: PNode): PNode
+proc semStaticExpr*(c: PContext, n: PNode): PNode
 proc semStaticType(c: PContext, childNode: PNode, prev: PType): PType
 proc semTypeOf(c: PContext; n: PNode): PNode
 proc hasUnresolvedArgs(c: PContext, n: PNode): bool

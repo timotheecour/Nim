@@ -437,12 +437,17 @@ proc genAndOr(c: PCtx; n: PNode; opc: TOpcode; dest: var TDest) =
 proc canonValue*(n: PNode): PNode =
   result = n
 
-proc rawGenLiteral(c: PCtx; n: PNode): int =
-  result = c.constants.len
+proc rawGenLiteral(c: PCtx; n: PNode, next: int): int =
+  result = next
   #assert(n.kind != nkCall)
   n.flags.incl nfAllConst
-  c.constants.add n.canonValue
   internalAssert c.config, result < 0x7fff
+  if result == c.constants.len:
+    c.constants.add n.canonValue
+    c.constantCounts.add 1
+  else:
+    c.constants[result] = n.canonValue
+    c.constantCounts[result] = 1
 
 proc sameConstant*(a, b: PNode): bool =
   result = false
@@ -465,9 +470,15 @@ proc sameConstant*(a, b: PNode): bool =
 
 proc genLiteral(c: PCtx; n: PNode): int =
   # types do not matter here:
+  # TODO: hashtable instead? this seems inefficient
+  var next = c.constants.len
   for i in 0 ..< c.constants.len:
-    if sameConstant(c.constants[i], n): return i
-  result = rawGenLiteral(c, n)
+    if next == c.constants.len and c.constants[i] == nil:
+      next = i
+    if sameConstant(c.constants[i], n):
+      c.constantCounts[i].inc
+      return i
+  result = rawGenLiteral(c, n, next)
 
 proc unused(c: PCtx; n: PNode; x: TDest) {.inline.} =
   if x >= 0:
@@ -500,7 +511,7 @@ proc genCase(c: PCtx; n: PNode; dest: var TDest) =
         # else stmt:
         c.gen(it.sons[0], dest)
       else:
-        let b = rawGenLiteral(c, it)
+        let b = rawGenLiteral(c, it, c.constants.len)
         c.gABx(it, opcBranch, tmp, b)
         let elsePos = c.xjmp(it.lastSon, opcFJmp, tmp)
         c.gen(it.lastSon, dest)
@@ -1483,8 +1494,8 @@ proc setSlot(c: PCtx; v: PSym) =
     v.position = getFreeRegister(c, if v.kind == skLet: slotFixedLet else: slotFixedVar, start = 1)
 
 proc cannotEval(c: PCtx; n: PNode) {.noinline.} =
-  globalError(c.config, n.info, "cannot evaluate at compile time: " &
-    n.renderTree)
+  globalError(c.config, n.info, "cannot evaluate at compile time: '" &
+    n.renderTree & "'' of kind:" & $n.kind)
 
 proc isOwnedBy(a, b: PSym): bool =
   var a = a.owner
@@ -2010,6 +2021,9 @@ proc procIsCallback(c: PCtx; s: PSym): bool =
     dec i
 
 proc gen(c: PCtx; n: PNode; dest: var TDest; flags: TGenFlags = {}) =
+  if nfPreserve in n.flags:
+    genLit(c, n, dest)
+    return
   case n.kind
   of nkSym:
     let s = n.sym

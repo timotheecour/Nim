@@ -112,6 +112,7 @@ proc initDefines*(symbols: StringTableRef) =
   defineSymbol("nimNewShiftOps")
   defineSymbol("nimHasCursor")
 
+  defineSymbol("nimRegisterCompilerCallback")
   when defined(nimHasLibFFI):
     # Renaming to `nimHasLibFFIDefined` as we can't conflate input vs output
     # define flags; e.g. this will report the right thing regardless of whether

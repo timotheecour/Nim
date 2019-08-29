@@ -210,6 +210,7 @@ type
                             # to not slow down interpretation
     globals*: PNode         #
     constants*: PNode       # constant data
+    constantCounts*: seq[int] # refcounts for constants
     types*: seq[PType]      # some instructions reference types (e.g. 'except')
     currentExceptionA*, currentExceptionB*: PNode
     exceptionInstr*: int # index of instruction that raised the exception

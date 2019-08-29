@@ -905,6 +905,7 @@ proc hoistParamsUsedInDefault(c: PTransf, call, letSection, defExpr: PNode): PNo
       if hoisted != nil: defExpr[i] = hoisted
 
 proc transform(c: PTransf, n: PNode): PTransNode =
+  if nfPreserve in n.flags: return PTransNode(n) # TODO: just reuse nfTransf?
   when false:
     var oldDeferAnchor: PNode
     if n.kind in {nkElifBranch, nkOfBranch, nkExceptBranch, nkElifExpr,

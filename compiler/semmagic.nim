@@ -10,6 +10,8 @@
 # This include file implements the semantic checking for magics.
 # included from sem.nim
 
+proc semRegisterCompilerCallback(c: PContext; n: PNode; flags: TExprFlags): PNode {.importc.}
+
 proc semAddrArg(c: PContext; n: PNode; isUnsafeAddr = false): PNode =
   let x = semExprWithType(c, n)
   if x.kind == nkSym:
@@ -460,4 +462,5 @@ proc magicsAfterOverloadResolution(c: PContext, n: PNode,
       result.sons[0] = newSymNode(t.destructor)
   of mUnown:
     result = semUnown(c, n)
+  of mRegisterCompilerCallback: result = semRegisterCompilerCallback(c, n, flags)
   else: result = n
