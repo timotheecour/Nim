@@ -239,6 +239,8 @@ proc processModule*(graph: ModuleGraph; module: PSym, stream: PLLStream): bool {
           if not processTopLevelStmt(graph, n, a): break
       closeParsers(p)
       if s.kind != llsStdIn: break
+
+    if graph.compileExtrasCallback != nil: graph.compileExtrasCallback(graph, module)
     closePasses(graph, a)
     # id synchronization point for more consistent code generation:
     idSynchronizationPoint(1000)

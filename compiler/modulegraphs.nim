@@ -73,6 +73,7 @@ type
     onDefinitionResolveForward*: proc (graph: ModuleGraph; s: PSym; info: TLineInfo) {.nimcall.}
     onUsage*: proc (graph: ModuleGraph; s: PSym; info: TLineInfo) {.nimcall.}
     globalDestructors*: seq[PNode]
+    compileExtrasCallback*: proc(graph: ModuleGraph, module: PSym) {.nimcall.}
 
   TPassContext* = object of RootObj # the pass's context
   PPassContext* = ref TPassContext

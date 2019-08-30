@@ -1092,7 +1092,6 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
 
     of opcRegisterModule:
       decodeB(rkNode)
-      # decodeB(rkNode)
       checkCond regs[rb].kind == rkNode, $regs[rb].kind
       let node = regs[rb].node
       checkCond node.kind in {nkStrLit..nkTripleStrLit}, $node.kind
