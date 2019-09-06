@@ -1042,7 +1042,7 @@ proc requiresExternC(m: BModule; sym: PSym): bool {.inline.} =
            sym.flags * {sfInfixCall, sfCompilerProc, sfMangleCpp} == {} and
            sym.flags * {sfImportc, sfExportc} != {} and
            sym.magic == mNone and
-           m.config.cmd == cmdCompileToCpp)
+           (sfCompileToCpp in m.module.flags or m.config.cmd == cmdCompileToCpp))
 
 proc genProcPrototype(m: BModule, sym: PSym) =
   useHeader(m, sym)

@@ -147,15 +147,18 @@ proc processImportCompilerProc(c: PContext; s: PSym, extname: string, info: TLin
   excl(s.flags, sfForward)
   incl(s.loc.flags, lfImportCompilerProc)
 
+proc handleCppDecl(c: PContext, s: PSym) =
+  if c.config.cmd == cmdCompileToC:
+    let m = s.getModule()
+    incl(m.flags, sfCompileToCpp)
+  incl c.config.globalOptions, optMixedMode
+
 proc processImportCpp(c: PContext; s: PSym, extname: string, info: TLineInfo) =
   setExternName(c, s, extname, info)
   incl(s.flags, sfImportc)
   incl(s.flags, sfInfixCall)
   excl(s.flags, sfForward)
-  if c.config.cmd == cmdCompileToC:
-    let m = s.getModule()
-    incl(m.flags, sfCompileToCpp)
-  incl c.config.globalOptions, optMixedMode
+  handleCppDecl(c, s)
 
 proc processImportObjC(c: PContext; s: PSym, extname: string, info: TLineInfo) =
   setExternName(c, s, extname, info)
@@ -780,10 +783,8 @@ proc singlePragma(c: PContext, sym: PSym, n: PNode, i: var int,
       of wExportc, wExportCpp:
         makeExternExport(c, sym, getOptionalStr(c, it, "$1"), it.info)
         if k == wExportCpp:
-          if c.config.cmd != cmdCompileToCpp:
-            localError(c.config, it.info, "exportcpp requires `nim cpp`, got " & $c.config.cmd)
-          else:
-            incl(sym.flags, sfMangleCpp)
+          handleCppDecl(c, sym)
+          incl(sym.flags, sfMangleCpp)
         incl(sym.flags, sfUsed) # avoid wrong hints
       of wImportc:
         let name = getOptionalStr(c, it, "$1")
