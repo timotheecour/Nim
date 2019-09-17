@@ -150,10 +150,13 @@ proc open*(L: var BaseLexer, input: Stream, bufLen: int = 8192;
 proc openConsumeAll*(L: var BaseLexer, input: Stream) =
   ## greedy version of `open`, avoids complications related to buffer management
   ## for applications where buffering is not needed
-  let s = readAll(input)
-  let bufLen = s.len + 1
-  open(L, newStringStream(s), bufLen = s.len + 1, {})
-  L.isGreedy = true
+  when defined js:
+    doAssert false
+  else:
+    let s = readAll(input)
+    let bufLen = s.len + 1
+    open(L, newStringStream(s), bufLen = s.len + 1, {})
+    L.isGreedy = true
 
 proc getColNumber*(L: BaseLexer, pos: int): int =
   ## retrieves the current column.
