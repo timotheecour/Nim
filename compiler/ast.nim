@@ -286,7 +286,7 @@ type
     sfTemplateParam   # symbol is a template parameter
     sfCursor          # variable/field is a cursor, see RFC 177 for details
     sfInjectDestructors # whether the proc needs the 'injectdestructors' transformation
-    # sfLazyImport      # module is lazy imported # CHECKME
+    sfLazyImport      # module is lazy imported # CHECKME
     sfImportStub      # symbol is from lazy imported module
     sfLazySem         # symbol is from lazy semantic
 
@@ -1638,8 +1638,8 @@ proc copyTreeForeign*(src: PNode, depth = 0): PNode =
   of nkIdent: result.ident = src.ident
   of nkStrLit..nkTripleStrLit: result.strVal = src.strVal
   else:
-    newSeq(result.sons, sonsLen(src))
-    for i in 0 ..< sonsLen(src):
+    newSeq(result.sons, len(src))
+    for i in 0 ..< len(src):
       result.sons[i] = copyTreeForeign(src.sons[i], depth+1)
 
 proc hasSonWith*(n: PNode, kind: TNodeKind): bool =

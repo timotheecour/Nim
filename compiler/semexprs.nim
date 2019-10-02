@@ -2101,10 +2101,10 @@ proc semCompiles(c: PContext, n: PNode, flags: TExprFlags): PNode =
   result.typ = getSysType(c.graph, n.info, tyBool)
 
 proc semOverloadResolve(c: PContext, n: PNode, flags: TExprFlags): PNode =
-  if sonsLen(n) != 2:
-    localError(c.config, n.info, "semOverloadResolve: got" & $sonsLen(n))
+  if len(n) != 2:
+    localError(c.config, n.info, "semOverloadResolve: got" & $len(n))
     return
-  doAssert sonsLen(n) == 2, $sonsLen(n)
+  doAssert len(n) == 2, $len(n)
   let n1 = n[1]
   n1.flags.incl nfOverloadResolve
   case n1.kind

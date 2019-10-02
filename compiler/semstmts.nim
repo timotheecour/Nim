@@ -1198,7 +1198,7 @@ proc checkCovariantParamsUsages(c: PContext; genericType: PType) =
 proc typeSectionRightSidePass(c: PContext, n: PNode) =
   for i in 0 ..< len(n):
     var a = n.sons[i]
-    # echo0 (c.module.name.s, i, sonsLen(n), a.info.callback_toLocPrettySimple_wrap)
+    # echo0 (c.module.name.s, i, len(n), a.info.callback_toLocPrettySimple_wrap)
     typeSectionRightSidePassInner(c, a)
 
 proc typeSectionRightSidePassInner*(c: PContext, a: PNode) =
