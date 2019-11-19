@@ -128,13 +128,18 @@ proc parseProtocol(protocol: string): tuple[orig: string, major, minor: int] =
 proc sendStatus(client: AsyncSocket, status: string): Future[void] =
   client.send("HTTP/1.1 " & status & "\c\L\c\L")
 
+when defined(timn_gcsafe_async_ignore):
+  {.pragma: gcsafe_hack, closure.}
+else:
+  {.pragma: gcsafe_hack, closure, gcsafe.}
+
 proc processRequest(
   server: AsyncHttpServer,
   req: FutureVar[Request],
   client: AsyncSocket,
   address: string,
   lineFut: FutureVar[string],
-  callback: proc (request: Request): Future[void] {.closure, gcsafe.},
+  callback: proc (request: Request): Future[void] {.gcsafe_hack.},
 ): Future[bool] {.async.} =
 
   # Alias `request` to `req.mget()` so we don't have to write `mget` everywhere.
@@ -276,7 +281,7 @@ proc processRequest(
 
 proc processClient(server: AsyncHttpServer, client: AsyncSocket, address: string,
                    callback: proc (request: Request):
-                      Future[void] {.closure, gcsafe.}) {.async.} =
+                      Future[void] {.gcsafe_hack.}) {.async.} =
   var request = newFutureVar[Request]("asynchttpserver.processClient")
   request.mget().url = initUri()
   request.mget().headers = newHttpHeaders()
@@ -290,7 +295,7 @@ proc processClient(server: AsyncHttpServer, client: AsyncSocket, address: string
     if not retry: break
 
 proc serve*(server: AsyncHttpServer, port: Port,
-            callback: proc (request: Request): Future[void] {.closure, gcsafe.},
+            callback: proc (request: Request): Future[void] {.gcsafe_hack.},
             address = "") {.async.} =
   ## Starts the process of listening for incoming HTTP connections on the
   ## specified address and port.

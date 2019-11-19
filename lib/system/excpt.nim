@@ -542,10 +542,18 @@ when defined(cpp) and appType != "lib" and
   proc setTerminate(handler: proc() {.noconv.})
     {.importc: "std::set_terminate", header: "<exception>".}
 
+  proc getTerminate(): (proc() {.noconv.})
+    {.importc: "std::get_terminate", header: "<exception>".}
+
+  const timn_objc_handler = defined(timn_objc_handler) # D20191113T130903
+  when timn_objc_handler:
+    {.passL: "-L$build_D/temp/ -lnimextras_objc".}
+
   setTerminate proc() {.noconv.} =
+    when timn_objc_handler:
+      proc terminate_objc_handler(msg: cstring) {.importc: "terminate_objc_handler".}
     # Remove ourself as a handler, reinstalling the default handler.
     setTerminate(nil)
-
     var msg = "Unknown error in unexpected exception handler"
     try:
       {.emit"#if !defined(_MSC_VER) || (_MSC_VER >= 1923)".}
@@ -555,8 +563,12 @@ when defined(cpp) and appType != "lib" and
       msg = currException.getStackTrace() & "Error: unhandled exception: " &
         currException.msg & " [" & $currException.name & "]"
     except StdException as e:
+      when timn_objc_handler:
+        terminate_objc_handler($e.what())
       msg = "Error: unhandled cpp exception: " & $e.what()
     except:
+      when timn_objc_handler:
+        terminate_objc_handler("")
       msg = "Error: unhandled unknown cpp exception"
 
     {.emit"#if defined(_MSC_VER) && (_MSC_VER < 1923)".}
