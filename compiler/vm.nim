@@ -25,8 +25,8 @@ const
   # traceCode = defined(nimVMDebug)
   traceCode = true
 
-const timn_temp = false
-when timn_temp:
+const timnTemp = false
+when timnTemp:
   import timn/echo_simple
 
 when hasFFI:
@@ -468,8 +468,8 @@ proc compile(c: PCtx, s: PSym): int =
   #c.echoCode
 
 template handleJmpBack() {.dirty.} =
-  callback_counter_max_wrap "handleJmpBack.max", MaxLoopIterations - c.loopIterations + 1
-  callback_counter_inc_wrap "handleJmpBack.total"
+  getCountersMax "handleJmpBack.max", MaxLoopIterations - c.loopIterations + 1
+  getCountersInc "handleJmpBack.total"
   if c.loopIterations <= 0:
     if allowInfiniteLoops in c.features:
       c.loopIterations = MaxLoopIterations
@@ -517,7 +517,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
     stackTraceAux(c, tos, pc)
   defer: getDebugMsgAdditional = nil
   while true:
-    callback_counter_inc_wrap "rawExecute:while"
+    getCountersInc "rawExecute:while"
     #{.computedGoto.}
     let instr = c.code[pc]
     let ra = instr.regA
@@ -1127,7 +1127,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
       # TODO: MEMORY maybe also add destroy that would release resource; maybe instead use protect/dispose?
       GC_ref node
       # TODO: nfIsRef?
-      when timn_temp:
+      when timnTemp:
         echo1 "opcGetPNodePointer", regs[ra].intVal, toFileLineCol(c.config, info)
 
     of opcFromPNodePointer:
@@ -1135,9 +1135,9 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
       let bkind = regs[rb].kind
       checkCond bkind == rkInt, $bkind
 
-      let node = cast[Pnode](regs[rb].intVal)
+      let node = cast[PNode](regs[rb].intVal)
       # callback_vm_custom()
-      when timn_temp:
+      when timnTemp:
         let info = c.debug[pc]
         echo1 "opcFromPNodePointer", regs[rb].intVal, toFileLineCol(c.config, info), regs[ra].kind, toFileLineCol(c.config, node.info)
 

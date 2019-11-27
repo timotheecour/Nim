@@ -16,8 +16,8 @@ const
   byteExcess* = 128 # we use excess-K for immediates
   wordExcess* = 32768
 
-const timn_nimc_MaxLoopIterations {.intdefine.} = 10_000_000
-const MaxLoopIterations* = timn_nimc_MaxLoopIterations # max iterations of all loops
+const timnNimcMaxLoopIterations {.intdefine.} = 10_000_000
+const MaxLoopIterations* = timnNimcMaxLoopIterations # max iterations of all loops
 
 
 type

@@ -1,4 +1,25 @@
 {.push profiler: off.}
+
+when false:
+  proc timn_BREAK*() {.exportc, noinline.} =
+    #[
+    MOVE FACTOR
+    # CHECKME: seems to work but make sure cross platform; eg __declspec(noinline); {.exportc, codegenDecl: """__attribute__((noinline)) void BREAK_5()""".}
+    noinline needed, otherwise can be skipped in -d:release etc
+
+    TODO: how to make a symbol static? (not exported)
+
+    ## BUG:
+    duplicate symbol '_timn_BREAK' in:
+      /Users/timothee/.cache/nim/nim_r/stdlib_assertions.nim.c.o
+      /Users/timothee/.cache/nim/nim_r/stdlib_system.nim.c.o
+    ld: 1 duplicate symbol for architecture x86_64
+    ]#
+    proc c_printf(frmt: cstring) {.importc: "printf", header: "<stdio.h>", varargs.}
+    c_printf("in timn_BREAK\n")
+    # echo "in timn_BREAK" # IMPROVE: wo this, proc is skipped
+    discard
+
 when hostOS == "standalone":
   include "$projectpath/panicoverride"
 
@@ -30,6 +51,7 @@ elif defined(nimQuirky) and not defined(nimscript):
 
 else:
   proc sysFatal(exceptn: typedesc, message: string) {.inline, noreturn.} =
+    # timn_BREAK()
     when declared(owned):
       var e: owned(ref exceptn)
     else:
@@ -39,6 +61,7 @@ else:
     raise e
 
   proc sysFatal(exceptn: typedesc, message, arg: string) {.inline, noreturn.} =
+    # timn_BREAK()
     when declared(owned):
       var e: owned(ref exceptn)
     else:
