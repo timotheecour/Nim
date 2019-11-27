@@ -41,7 +41,7 @@ proc garbageCollectVM(c: PContext, n: PNode) =
   ]#
   let vm = PCtx(c.graph.vm)
   doAssert vm.constantCounts.len == vm.constants.len
-  for i in 0 .. < vm.constants.len:
+  for i in 0 ..< vm.constants.len:
     # BUGFIX: starting from previous len instead of 0 was wrong; maybe bc code can execute other stuff inside or reentrant?
     if sameConstant(vm.constants[i], n):
       doAssert vm.constantCounts[i] > 0
@@ -82,7 +82,7 @@ proc semRegisterCompilerCallback*(c: PContext; n: PNode; flags: TExprFlags): PNo
   of kDiagnostic2:
     # TODO: just in a range?
     let vm = PCtx(c.graph.vm)
-    for i in 0 .. < vm.constants.len:
+    for i in 0 ..< vm.constants.len:
       echo0If i, vm.constants[i], vm.constantCounts[i]
 
   of kOnUsageHook:

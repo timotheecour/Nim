@@ -107,7 +107,7 @@ proc codeListing(c: PCtx, result: var string, start=0; last = -1) =
     result = result.alignTable
 
 proc echoCode*(c: PCtx; start=0; last = -1) {.deprecated.} =
-  if getRcfg2().extend.withVMDebug:
+  if timncfg().nimc.extendPub.withVMDebug:
     var buf = ""
     codeListing(c, buf, start, last)
     callback_vmgen_echoCode_wrap(buf)

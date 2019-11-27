@@ -271,7 +271,6 @@ proc genLineDir(p: BProc, t: PNode) =
       (p.prc == nil or sfPure notin p.prc.flags) and t.info.fileIndex != InvalidFileIdx:
     if freshLineInfo(p, t.info):
       if optExcessiveStackTrace in p.config.globalOptions:
-        # if getRcfg().stacktrace_has_col
         var msg = ""
         msg.addQuoted toFileLineCol(p.config, t.info)
         # abuses the `filename` field to be the formatted location for simplicity

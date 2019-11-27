@@ -523,7 +523,7 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
     let ra = instr.regA
 
     when traceCode:
-      if getRcfg2().extend.withVMTraceCode:
+      if timncfg().nimc.extendPub.withVMTraceCode:
         template regDescr(name, r): string =
           let kind = if r < regs.len: $regs[r].kind else: ""
           let ret = name & ": " & $r & " " & $kind
