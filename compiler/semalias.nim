@@ -6,7 +6,6 @@ MOVE here:
 import compiler/ast
 import compiler/options
 
-{.emit: "NIM_EXTERNC".} # TODO: do it for other `exportc` procs, or improve compiler
 proc isMacroRealGeneric*(s: PSym): bool {.exportc.} =
   if s.kind != skMacro: return false
   if s.ast == nil: return false

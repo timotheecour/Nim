@@ -5,7 +5,6 @@ D20190829T103518
 import compiler/ast
 import compiler/semdata
 
-{.emit: "NIM_EXTERNC".}
 proc semRegisterCompilerCallback*(c: PContext; n: PNode; flags: TExprFlags): PNode {.exportc.}
 
 import compiler/compilerext
