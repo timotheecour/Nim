@@ -155,6 +155,8 @@ type
     opcModuleSymbols,
     opcGetPNodePointer,
     opcFromPNodePointer,
+    opcTimnEcho5,
+    opcTimnCast,
     opcRegisterModule,
     opcSymIsInstantiationOf,
 

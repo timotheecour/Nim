@@ -1251,6 +1251,19 @@ proc genMagic(c: PCtx; n: PNode; dest: var TDest; m: TMagic) =
   of mGetPNodePointer: genUnaryABC(c, n, dest, opcGetPNodePointer)
   of mFromPNodePointer: genUnaryABC(c, n, dest, opcFromPNodePointer)
   of mRegisterModule: genUnaryABC(c, n, dest, opcRegisterModule)
+  of mTimnCast:
+    genBinaryABC(c, n, dest, opcTimnCast)
+  of mTimnEcho5:
+    unused(c, n, dest)
+    let n = n[1].skipConv
+    if n.kind == nkBracket:
+      # can happen for nim check, see bug #9609
+      let x = c.getTempRange(n.len, slotTempUnknown)
+      for i in 0..<n.len:
+        var r: TRegister = x+i
+        c.gen(n.sons[i], r)
+      c.gABC(n, opcTimnEcho5, x, n.len)
+      c.freeTempRange(x, n.len)
 
   of mNChild: genBinaryABC(c, n, dest, opcNChild)
   of mNSetChild: genVoidABC(c, n, dest, opcNSetChild)

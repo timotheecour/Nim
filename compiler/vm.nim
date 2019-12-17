@@ -1161,6 +1161,40 @@ proc rawExecute(c: PCtx, start: int, tos: PStackFrame): TFullReg =
         regs[ra].node = copyTreeForeign(node)
       # TODO: nfIsRef?
 
+    of opcTimnCast: # UNFINISHED
+      decodeB(rkInt)
+      # let rb = instr.regB
+      let bkind = regs[rb].kind
+      # let info = c.debug[pc]
+      debugEcho $(regs[rb].kind, regs[ra].kind)
+
+      # var node: PNode
+      # node = newNodeI(nkIntLit, info)
+      # node.intVal = regs[rb].intVal
+
+      # regs[ra].intVal = cast[ByteAddress](node)
+      regs[ra].intVal = regs[rb].intVal
+
+      # if bkind == rkInt:
+      #   let node = cast[PNode](regs[rb].intVal)
+
+      # elif bkind == rkNode:
+      # else:
+      #   checkCond false, $bkind
+
+    of opcTimnEcho5:
+      let rb = instr.regB
+      let flags: MsgFlags = {} # {msgStdout}
+      var outp = ""
+      var j = 0
+      for i in ra..ra+rb-1:
+        #if regs[i].kind != rkNode: debug regs[i]
+        if j > 0:
+          outp.add ", "
+        outp.add(regs[i].node.strVal)
+        j.inc
+      msgWriteln(c.config, outp, flags)
+
     of opcEcho:
       let rb = instr.regB
       if rb == 1:

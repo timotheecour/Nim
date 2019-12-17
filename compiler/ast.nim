@@ -683,6 +683,8 @@ type
     mModuleSymbols, # TODO: is that obsoleted by mNGetPNodePointer ?
     mGetPNodePointer,
     mRegisterModule,
+    mTimnEcho5,
+    mTimnCast,
     mFromPNodePointer,
     mGetCurrentScope,
     mOverloadResolve,

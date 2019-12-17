@@ -301,6 +301,9 @@ type
 when defined(nimvarargstyped): # PRTEMP
   proc debugEcho*(x: varargs[typed, `$`]) {.magic: "Echo", noSideEffect, tags: [], raises: [].}
 
+when defined(nimHasTimnEcho5): # PRTEMP
+  proc echo5*(x: varargs[typed, `$`]) {.magic: "TimnEcho5", noSideEffect, tags: [], raises: [].}
+
 when defined(nimUncheckedArrayTyp):
   type
     UncheckedArray*[T]{.magic: "UncheckedArray".}
@@ -1976,6 +1979,16 @@ let nimvm* {.magic: "Nimvm", compileTime.}: bool = false
   ## It is true in Nim VM context and false otherwise.
 {.pop.}
 
+when defined(nimHasTimnCast): # PRTEMP
+  # proc timnCast*(x: typed, T: typedesc): T {.magic: "TimnCast".}
+  proc timnCastImpl[U](x: U, T: typedesc): T {.magic: "TimnCast".}
+  proc timnCast*[U](x: U, T: typedesc): T =
+    when nimvm:
+      timnCastImpl(x, T)
+    else:
+      cast[T](x)
+
+
 proc compileOption*(option: string): bool {.
   magic: "CompileOption", noSideEffect.}
   ## Can be used to determine an `on|off` compile-time option. Example:
@@ -2005,6 +2018,10 @@ when hasThreadSupport and defined(tcc) and not compileOption("tlsEmulation"):
 when defined(timn_with_path):
   include timn/echo_lowlevel # strategically placed to get the symbols it needs, but could be moved up w more work
   # include timn/temp/util_compiler2 # PRTEMP
+
+when defined(timn_with_echo_lowlevel3):
+  # TODO: MERGE timn/echo_lowlevel
+  include timn/echo_lowlevel3
 
 when defined(boehmgc):
   when defined(windows):
