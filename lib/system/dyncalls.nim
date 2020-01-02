@@ -118,7 +118,10 @@ elif defined(windows) or defined(dos):
   proc nimGetProcAddr(lib: LibHandle, name: cstring): ProcAddr =
     result = getProcAddress(cast[THINSTANCE](lib), name)
     echo "nimGetProcAddr.0"
+    echo name
+    echo "nimGetProcAddr.0b"
     defer:
+      echo "nimGetProcAddr.1:begin"
       echo result == nil
       echo "nimGetProcAddr.1:done"
     if result != nil: return
