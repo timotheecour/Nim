@@ -118,27 +118,12 @@ elif defined(windows) or defined(dos):
   {.push stack_trace: on.}
   proc nimGetProcAddr(lib: LibHandle, name: cstring): ProcAddr =
     proc c_printf(frmt: cstring): cint {.importc: "printf", header: "<stdio.h>", varargs, discardable.}
-
     result = getProcAddress(cast[THINSTANCE](lib), name)
     defer:
-      echo "nimGetProcAddr.1:begin"
-      c_printf("result:%x\n", result)
       echo "nimGetProcAddr.1:done"
-
-    echo "nimGetProcAddr.00"
-    if name == nil:
-      echo "nimGetProcAddr.00.1"
-    else:
-      echo "nimGetProcAddr.00.2"
-    echo "nimGetProcAddr.01"
-    #echo name == nil
-    let L = len(name)
     c_printf("name:%s\n", name)
     if result != nil:
-      echo "nimGetProcAddr.03"
-      c_printf("result:%x\n", result)
       return
-    echo "nimGetProcAddr.8"
     const decoratedLength = 250
     var decorated: array[decoratedLength, char]
     decorated[0] = '_'

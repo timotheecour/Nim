@@ -699,16 +699,25 @@ proc loadDynamicLib(m: BModule, lib: PLib) =
 proc mangleDynLibProc(sym: PSym): Rope =
   # we have to build this as a single rope in order not to trip the
   # optimization in genInfixCall, see test tests/cpp/t8241.nim
+
+  if sfCompilerProc in sym.flags:
+    # NOTE: sym.loc.r is the external name!
+    echo ("D20200102T105609.1:", sym.name.s)
+    return rope(sym.name.s)
+
   if sym.loc.r != nil:
-    echo ("D20200102T105609:", $sym.loc.r, sym.flags, sym.name.s)
+    echo ("D20200102T105609.2:", $sym.loc.r, sym.flags, sym.name.s)
     return rope($sym.loc.r) # would cause on windows a SIGSEGV in
     # stdlib_winleanDatInit000 () at generated_not_to_break_here
     # if sym.cname.len == 0: sym.cname = $sym.loc.r
-  if sfCompilerProc in sym.flags:
-    # NOTE: sym.loc.r is the external name!
-    result = rope(sym.name.s)
-  else:
-    result = rope(strutils.`%`("Dl_$1_", $sym.id))
+
+  echo ("D20200102T105609.3:", sym.flags, sym.name.s)
+  result = rope(strutils.`%`("Dl_$1_", $sym.id))
+  # if sfCompilerProc in sym.flags:
+  #   # NOTE: sym.loc.r is the external name!
+  #   result = rope(sym.name.s)
+  # else:
+  #   result = rope(strutils.`%`("Dl_$1_", $sym.id))
 
 proc symInDynamicLib(m: BModule, sym: PSym) =
   var lib = sym.annex
@@ -742,10 +751,8 @@ proc symInDynamicLib(m: BModule, sym: PSym) =
       internalError(m.config, sym.info, "wrong index: " & idx)
   else:
     appcg(m, m.s[cfsDynLibInit],
-        "\t /*ok1.1*/ printf(\"ok0\\n\"); ($2) #nimGetProcAddr($3, $4); printf(\"ok1 \"); printf(\" %x: \", #nimGetProcAddr($3, $4)); $n",
-        [tmp, getTypeDesc(m, sym.typ), lib.name, makeCString($extname)])
     appcg(m, m.s[cfsDynLibInit],
-        "\t /*ok1.2*/ $1 = ($2) #nimGetProcAddr($3, $4);printf(\" ok3 \"); $n",
+        "\t$1 = ($2) #nimGetProcAddr($3, $4);$n",
         [tmp, getTypeDesc(m, sym.typ), lib.name, makeCString($extname)])
   # m.s[cfsVars].addf(" /*ok1.3*/ $2 $1;$n", [sym.loc.r, getTypeDesc(m, sym.loc.t)])
   m.s[cfsVars].addf(" /*ok1.3*/ $2 $1 = NIM_NIL;$n", [sym.loc.r, getTypeDesc(m, sym.loc.t)])
