@@ -117,10 +117,13 @@ elif defined(windows) or defined(dos):
 
   proc nimGetProcAddr(lib: LibHandle, name: cstring): ProcAddr =
     result = getProcAddress(cast[THINSTANCE](lib), name)
+    defer:
+      echo ("nimGetProcAddr.1:done")
     if result != nil: return
     const decoratedLength = 250
     var decorated: array[decoratedLength, char]
     decorated[0] = '_'
+    echo ("nimGetProcAddr.2", name)
     var m = 1
     while m < (decoratedLength - 5):
       if name[m - 1] == '\x00': break
@@ -136,17 +139,22 @@ elif defined(windows) or defined(dos):
           m = m + 2
       else:
         m = m + 3
+      echo ("nimGetProcAddr.3", m)
       decorated[m + 1] = '\x00'
       while true:
         decorated[m] = chr(ord('0') + (k %% 10))
         dec(m)
         k = k div 10
         if k == 0: break
+      echo ("nimGetProcAddr.4", defined(nimNoArrayToCstringConversion))
+      echo ("nimGetProcAddr.5", decorated)
       when defined(nimNoArrayToCstringConversion):
         result = getProcAddress(cast[THINSTANCE](lib), addr decorated)
       else:
         result = getProcAddress(cast[THINSTANCE](lib), decorated)
       if result != nil: return
+      # TODO: break?
+      echo echo ("nimGetProcAddr.6", )
     procAddrError(name)
 
 elif defined(genode):
