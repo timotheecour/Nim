@@ -117,6 +117,8 @@ elif defined(windows) or defined(dos):
 
   {.push stack_trace: on.}
   proc nimGetProcAddr(lib: LibHandle, name: cstring): ProcAddr =
+    proc c_printf(frmt: cstring): cint {.importc: "printf", header: "<stdio.h>", varargs, discardable.}
+
     result = getProcAddress(cast[THINSTANCE](lib), name)
     echo "nimGetProcAddr.00"
     if name == nil:
@@ -125,9 +127,12 @@ elif defined(windows) or defined(dos):
       echo "nimGetProcAddr.00.2"
     echo "nimGetProcAddr.01"
     #echo name == nil
-    echo len(name)
+    let L = len(name)
+    c_printf("L:%d\n", (int)L)
+    # echo len(name)
     echo "nimGetProcAddr.02"
-    echo $name
+    c_printf("name:%s\n", name)
+    # echo $name
     echo "nimGetProcAddr.03"
     defer:
       echo "nimGetProcAddr.1:begin"
