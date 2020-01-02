@@ -118,9 +118,13 @@ elif defined(windows) or defined(dos):
   {.push stack_trace: on.}
   proc nimGetProcAddr(lib: LibHandle, name: cstring): ProcAddr =
     result = getProcAddress(cast[THINSTANCE](lib), name)
-    echo "nimGetProcAddr.0"
-    echo name
-    echo "nimGetProcAddr.0b"
+    echo "nimGetProcAddr.00"
+    echo name == nil
+    echo "nimGetProcAddr.01"
+    echo len(name)
+    echo "nimGetProcAddr.02"
+    echo $name
+    echo "nimGetProcAddr.03"
     defer:
       echo "nimGetProcAddr.1:begin"
       echo result == nil
