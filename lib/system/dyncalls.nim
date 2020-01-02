@@ -148,7 +148,7 @@ elif defined(windows) or defined(dos):
         k = k div 10
         if k == 0: break
       echo defined(nimNoArrayToCstringConversion)
-      echo decorated
+      #echo decorated
       when defined(nimNoArrayToCstringConversion):
         result = getProcAddress(cast[THINSTANCE](lib), addr decorated)
       else:
