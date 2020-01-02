@@ -119,7 +119,7 @@ elif defined(windows) or defined(dos):
     result = getProcAddress(cast[THINSTANCE](lib), name)
     echo "nimGetProcAddr.0"
     defer:
-      echo "nimGetProcAddr.1:done"
+      echo ("nimGetProcAddr.1:done", result)
     if result != nil: return
     const decoratedLength = 250
     var decorated: array[decoratedLength, char]
@@ -153,10 +153,12 @@ elif defined(windows) or defined(dos):
         result = getProcAddress(cast[THINSTANCE](lib), addr decorated)
       else:
         result = getProcAddress(cast[THINSTANCE](lib), decorated)
+      echo "nimGetProcAddr.5.1"
       if result != nil: return
       # TODO: break?
       echo "nimGetProcAddr.6"
     procAddrError(name)
+    echo "nimGetProcAddr.7"
 
 elif defined(genode):
 
