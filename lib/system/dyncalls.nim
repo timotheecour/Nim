@@ -142,7 +142,7 @@ elif defined(windows) or defined(dos):
     # echo $name
     echo "nimGetProcAddr.03"
     if result != nil:
-      printf("result:%x\n", result)
+      c_printf("result:%x\n", result)
       return
     echo "nimGetProcAddr.8"
     const decoratedLength = 250
