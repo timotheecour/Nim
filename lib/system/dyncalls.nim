@@ -124,14 +124,16 @@ elif defined(windows) or defined(dos):
     else:
       echo "nimGetProcAddr.00.2"
     echo "nimGetProcAddr.01"
-    echo name == nil
+    #echo name == nil
     echo len(name)
     echo "nimGetProcAddr.02"
     echo $name
     echo "nimGetProcAddr.03"
     defer:
       echo "nimGetProcAddr.1:begin"
-      echo result == nil
+      if name == nil:
+        echo "nimGetProcAddr.1:nil"
+      # echo result == nil
       echo "nimGetProcAddr.1:done"
     if result != nil: return
     const decoratedLength = 250
