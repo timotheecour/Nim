@@ -742,7 +742,10 @@ proc symInDynamicLib(m: BModule, sym: PSym) =
       internalError(m.config, sym.info, "wrong index: " & idx)
   else:
     appcg(m, m.s[cfsDynLibInit],
-        "\t /*ok1*/ $1 = ($2) #nimGetProcAddr($3, $4);$n",
+        "\t /*ok1.1*/ printf("ok0"); ($2) #nimGetProcAddr($3, $4); printf("ok1"); $n",
+        [tmp, getTypeDesc(m, sym.typ), lib.name, makeCString($extname)])
+    appcg(m, m.s[cfsDynLibInit],
+        "\t /*ok1.2*/ $1 = ($2) #nimGetProcAddr($3, $4);printf("ok2"); $n",
         [tmp, getTypeDesc(m, sym.typ), lib.name, makeCString($extname)])
   m.s[cfsVars].addf("$2 $1;$n", [sym.loc.r, getTypeDesc(m, sym.loc.t)])
 
