@@ -747,7 +747,8 @@ proc symInDynamicLib(m: BModule, sym: PSym) =
     appcg(m, m.s[cfsDynLibInit],
         "\t /*ok1.2*/ $1 = ($2) #nimGetProcAddr($3, $4);printf(\" ok3 \"); $n",
         [tmp, getTypeDesc(m, sym.typ), lib.name, makeCString($extname)])
-  m.s[cfsVars].addf(" /*ok1.3*/ $2 $1;$n", [sym.loc.r, getTypeDesc(m, sym.loc.t)])
+  # m.s[cfsVars].addf(" /*ok1.3*/ $2 $1;$n", [sym.loc.r, getTypeDesc(m, sym.loc.t)])
+  m.s[cfsVars].addf(" /*ok1.3*/ $2 $1 = NIM_NIL;$n", [sym.loc.r, getTypeDesc(m, sym.loc.t)])
 
 proc varInDynamicLib(m: BModule, sym: PSym) =
   var lib = sym.annex
