@@ -115,6 +115,7 @@ elif defined(windows) or defined(dos):
   proc nimLoadLibrary(path: string): LibHandle =
     result = cast[LibHandle](winLoadLibrary(path))
 
+  {.push stack_trace: on.}
   proc nimGetProcAddr(lib: LibHandle, name: cstring): ProcAddr =
     result = getProcAddress(cast[THINSTANCE](lib), name)
     echo "nimGetProcAddr.0"
@@ -163,6 +164,7 @@ elif defined(windows) or defined(dos):
       echo "nimGetProcAddr.6"
     procAddrError(name)
     echo "nimGetProcAddr.7"
+  {.pop.}
 
 elif defined(genode):
 
