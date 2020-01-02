@@ -122,8 +122,6 @@ elif defined(windows) or defined(dos):
     result = getProcAddress(cast[THINSTANCE](lib), name)
     defer:
       echo "nimGetProcAddr.1:begin"
-      c_printf("name:%s\n", name)
-      echo "nimGetProcAddr.1:mid"
       c_printf("result:%x\n", result)
       echo "nimGetProcAddr.1:done"
 
@@ -135,13 +133,9 @@ elif defined(windows) or defined(dos):
     echo "nimGetProcAddr.01"
     #echo name == nil
     let L = len(name)
-    c_printf("L:%d\n", (int)L)
-    # echo len(name)
-    echo "nimGetProcAddr.02"
     c_printf("name:%s\n", name)
-    # echo $name
-    echo "nimGetProcAddr.03"
     if result != nil:
+      echo "nimGetProcAddr.03"
       c_printf("result:%x\n", result)
       return
     echo "nimGetProcAddr.8"
@@ -164,7 +158,6 @@ elif defined(windows) or defined(dos):
           m = m + 2
       else:
         m = m + 3
-      echo "nimGetProcAddr.3:" & $m
       decorated[m + 1] = '\x00'
       while true:
         decorated[m] = chr(ord('0') + (k %% 10))
@@ -177,12 +170,9 @@ elif defined(windows) or defined(dos):
         result = getProcAddress(cast[THINSTANCE](lib), addr decorated)
       else:
         result = getProcAddress(cast[THINSTANCE](lib), decorated)
-      echo "nimGetProcAddr.5.1"
       if result != nil: return
       # TODO: break?
-      echo "nimGetProcAddr.6"
     procAddrError(name)
-    echo "nimGetProcAddr.7"
   {.pop.}
 
 elif defined(genode):

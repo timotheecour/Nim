@@ -742,7 +742,7 @@ proc symInDynamicLib(m: BModule, sym: PSym) =
       internalError(m.config, sym.info, "wrong index: " & idx)
   else:
     appcg(m, m.s[cfsDynLibInit],
-        "\t$1 = ($2) #nimGetProcAddr($3, $4);$n",
+        "\t /*ok1*/ $1 = ($2) #nimGetProcAddr($3, $4);$n",
         [tmp, getTypeDesc(m, sym.typ), lib.name, makeCString($extname)])
   m.s[cfsVars].addf("$2 $1;$n", [sym.loc.r, getTypeDesc(m, sym.loc.t)])
 
@@ -755,7 +755,7 @@ proc varInDynamicLib(m: BModule, sym: PSym) =
   sym.loc.r = tmp             # from now on we only need the internal name
   inc(m.labels, 2)
   appcg(m, m.s[cfsDynLibInit],
-      "$1 = ($2*) #nimGetProcAddr($3, $4);$n",
+      "/*ok2*/ $1 = ($2*) #nimGetProcAddr($3, $4);$n",
       [tmp, getTypeDesc(m, sym.typ), lib.name, makeCString($extname)])
   m.s[cfsVars].addf("$2* $1;$n",
       [sym.loc.r, getTypeDesc(m, sym.loc.t)])
