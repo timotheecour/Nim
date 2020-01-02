@@ -120,6 +120,13 @@ elif defined(windows) or defined(dos):
     proc c_printf(frmt: cstring): cint {.importc: "printf", header: "<stdio.h>", varargs, discardable.}
 
     result = getProcAddress(cast[THINSTANCE](lib), name)
+    defer:
+      echo "nimGetProcAddr.1:begin"
+      c_printf("name:%s\n", name)
+      echo "nimGetProcAddr.1:mid"
+      c_printf("result:%x\n", result)
+      echo "nimGetProcAddr.1:done"
+
     echo "nimGetProcAddr.00"
     if name == nil:
       echo "nimGetProcAddr.00.1"
@@ -134,13 +141,10 @@ elif defined(windows) or defined(dos):
     c_printf("name:%s\n", name)
     # echo $name
     echo "nimGetProcAddr.03"
-    defer:
-      echo "nimGetProcAddr.1:begin"
-      if name == nil:
-        echo "nimGetProcAddr.1:nil"
-      # echo result == nil
-      echo "nimGetProcAddr.1:done"
-    if result != nil: return
+    if result != nil:
+      printf("result:%x\n", result)
+      return
+    echo "nimGetProcAddr.8"
     const decoratedLength = 250
     var decorated: array[decoratedLength, char]
     decorated[0] = '_'
