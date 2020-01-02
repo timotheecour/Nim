@@ -47,7 +47,7 @@ const
   nkPtrLit = nkIntLit # hopefully we can get rid of this hack soon
 
 proc importcSymbol*(conf: ConfigRef, sym: PSym): PNode =
-  var name = $sym.cname
+  var name = $sym.loc.r
   if name.len == 0: name = $sym.loc.r
   # the AST does not support untyped pointers directly, so we use an nkIntLit
   # that contains the address instead:
