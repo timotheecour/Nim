@@ -9,6 +9,7 @@
 
 include inclrtl
 import formatfloat
+from system {.privateImport.} import since
 
 # ----------------- IO Part ------------------------------------------------
 type

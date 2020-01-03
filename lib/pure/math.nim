@@ -57,6 +57,7 @@ include "system/inclrtl"
                        # of the standard library!
 
 import bitops
+from system {.privateImport.} import since
 
 proc binom*(n, k: int): int {.noSideEffect.} =
   ## Computes the `binomial coefficient <https://en.wikipedia.org/wiki/Binomial_coefficient>`_.

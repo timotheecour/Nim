@@ -7,6 +7,8 @@
 #    distribution, for details about the copyright.
 #
 
+from system {.privateImport.} import since
+
 ## The ``strtabs`` module implements an efficient hash table that is a mapping
 ## from strings to strings. Supports a case-sensitive, case-insensitive and
 ## style-insensitive mode.

@@ -3568,7 +3568,7 @@ const
   NimVersion*: string = $NimMajor & "." & $NimMinor & "." & $NimPatch
     ## is the version of Nim as a string.
 
-template since*(version, body: untyped) {.dirty.} =
+template since(version, body: untyped) {.dirty.} =
   ## Enable `body` when nim >= `version`
   ##
   ## .. code-block:: Nim
