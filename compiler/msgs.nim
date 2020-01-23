@@ -66,20 +66,19 @@ proc fileInfoKnown*(conf: ConfigRef; filename: AbsoluteFile): bool =
     canon = filename
   result = conf.m.filenameToIndexTbl.hasKey(canon.string)
 
+const
+  pseudoRoot* = "/fakeroot/"
+  commandLineDesc* = pseudoRoot/"commandline"
+
+proc isPseudoPath*(file: string): bool =
+  ## The compiler uses "filenames" for `commandline` or `stdin`
+  ## This flag indicates that we are working with such a path here
+  file.startsWith pseudoRoot
+
 proc fileInfoIdx*(conf: ConfigRef; filename: AbsoluteFile; isKnownFile: var bool): FileIndex =
-  var
-    canon: AbsoluteFile
-    pseudoPath = false
-
-  try:
-    canon = canonicalizePath(conf, filename)
-    shallow(canon.string)
-  except OSError:
-    canon = filename
-    # The compiler uses "filenames" such as `command line` or `stdin`
-    # This flag indicates that we are working with such a path here
-    pseudoPath = true
-
+  assert filename.string.isAbsolute, $filename
+  let pseudoPath = filename.string.isPseudoPath
+  let canon = if pseudoPath: filename else: canonicalizePath(conf, filename)
   if conf.m.filenameToIndexTbl.hasKey(canon.string):
     isKnownFile = true
     result = conf.m.filenameToIndexTbl[canon.string]
@@ -159,9 +158,6 @@ proc getInfoContext*(conf: ConfigRef; index: int): TLineInfo =
   let i = if index < 0: conf.m.msgContext.len + index else: index
   if i >=% conf.m.msgContext.len: result = unknownLineInfo
   else: result = conf.m.msgContext[i].info
-
-const
-  commandLineDesc = "command line"
 
 template toFilename*(conf: ConfigRef; fileIdx: FileIndex): string =
   if fileIdx.int32 < 0 or conf == nil:

@@ -83,6 +83,7 @@ when true:
 
   proc relativeTo*(fullPath: AbsoluteFile, baseFilename: AbsoluteDir;
                    sep = DirSep): RelativeFile =
+    assert not baseFilename.isEmpty, $fullPath # otherwise would return absolute path
     RelativeFile(relativePath(fullPath.string, baseFilename.string, sep))
 
   proc toAbsolute*(file: string; base: AbsoluteDir): AbsoluteFile =

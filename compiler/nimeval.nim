@@ -10,9 +10,9 @@
 ## exposes the Nim VM to clients.
 import
   ast, astalgo, modules, passes, condsyms,
-  options, sem, semdata, llstream, vm, vmdef,
+  options, sem, llstream, vm, vmdef,
   modulegraphs, idents, os, pathutils, passaux,
-  scriptconfig
+  scriptconfig, msgs
 
 type
   Interpreter* = ref object ## Use Nim as an interpreter with this object
@@ -97,9 +97,13 @@ proc findNimStdLibCompileTime*(): string =
   result = sourcePath.parentDir.parentDir / "lib"
   doAssert fileExists(result / "system.nim"), "result:" & result
 
+proc postInit(conf: ConfigRef, scriptName: AbsoluteFile) =
+  conf.projectPath = scriptName.splitFile.dir
+
 proc createInterpreter*(scriptName: string;
                         searchPaths: openArray[string];
                         flags: TSandboxFlags = {}): Interpreter =
+  # let scriptName = scriptName.absolutePath(pseudoRoot).AbsoluteFile
   var conf = newConfigRef()
   var cache = newIdentCache()
   var graph = newModuleGraph(cache, conf)
@@ -113,15 +117,19 @@ proc createInterpreter*(scriptName: string;
   for p in searchPaths:
     conf.searchPaths.add(AbsoluteDir p)
     if conf.libpath.isEmpty: conf.libpath = AbsoluteDir p
+  
+  var scriptName2 = findFile(conf, scriptName)
+  if scriptName2.isEmpty: scriptName2 = pseudoRoot.AbsoluteDir / scriptName.RelativeFile
+  postInit(conf, scriptName2)
 
-  var m = graph.makeModule(scriptName)
+  var m = graph.makeModule(scriptName2)
   incl(m.flags, sfMainModule)
   var vm = newCtx(m, cache, graph)
   vm.mode = emRepl
   vm.features = flags
   graph.vm = vm
   graph.compileSystemModule()
-  result = Interpreter(mainModule: m, graph: graph, scriptName: scriptName)
+  result = Interpreter(mainModule: m, graph: graph, scriptName: scriptName2.string)
 
 proc destroyInterpreter*(i: Interpreter) =
   ## destructor.

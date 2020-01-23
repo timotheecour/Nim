@@ -12,7 +12,7 @@
 import
   ast, astalgo, magicsys, msgs, options,
   idents, lexer, idgen, passes, syntaxes, llstream, modulegraphs, rod,
-  lineinfos, pathutils, tables
+  lineinfos, pathutils, tables, os
 
 proc resetSystemArtifacts*(g: ModuleGraph) =
   magicsys.resetSysTypes(g)
@@ -124,7 +124,7 @@ proc compileSystemModule*(graph: ModuleGraph) =
 
 proc wantMainModule*(conf: ConfigRef) =
   if conf.projectFull.isEmpty:
-    fatal(conf, newLineInfo(conf, AbsoluteFile"command line", 1, 1), errGenerated,
+    fatal(conf, newLineInfo(conf, AbsoluteFile(commandLineDesc), 1, 1), errGenerated,
         "command expects a filename")
   conf.projectMainIdx = fileInfoIdx(conf, addFileExt(conf.projectFull, NimExt))
 
@@ -146,7 +146,5 @@ proc makeModule*(graph: ModuleGraph; filename: AbsoluteFile): PSym =
   result.id = getID()
   registerModule(graph, result)
 
-proc makeModule*(graph: ModuleGraph; filename: string): PSym =
-  result = makeModule(graph, AbsoluteFile filename)
-
-proc makeStdinModule*(graph: ModuleGraph): PSym = graph.makeModule(AbsoluteFile"stdin")
+proc makeStdinModule*(graph: ModuleGraph): PSym =
+  graph.makeModule(AbsoluteFile(pseudoRoot / "stdin"))
