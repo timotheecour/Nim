@@ -118,13 +118,7 @@ proc hash*[T: SomeNumber | Ordinal | char](x: T): Hash {.inline.} =
       # bugfix: the previous code was using `x = x + 1.0` (presumably for
       # handling negative 0), however this leads to collisions for small x due
       # to FP finite precision.
-      let x: BiggestInt =
-        if x == 0: 0.BiggestInt
-        else:
-          when sizeof(BiggestInt) == sizeof(T):
-            cast[BiggestInt](x)
-          else: # for nimvm
-            cast[int32](x).BiggestInt
+      let x = cast[BiggestInt](x + T(0))
     else:
       let x = x.BiggestInt
     hashBiggestInt(x)
