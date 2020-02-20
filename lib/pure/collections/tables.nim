@@ -270,10 +270,13 @@ proc enlarge[A, B](t: var Table[A, B]) =
   swap(t.data, n)
   t.countDeleted = 0
   for i in countup(0, high(n)):
-    let eh = n[i].hcode
+    var eh = n[i].hcode
     if isFilledAndValid(eh):
       template mustNextTry(cell, index): bool = isFilled(cell.hcode)
-      let j = findCell(t, eh, mustNextTry)
+      when cmode == krobin:
+        let j = robinHoodInsert(t, eh, mustNextTry, n[i].key, n[i].val)
+      else:
+        let j = findCell(t, eh, mustNextTry)
       when defined(js):
         rawInsert(t, t.data, n[i].key, n[i].val, eh, j)
       else:

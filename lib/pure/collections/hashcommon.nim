@@ -20,6 +20,8 @@ when not defined(nimHasDefault):
 
 const freeMarker = 0
 const deletedMarker = -1
+type CMode = enum krobin, kmix
+const cmode = krobin
 
 type UHash = uint
 
@@ -73,6 +75,37 @@ template getPerturb(t: typed, hc: Hash): UHash =
   # influence the recursion in nextTry earlier rather than later.
   translateBits(cast[uint](hc), numBitsMask)
 
+template robinHoodGet(t: typed, hc, mustNextTry, key0): int =
+  let m = maxHash(t)
+  var index: Hash = hc and m
+  while mustNextTry(t.data[index], index):
+    # TODO: can short circuit/optimize using depth
+    index = (index + 1) and m
+  index
+
+template robinHoodInsert(t: typed, hc, mustNextTry, key0, val0): int =
+  static: doAssert cmode == krobin
+  let m = maxHash(t)
+  var index: Hash = hc and m
+  var depth = 0
+  while mustNextTry(t.data[index], index):
+    depth.inc
+    let indexi = t.data[index].hcode and m
+    var depthi = index - indexi
+    if depthi < 0: depthi = depthi + m + 1
+    # debugecho (depth, depthi, depth > depthi)
+    # if depth > depthi and false:
+    if depth > depthi:
+      # steal!
+      when compiles(t.data[index].val): # eg: not for HashSet
+        swap(t.data[index].val, val0)
+      swap(t.data[index].key, key0)
+      swap(t.data[index].hcode, hc)
+      depth = depthi
+    index = (index + 1) and m
+  # debugecho (depth, index, key0, val0, hc)
+  index
+
 template findCell(t: typed, hc, mustNextTry): int =
   let m = maxHash(t)
   var index: Hash = hc and m
@@ -103,6 +136,7 @@ template findCell(t: typed, hc, mustNextTry): int =
 template rawGetKnownHCImpl() {.dirty.} =
   if t.dataLen == 0: return -1
   var deletedIndex = -1
+
   template mustNextTry(cell, index): bool =
     if isFilledAndValid(cell.hcode):
       # Compare hc THEN key with boolean short circuit. This makes the common case
@@ -121,7 +155,15 @@ template rawGetKnownHCImpl() {.dirty.} =
       true
     else: false
 
-  let index = findCell(t, hc, mustNextTry)
+  when compiles(t.data[0].val) and cmode == krobin:
+    # IMPROVE
+    when compiles(val):
+      let index = robinHoodInsert(t, hc, mustNextTry, key, val)
+    else:
+      let index = robinHoodGet(t, hc, mustNextTry, key)
+  else:
+    let index = findCell(t, hc, mustNextTry)
+
   if deletedIndex == -2:
     result = index
   elif deletedIndex == -1:
@@ -151,3 +193,6 @@ template rawGetImpl() {.dirty.} =
 
 proc rawGet[X, A](t: X, key: A, hc: var Hash): int {.inline.} =
   rawGetImpl()
+
+proc rawPutAux[X, A, B](t: var X, key: var A, hc: var Hash, val: var B): int {.inline.} =
+  rawGetKnownHCImpl()

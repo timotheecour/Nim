@@ -61,7 +61,10 @@ template maybeRehashPutImpl(enlarge) {.dirty.} =
 template putImpl(enlarge) {.dirty.} =
   checkIfInitialized()
   var hc: Hash
-  var index = rawGet(t, key, hc)
+  genHashImpl(key, hc)
+  var val = val
+  var key = key
+  var index = rawPutAux(t, key, hc, val)
   if index >= 0: t.data[index].val = val
   else: maybeRehashPutImpl(enlarge)
 
