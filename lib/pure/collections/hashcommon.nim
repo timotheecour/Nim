@@ -32,7 +32,6 @@ proc isFilledAndValid(hcode: Hash): bool {.inline.} =
 proc isFilled(hcode: Hash): bool {.inline.} =
   result = hcode != 0
 
-
 proc translateBits(a: UHash, numBitsMask: int): UHash {.inline.} =
   result = (a shr numBitsMask) or (a shl (UHash.sizeof * 8 - numBitsMask))
 
@@ -42,7 +41,9 @@ proc nextTry(h, maxHash: Hash, perturb: var UHash): Hash {.inline.} =
   # and then switch to the formula below, to get "best of both worlds": good
   # cache locality, except when a collision cluster is detected (ie, large number
   # of iterations).
-  const PERTURB_SHIFT = 5 # consider tying this to `numBitsMask = fastLog2(t.dataLen)`
+
+  # consider tying this to `numBitsMask = fastLog2(t.dataLen)`
+  const PERTURB_SHIFT = 5
   result = cast[Hash]((5*cast[uint](h) + 1 + perturb) and cast[uint](maxHash))
   perturb = perturb shr PERTURB_SHIFT
 
@@ -75,14 +76,27 @@ template getPerturb(t: typed, hc: Hash): UHash =
 template findCell(t: typed, hc, mustNextTry): int =
   let m = maxHash(t)
   var index: Hash = hc and m
-  var perturb: UHash = getPerturb(t, hc)
+  var perturb = getPerturb(t, hc)
   var depth = 0
-  const depthThres = 20 # PARAM
+
+  ## PARAM: this param can affect performance and could be exposed to users whoe
+  ## need to optimize for their specific key distribution. If clusters are to be
+  ## expected, it's better to set it low; for really random data, it's better to
+  ## set it high. We pick a sensible default that works across a range of key
+  ## distributions.
+  ##
+  ## depthThres=0 will just use pseudorandom probing
+  ## depthThres=int.max will just use linear probing
+  ## depthThres in between will switch
+  const depthThres = 20
+
   while mustNextTry(t.data[index], index):
     depth.inc
     if depth <= depthThres:
+      ## linear probing, cache friendly
       index = (index + 1) and m
     else:
+      ## pseudorandom probing, "bad" case was detected
       index = nextTry(index, m, perturb)
   index
 
