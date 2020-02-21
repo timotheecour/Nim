@@ -68,6 +68,8 @@
 - Added `minIndex`, `maxIndex` and `unzip` to the `sequtils` module.
 - Added `os.isRelativeTo` to tell whether a path is relative to another
 - Added `resetOutputFormatters` to `unittest`
+- added `os.relativePath(path)`, and made `os.relativePath` more consistent when mixing absolute
+  and relative paths; it also now works for js with -d:nodejs.
 
 
 ## Library changes
