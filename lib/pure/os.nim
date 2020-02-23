@@ -1284,6 +1284,13 @@ proc fileNewer*(a, b: string): bool {.rtl, extern: "nos$1", noNimScript.} =
   else:
     result = getLastModificationTime(a) > getLastModificationTime(b)
 
+when true:
+  proc relativePath*(path: string, sep = DirSep): string =
+      ## returns `path` relative to current directory
+    let base = if path.isAbsolute: getCurrentDir() else: "."
+    relativePath(path, base, sep)
+
+
 when not defined(nimscript):
   proc getCurrentDir*(): string {.rtl, extern: "nos$1", tags: [].} =
     ## Returns the `current working directory`:idx: i.e. where the built
@@ -1345,11 +1352,6 @@ when not defined(nimscript):
             result = newString(bufsize)
           else:
             raiseOSError(osLastError())
-
-proc relativePath*(path: string, sep = DirSep): string =
-  ## returns `path` relative to current directory
-  let base = if path.isAbsolute: getCurrentDir() else: "."
-  relativePath(path, base, sep)
 
 proc setCurrentDir*(newDir: string) {.inline, tags: [], noNimScript.} =
   ## Sets the `current working directory`:idx:; `OSError`
