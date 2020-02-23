@@ -1339,7 +1339,7 @@ when not defined(nimscript):
           break
         else:
           let err = osLastError()
-          if err.int32 == ERANGE:
+        if err.int32 == ERANGE: # PRTEMP: intential indent BUG here
             bufsize = bufsize shl 1
             doAssert(bufsize >= 0)
             result = newString(bufsize)
