@@ -84,8 +84,6 @@ type
 
 include "includes/osseps"
 
-proc absolutePathInternal(path: string): string {.gcsafe.}
-
 proc normalizePathEnd(path: var string, trailingSep = false) =
   ## Ensures ``path`` has exactly 0 or 1 trailing `DirSep`, depending on
   ## ``trailingSep``, and taking care of edge cases: it preservers whether
@@ -345,6 +343,97 @@ when doslikeFileSystem:
         else:
           return false
 
+when not weirdTarget:
+  proc c_rename(oldname, newname: cstring): cint {.
+    importc: "rename", header: "<stdio.h>".}
+  proc c_system(cmd: cstring): cint {.
+    importc: "system", header: "<stdlib.h>".}
+  proc c_strlen(a: cstring): cint {.
+    importc: "strlen", header: "<string.h>", noSideEffect.}
+  proc c_free(p: pointer) {.
+    importc: "free", header: "<stdlib.h>".}
+
+include "includes/oserr"
+
+when not defined(nimscript):
+  proc getCurrentDir*(): string {.rtl, extern: "nos$1", tags: [].} =
+    ## Returns the `current working directory`:idx: i.e. where the built
+    ## binary is run.
+    ##
+    ## So the path returned by this proc is determined at run time.
+    ##
+    ## See also:
+    ## * `getHomeDir proc <#getHomeDir>`_
+    ## * `getConfigDir proc <#getConfigDir>`_
+    ## * `getTempDir proc <#getTempDir>`_
+    ## * `setCurrentDir proc <#setCurrentDir,string>`_
+    ## * `currentSourcePath template <system.html#currentSourcePath.t>`_
+    ## * `getProjectPath proc <macros.html#getProjectPath>`_
+    when defined(nodejs):
+      var ret: cstring
+      {.emit: "`ret` = process.cwd();".}
+      return $ret
+    elif defined(js):
+      doAssert false, "use -d:nodejs to have `getCurrentDir` defined"
+    elif defined(windows):
+      var bufsize = MAX_PATH.int32
+      when useWinUnicode:
+        var res = newWideCString("", bufsize)
+        while true:
+          var L = getCurrentDirectoryW(bufsize, res)
+          if L == 0'i32:
+            raiseOSError(osLastError())
+          elif L > bufsize:
+            res = newWideCString("", L)
+            bufsize = L
+          else:
+            result = res$L
+            break
+      else:
+        result = newString(bufsize)
+        while true:
+          var L = getCurrentDirectoryA(bufsize, result)
+          if L == 0'i32:
+            raiseOSError(osLastError())
+          elif L > bufsize:
+            result = newString(L)
+            bufsize = L
+          else:
+            setLen(result, L)
+            break
+    else:
+      var bufsize = 1024 # should be enough
+      result = newString(bufsize)
+      while true:
+        if getcwd(result, bufsize) != nil:
+          setLen(result, c_strlen(result))
+          break
+        else:
+          let err = osLastError()
+          if err.int32 == ERANGE:
+            bufsize = bufsize shl 1
+            doAssert(bufsize >= 0)
+            result = newString(bufsize)
+          else:
+            raiseOSError(osLastError())
+
+proc absolutePath*(path: string, root = getCurrentDir()): string =
+  ## Returns the absolute path of `path`, rooted at `root` (which must be absolute;
+  ## default: current directory).
+  ## If `path` is absolute, return it, ignoring `root`.
+  ##
+  ## See also:
+  ## * `normalizedPath proc <#normalizedPath,string>`_
+  ## * `normalizePath proc <#normalizePath,string>`_
+  runnableExamples:
+    assert absolutePath("a") == getCurrentDir() / "a"
+
+  if isAbsolute(path): path
+  else:
+    if not root.isAbsolute:
+      raise newException(ValueError, "The specified root is not absolute: " & root)
+    joinPath(root, path)
+
 proc relativePath*(path, base: string, sep = DirSep): string {.
   rtl, extern: "nos$1".} =
   ## Converts `path` to a path relative to `base`.
@@ -377,6 +466,9 @@ proc relativePath*(path, base: string, sep = DirSep): string {.
   base.normalizePathAux
   let a1 = isAbsolute(path)
   let a2 = isAbsolute(base)
+
+  template absolutePathInternal(path: string): string = absolutePath(path, getCurrentDir())
+
   if a1 and not a2:
     base = absolutePathInternal(base)
   elif a2 and not a1:
@@ -852,7 +944,6 @@ proc unixToNativePath*(path: string, drive=""): string {.
         add result, path[i]
         inc(i)
 
-include "includes/oserr"
 when not defined(nimscript):
   include "includes/osenv"
 
@@ -1026,17 +1117,6 @@ when defined(windows) or defined(posix) or defined(nintendoswitch):
     for i in 0..<args.len:
       if i > 0: result.add " "
       result.add quoteShell(args[i])
-
-when not weirdTarget:
-  proc c_rename(oldname, newname: cstring): cint {.
-    importc: "rename", header: "<stdio.h>".}
-  proc c_system(cmd: cstring): cint {.
-    importc: "system", header: "<stdlib.h>".}
-  proc c_strlen(a: cstring): cint {.
-    importc: "strlen", header: "<string.h>", noSideEffect.}
-  proc c_free(p: pointer) {.
-    importc: "free", header: "<stdlib.h>".}
-
 
 when defined(windows) and not weirdTarget:
   when useWinUnicode:
@@ -1284,68 +1364,6 @@ proc fileNewer*(a, b: string): bool {.rtl, extern: "nos$1", noNimScript.} =
   else:
     result = getLastModificationTime(a) > getLastModificationTime(b)
 
-when not defined(nimscript):
-  proc getCurrentDir*(): string {.rtl, extern: "nos$1", tags: [].} =
-    ## Returns the `current working directory`:idx: i.e. where the built
-    ## binary is run.
-    ##
-    ## So the path returned by this proc is determined at run time.
-    ##
-    ## See also:
-    ## * `getHomeDir proc <#getHomeDir>`_
-    ## * `getConfigDir proc <#getConfigDir>`_
-    ## * `getTempDir proc <#getTempDir>`_
-    ## * `setCurrentDir proc <#setCurrentDir,string>`_
-    ## * `currentSourcePath template <system.html#currentSourcePath.t>`_
-    ## * `getProjectPath proc <macros.html#getProjectPath>`_
-    when defined(nodejs):
-      var ret: cstring
-      {.emit: "`ret` = process.cwd();".}
-      return $ret
-    elif defined(js):
-      doAssert false, "use -d:nodejs to have `getCurrentDir` defined"
-    elif defined(windows):
-      var bufsize = MAX_PATH.int32
-      when useWinUnicode:
-        var res = newWideCString("", bufsize)
-        while true:
-          var L = getCurrentDirectoryW(bufsize, res)
-          if L == 0'i32:
-            raiseOSError(osLastError())
-          elif L > bufsize:
-            res = newWideCString("", L)
-            bufsize = L
-          else:
-            result = res$L
-            break
-      else:
-        result = newString(bufsize)
-        while true:
-          var L = getCurrentDirectoryA(bufsize, result)
-          if L == 0'i32:
-            raiseOSError(osLastError())
-          elif L > bufsize:
-            result = newString(L)
-            bufsize = L
-          else:
-            setLen(result, L)
-            break
-    else:
-      var bufsize = 1024 # should be enough
-      result = newString(bufsize)
-      while true:
-        if getcwd(result, bufsize) != nil:
-          setLen(result, c_strlen(result))
-          break
-        else:
-          let err = osLastError()
-          if err.int32 == ERANGE:
-            bufsize = bufsize shl 1
-            doAssert(bufsize >= 0)
-            result = newString(bufsize)
-          else:
-            raiseOSError(osLastError())
-
 proc relativePath*(path: string, sep = DirSep): string =
   ## returns `path` relative to current directory
   let base = if path.isAbsolute: getCurrentDir() else: "."
@@ -1368,27 +1386,6 @@ proc setCurrentDir*(newDir: string) {.inline, tags: [], noNimScript.} =
       if setCurrentDirectoryA(newDir) == 0'i32: raiseOSError(osLastError(), newDir)
   else:
     if chdir(newDir) != 0'i32: raiseOSError(osLastError(), newDir)
-
-
-proc absolutePath*(path: string, root = getCurrentDir()): string =
-  ## Returns the absolute path of `path`, rooted at `root` (which must be absolute;
-  ## default: current directory).
-  ## If `path` is absolute, return it, ignoring `root`.
-  ##
-  ## See also:
-  ## * `normalizedPath proc <#normalizedPath,string>`_
-  ## * `normalizePath proc <#normalizePath,string>`_
-  runnableExamples:
-    assert absolutePath("a") == getCurrentDir() / "a"
-
-  if isAbsolute(path): path
-  else:
-    if not root.isAbsolute:
-      raise newException(ValueError, "The specified root is not absolute: " & root)
-    joinPath(root, path)
-
-proc absolutePathInternal(path: string): string =
-  absolutePath(path, getCurrentDir())
 
 proc normalizePath*(path: var string) {.rtl, extern: "nos$1", tags: [].} =
   ## Normalize a path.
