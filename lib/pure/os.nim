@@ -84,7 +84,7 @@ type
 
 include "includes/osseps"
 
-proc absolutePathInternal(path: string): string {.gcsafe.}
+{.experimental: "codeReordering".}
 
 proc normalizePathEnd(path: var string, trailingSep = false) =
   ## Ensures ``path`` has exactly 0 or 1 trailing `DirSep`, depending on
@@ -377,10 +377,13 @@ proc relativePath*(path, base: string, sep = DirSep): string {.
   base.normalizePathAux
   let a1 = isAbsolute(path)
   let a2 = isAbsolute(base)
+
+  template absolutePath2(path: string): string = absolutePath(path, getCurrentDir())
+
   if a1 and not a2:
-    base = absolutePathInternal(base)
+    base = absolutePath2(base)
   elif a2 and not a1:
-    path = absolutePathInternal(path)
+    path = absolutePath2(path)
 
   when doslikeFileSystem:
     if isAbsolute(path) and isAbsolute(base):
@@ -1386,9 +1389,6 @@ proc absolutePath*(path: string, root = getCurrentDir()): string =
     if not root.isAbsolute:
       raise newException(ValueError, "The specified root is not absolute: " & root)
     joinPath(root, path)
-
-proc absolutePathInternal(path: string): string =
-  absolutePath(path, getCurrentDir())
 
 proc normalizePath*(path: var string) {.rtl, extern: "nos$1", tags: [].} =
   ## Normalize a path.
