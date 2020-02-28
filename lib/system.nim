@@ -949,7 +949,7 @@ since2 (1, 1):
       doAssert Foo1().notDefault
       doAssert Foo2().isDefault
 
-    # BUG: default(T) would not work but should
+    # pending https://github.com/nim-lang/Nim/issues/13527, use `default(T)`
     a == default(type(a))
 
   template isDefault*(a: string): bool =
