@@ -26,7 +26,9 @@ when defined(i386) and defined(windows) and defined(vcc):
 import
   os, strutils, parseopt, osproc
 
-import tools / kochdocs
+import tools/kochdocs
+import tools/continuous_integration
+  # we could make this conditional on whether we're in CI
 
 const VersionAsString = system.NimVersion
 
@@ -55,8 +57,8 @@ Possible Commands:
   nimble                   builds the Nimble tool
 Boot options:
   -d:release               produce a release version of the compiler
-  -d:useLinenoise          use the linenoise library for interactive mode
-                           (not needed on Windows)
+  -d:nimUseLinenoise       use the linenoise library for interactive mode
+                           `nim secret` (not needed on Windows)
   -d:leanCompiler          produce a compiler without JS codegen or
                            documentation generator in order to use less RAM
                            for bootstrapping
@@ -475,6 +477,9 @@ proc xtemp(cmd: string) =
 proc runCI(cmd: string) =
   doAssert cmd.len == 0, cmd # avoid silently ignoring
   echo "runCI:", cmd
+  echo hostInfo()
+  installNode()
+
   # note(@araq): Do not replace these commands with direct calls (eg boot())
   # as that would weaken our testing efforts.
   when defined(posix): # appveyor (on windows) didn't run this
