@@ -18,11 +18,13 @@ const
   FirstCallConv* = wNimcall
   LastCallConv* = wNoconv
 
+const CallConvsLike = {FirstCallConv..LastCallConv} + {wAlwaysInline}
+
 const
   declPragmas = {wImportc, wImportObjC, wImportCpp, wImportJs, wExportc, wExportCpp,
     wExportNims, wExtern, wDeprecated, wNodecl, wError, wUsed, wAlign}
     ## common pragmas for declarations, to a good approximation
-  procPragmas* = declPragmas + {FirstCallConv..LastCallConv,
+  procPragmas* = declPragmas + CallConvsLike + {
     wMagic, wNoSideEffect, wSideEffect, wNoreturn, wNosinks, wDynlib, wHeader,
     wCompilerProc, wNonReloadable, wCore, wProcVar, wVarargs, wCompileTime, wMerge,
     wBorrow, wImportCompilerProc, wThread,
@@ -33,10 +35,10 @@ const
   methodPragmas* = procPragmas+{wBase}-{wImportCpp}
   templatePragmas* = {wDeprecated, wError, wGensym, wInject, wDirty,
     wDelegator, wExportNims, wUsed, wPragma}
-  macroPragmas* = declPragmas + {FirstCallConv..LastCallConv,
+  macroPragmas* = declPragmas + CallConvsLike + {
     wMagic, wNoSideEffect, wCompilerProc, wNonReloadable, wCore,
     wDiscardable, wGensym, wInject, wDelegator}
-  iteratorPragmas* = declPragmas + {FirstCallConv..LastCallConv, wNoSideEffect, wSideEffect,
+  iteratorPragmas* = declPragmas + CallConvsLike + {wNoSideEffect, wSideEffect,
     wMagic, wBorrow,
     wDiscardable, wGensym, wInject, wRaises,
     wTags, wLocks, wGcSafe}
@@ -52,7 +54,7 @@ const
     wFloatChecks, wInfChecks, wNanChecks, wPragma, wEmit, wUnroll,
     wLinearScanEnd, wPatterns, wTrMacros, wEffects, wNoForward, wReorder, wComputedGoto,
     wInjectStmt, wExperimental, wThis, wUsed}
-  lambdaPragmas* = declPragmas + {FirstCallConv..LastCallConv,
+  lambdaPragmas* = declPragmas + CallConvsLike + {
     wNoSideEffect, wSideEffect, wNoreturn, wNosinks, wDynlib, wHeader,
     wThread, wAsmNoStackFrame,
     wRaises, wLocks, wTags, wGcSafe, wCodegenDecl} - {wExportNims, wError, wUsed}  # why exclude these?
@@ -71,7 +73,7 @@ const
     wGensym, wInject,
     wIntDefine, wStrDefine, wBoolDefine, wCompilerProc, wCore}
   letPragmas* = varPragmas
-  procTypePragmas* = {FirstCallConv..LastCallConv, wVarargs, wNoSideEffect,
+  procTypePragmas* = CallConvsLike + {wVarargs, wNoSideEffect,
                       wThread, wRaises, wLocks, wTags, wGcSafe}
   forVarPragmas* = {wInject, wGensym}
   allRoutinePragmas* = methodPragmas + iteratorPragmas + lambdaPragmas
@@ -1039,6 +1041,12 @@ proc singlePragma(c: PContext, sym: PSym, n: PNode, i: var int,
         assert(sym != nil)
         if sym.typ == nil: invalidPragma(c, it)
         else: sym.typ.callConv = wordToCallConv(k)
+      of wAlwaysInline:
+        assert(sym != nil)
+        if sym.typ == nil: invalidPragma(c, it)
+        else:
+          sym.typ.callConv = wordToCallConv(wInline)
+          sym.typ.flags.incl tfAlwaysInline
       of wEmit: pragmaEmit(c, it)
       of wUnroll: pragmaUnroll(c, it)
       of wLinearScanEnd, wComputedGoto: noVal(c, it)

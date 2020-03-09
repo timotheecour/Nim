@@ -545,6 +545,7 @@ type
                            # If it has one, t.destructor is not nil.
     tfAcyclic # object type was annotated as .acyclic
     tfIncompleteStruct # treat this type as if it had sizeof(pointer)
+    tfAlwaysInline
 
   TTypeFlags* = set[TTypeFlag]
 
