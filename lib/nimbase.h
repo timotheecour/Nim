@@ -93,8 +93,8 @@ __AVR__
   /* these should support C99's inline */
   /* the test for __POCC__ has to come before the test for _MSC_VER,
      because PellesC defines _MSC_VER too. This is brain-dead. */
-#  define N_INLINE(rettype, name) inline rettype name
-   // #  define N_INLINE(rettype, name) __attribute__((__always_inline__)) rettype name
+// #  define N_INLINE(rettype, name) inline rettype name
+   #  define N_INLINE(rettype, name) __attribute__((__always_inline__)) rettype name
 #if __has_attribute(__always_inline__)
   #  define N_ALWAYS_INLINE(rettype, name) __attribute__((__always_inline__)) rettype name
 #endif
