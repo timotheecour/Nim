@@ -161,7 +161,7 @@ proc isSpaceAscii*(c: char): bool {.noSideEffect, procvar,
   return c in Whitespace
 
 proc isLowerAscii*(c: char): bool {.noSideEffect, procvar,
-  rtl, extern: "nsuIsLowerAsciiChar".} =
+  rtl, extern: "nsuIsLowerAsciiChar", inline.} =
   ## Checks whether or not `c` is a lower case character.
   ##
   ## This checks ASCII characters only.
@@ -176,7 +176,7 @@ proc isLowerAscii*(c: char): bool {.noSideEffect, procvar,
   return c in {'a'..'z'}
 
 proc isUpperAscii*(c: char): bool {.noSideEffect, procvar,
-  rtl, extern: "nsuIsUpperAsciiChar".} =
+  rtl, extern: "nsuIsUpperAsciiChar", inline.} =
   ## Checks whether or not `c` is an upper case character.
   ##
   ## This checks ASCII characters only.
@@ -2872,15 +2872,15 @@ since (1, 1):
     ## See also:
     ## * `normalize proc<#normalize,string>`_
     runnableExamples:
-      var stringy = "ABCDEF"
+      var stringy = "ABCDeF!"
       toLowerAsciiInPlace(stringy)
-      doAssert stringy == "abcdef"
-      var strng = "NIM"
-      toLowerAsciiInPlace(strng)
-      doAssert strng == "nim"
+      doAssert stringy == "abcdef!"
+      var str = "NIM"
+      toLowerAsciiInPlace(str)
+      doAssert str == "nim"
     for c in mitems(s):
-      if c in {'A'..'Z'}: c = chr(ord(c) + (ord('a') - ord('A')))
-
+      # faster than `if c.isUpperAscii: ...`
+      c = chr(c.ord + (if c.isUpperAscii: (ord('a') - ord('A')) else: 0))
 
   func toUpperAsciiInPlace*(s: var string) {.inline.} =
     ## Converts string `s` into upper case.
@@ -2892,14 +2892,14 @@ since (1, 1):
     ## See also:
     ## * `capitalizeAscii proc<#capitalizeAscii,string>`_
     runnableExamples:
-      var stringo = "abcdef"
+      var stringo = "ABCDeF!"
       toUpperAsciiInPlace(stringo)
-      doAssert stringo == "ABCDEF"
-      var strng = "nim"
-      toUpperAsciiInPlace(strng)
-      doAssert strng == "NIM"
+      doAssert stringo == "ABCDEF!"
+      var str = "nim"
+      toUpperAsciiInPlace(str)
+      doAssert str == "NIM"
     for c in mitems(s):
-      if c in {'a'..'z'}: c = chr(ord(c) - (ord('a') - ord('A')))
+      c = chr(c.ord + (if c.isLowerAscii: (ord('A') - ord('a')) else: 0))
 
 
 when isMainModule:
