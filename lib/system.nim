@@ -2800,7 +2800,6 @@ when defined(himHasOverloadResolve):
     ## without calling it. Unlike `compiles(foo(args))`, the body is not analyzed.
     ## Also works with `compiles(mymod.mysym)` to return the symChoice overload
     ## set.
-    discard
 
 when defined(nimV2):
   import system/repr_v2
