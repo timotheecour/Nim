@@ -94,12 +94,16 @@ __AVR__
   /* the test for __POCC__ has to come before the test for _MSC_VER,
      because PellesC defines _MSC_VER too. This is brain-dead. */
 #  define N_INLINE(rettype, name) inline rettype name
+#if __has_attribute(__always_inline__)
+  #  define N_ALWAYS_INLINE(rettype, name) __attribute__((__always_inline__)) rettype name
+#endif
 #elif defined(__BORLANDC__) || defined(_MSC_VER)
 /* Borland's compiler is really STRANGE here; note that the __fastcall
    keyword cannot be before the return type, but __inline cannot be after
    the return type, so we do not handle this mess in the code generator
    but rather here. */
 #  define N_INLINE(rettype, name) __inline rettype name
+#  define N_ALWAYS_INLINE(rettype, name) __forceinline rettype name
 #elif defined(__DMC__)
 #  define N_INLINE(rettype, name) inline rettype name
 #elif defined(__WATCOMC__)
@@ -108,7 +112,11 @@ __AVR__
 #  define N_INLINE(rettype, name) rettype __inline name
 #endif
 
-#define N_INLINE_PTR(rettype, name) rettype (*name)
+#if !defined(N_ALWAYS_INLINE)
+#  define N_ALWAYS_INLINE(rettype, name) N_INLINE(rettype, name)
+#endif
+
+#define N_INLINE_PTR(rettype, name) rettype (*name) // no inline here?
 
 #if defined(__POCC__)
 #  define NIM_CONST /* PCC is really picky with const modifiers */

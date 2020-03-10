@@ -240,6 +240,10 @@ const
                  # but one can #define it to what one wants
     "N_INLINE", "N_NOINLINE", "N_FASTCALL", "N_CLOSURE", "N_NOCONV"]
 
+proc callingConvStr(typ: PType): string =
+  if tfAlwaysInline in typ.flags: "N_ALWAYS_INLINE"
+  else: CallingConvToStr[typ.callConv]
+
 proc cacheGetType(tab: TypeCache; sig: SigHash): Rope =
   # returns nil if we need to declare this type
   # since types are now unique via the ``getUniqueType`` mechanism, this slow
@@ -765,7 +769,7 @@ proc getTypeDescAux(m: BModule, origTyp: PType, check: var IntSet): Rope =
     if not isImportedType(t):
       if t.callConv != ccClosure: # procedure vars may need a closure!
         m.s[cfsTypes].addf("typedef $1_PTR($2, $3) $4;$n",
-             [rope(CallingConvToStr[t.callConv]), rettype, result, desc])
+             [rope(t.callingConvStr), rettype, result, desc])
       else:
         m.s[cfsTypes].addf("typedef struct {$n" &
             "N_NIMCALL_PTR($2, ClP_0) $3;$n" &
@@ -916,7 +920,7 @@ proc getClosureType(m: BModule, t: PType, kind: TClosureTypeKind): Rope =
   if not isImportedType(t):
     if t.callConv != ccClosure or kind != clFull:
       m.s[cfsTypes].addf("typedef $1_PTR($2, $3) $4;$n",
-           [rope(CallingConvToStr[t.callConv]), rettype, result, desc])
+           [rope(t.callingConvStr), rettype, result, desc])
     else:
       m.s[cfsTypes].addf("typedef struct {$n" &
           "N_NIMCALL_PTR($2, ClP_0) $3;$n" &
@@ -969,7 +973,7 @@ proc genProcHeader(m: BModule, prc: PSym, asPtr: bool = false): Rope =
   # the object graph!
   if prc.constraint.isNil:
     result.addf("$1$2($3, $4)$5",
-         [rope(CallingConvToStr[prc.typ.callConv]), asPtrStr, rettype, name,
+         [rope(prc.typ.callingConvStr), asPtrStr, rettype, name,
          params])
   else:
     let asPtrStr = if asPtr: (rope("(*") & name & ")") else: name
