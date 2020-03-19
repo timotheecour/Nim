@@ -53,9 +53,33 @@ type
     len: int
     prev: ptr GcFrameHeader
 
+type CstringWrapper = object
+  # not necessarily 0 terminated (we're not using `c_strlen` or equivalent)
+  s: cstring
+  len: int
+  cap: int
+
+proc setLen*(a: var CstringWrapper, n: int) =
+  proc c_realloc(p: pointer, newsize: csize_t): pointer {.importc: "realloc", header: "<stdlib.h>".}
+  if n > a.cap:
+    if a.cap == 0:
+      a.cap = 8
+    else:
+      a.cap = a.cap * 2
+    a.s = cast[cstring](c_realloc(cast[pointer](a.s), a.cap.csize_t))
+  a.len = n
+
+proc add*(a: var CstringWrapper, b: string) =
+  let old = a.len
+  a.setLen(old + b.len)
+  for i in 0..<b.len: a.s[old+i] = b[i]
+
+template `[]`*(a: CstringWrapper, index: int): char =
+  a.s[index]
+
 var
   framePtr {.threadvar.}: PFrame
-  frameMsgBuf* {.threadvar.}: string
+  frameMsgBuf* {.threadvar.}: CstringWrapper
   excHandler {.threadvar.}: PSafePoint
     # list of exception handlers
     # a global variable for the root of all try blocks
