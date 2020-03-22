@@ -520,7 +520,6 @@ proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
         if amb and checkAmbiguity in flags:
           errorUseQualifier(c, n.info, candidates)
 
-    # if result == nil and checkUndeclared in flags:
     if result == nil and checkUndeclared in flags and checkOverloadResolve notin flags:
       result = errorUndeclaredIdentifierHint(c, n, ident)
     elif checkAmbiguity in flags and result != nil and amb:
