@@ -541,7 +541,7 @@ proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
           result = strTableGet(c.topLevelScope.symbols, ident).skipAlias(n, c.config)
         else:
           result = someSym(c.graph, m, ident).skipAlias(n, c.config)
-        if result == nil and checkUndeclared in flags:
+        if result == nil and checkUndeclared in flags and nfOverloadResolve notin n.flags:
           result = errorUndeclaredIdentifierHint(c, n[1], ident)
       elif n[1].kind == nkSym:
         result = n[1].sym
