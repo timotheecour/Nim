@@ -2,7 +2,7 @@
 
 import macros
 
-macro tryCompile(expr, elseBody: untyped): untyped =
+macro tryCompile*(expr, elseBody: untyped): untyped =
   var name: NimNode
 
   if expr.kind in nnkCallKinds:
@@ -36,19 +36,20 @@ macro tryCompile(expr, elseBody: untyped): untyped =
     )
   )
 
-  result = nnkStmtListExpr.newTree(
-    templateDef, expr
-  )
+  result = quote do:
+    `templateDef`
+    `expr`
 
-type
-  MyObject = object
+when isMainModule:
+  type
+    MyObject = object
 
-var myInt: int = 123
-var mySeq = @['a','b','c']
-var myString = "abcdef"
-var myObject: MyObject
+  var myInt: int = 123
+  var mySeq = @['a','b','c']
+  var myString = "abcdef"
+  var myObject: MyObject
 
-echo tryCompile(myInt.len, 10)     # 10
-echo tryCompile(mySeq.len, 11)     # 3
-echo tryCompile(myString.len, 12)  # 6
-echo tryCompile(myObject.len, 13)  # 13
+  doAssert tryCompile(myInt.len, 10) == 10
+  doAssert tryCompile(mySeq.len, 11) == 3
+  doAssert tryCompile(myString.len, 12) == 6
+  doAssert tryCompile(myObject.len, 13) == 13
