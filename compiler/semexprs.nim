@@ -13,8 +13,6 @@
 when defined(nimCompilerStackraceHints):
   import std/stackframes
 
-import std/wrapnils # PRTEMP
-
 const
   errExprXHasNoType = "expression '$1' has no type (or is ambiguous)"
   errXExpectsTypeOrValue = "'$1' expects a type or value"
