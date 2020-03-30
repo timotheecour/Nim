@@ -646,8 +646,10 @@ when defined(windows) and appType == "console" and
     importc: "SetConsoleCP".}
 
   const Utf8codepage = 65001
-  discard setConsoleOutputCP(Utf8codepage)
-  discard setConsoleCP(Utf8codepage)
+  discard setConsoleOutputCP(Utf8codepage) # output
+  discard setConsoleCP(Utf8codepage) # input
+  # xxx: we should restore chcp state before program exits, maybe by scoping
+  # this in a try/catch block or via `addQuitProc`
 
 proc readFile*(filename: string): TaintedString {.tags: [ReadIOEffect], benign.} =
   ## Opens a file named `filename` for reading, calls `readAll
