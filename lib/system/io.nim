@@ -214,34 +214,9 @@ proc writeChars*(f: File, a: openArray[char], start, len: Natural): int {.
   var x = cast[ptr UncheckedArray[int8]](a)
   result = writeBuffer(f, addr(x[int(start)]), len)
 
-when defined(windows):
-  proc writeWindows(f: File; s: string; doRaise = false) =
-    # Don't ask why but the 'printf' family of function is the only thing
-    # that writes utf-8 strings reliably on Windows. At least on my Win 10
-    # machine. We also enable `setConsoleOutputCP(65001)` now by default.
-    # But we cannot call printf directly as the string might contain \0.
-    # So we have to loop over all the sections separated by potential \0s.
-    var i = c_fprintf(f, "%s", s)
-    while i < s.len:
-      if s[i] == '\0':
-        let w = c_fputc('\0', f)
-        if w != 0:
-          if doRaise: raiseEIO("cannot write string to file")
-          break
-        inc i
-      else:
-        let w = c_fprintf(f, "%s", unsafeAddr s[i])
-        if w <= 0:
-          if doRaise: raiseEIO("cannot write string to file")
-          break
-        inc i, w
-
 proc write*(f: File, s: string) {.tags: [WriteIOEffect], benign.} =
-  when defined(windows):
-    writeWindows(f, s, doRaise = true)
-  else:
-    if writeBuffer(f, cstring(s), s.len) != s.len:
-      raiseEIO("cannot write string to file")
+  if writeBuffer(f, cstring(s), s.len) != s.len:
+    raiseEIO("cannot write string to file")
 {.pop.}
 
 when NoFakeVars:
@@ -639,10 +614,7 @@ when declared(stdout):
       when defined(windows) and compileOption("threads"):
         acquireSys echoLock
       for s in args:
-        when defined(windows):
-          writeWindows(stdout, s)
-        else:
-          discard c_fwrite(s.cstring, cast[csize_t](s.len), 1, stdout)
+        discard c_fwrite(s.cstring, cast[csize_t](s.len), 1, stdout)
       const linefeed = "\n"
       discard c_fwrite(linefeed.cstring, linefeed.len, 1, stdout)
       discard c_fflush(stdout)
