@@ -62,6 +62,48 @@ elif defined(macosx) and not defined(emscripten):
   proc `-`*(a, b: Ticks): Nanos =
     result = (a.int64 - b.int64) * timeBaseInfo.numer div timeBaseInfo.denom
 
+elif defined(posixRealtime2):
+  type
+    Clockid {.importc: "clockid_t", header: "<time.h>", final.} = object
+
+    TimeSpec {.importc: "struct timespec", header: "<time.h>",
+               final, pure.} = object ## struct timespec
+      tv_sec: int  ## Seconds.
+      tv_nsec: int ## Nanoseconds.
+
+  var
+    CLOCK_REALTIME {.importc: "CLOCK_REALTIME", header: "<time.h>".}: Clockid
+
+  proc clock_gettime(clkId: Clockid, tp: var Timespec) {.
+    importc: "clock_gettime", header: "<time.h>".}
+
+  proc getTicks*(): Ticks {.inline.} =
+    #var t {.noinit.}: Timespec
+    var t: Timespec
+    clock_gettime(CLOCK_REALTIME, t)
+    #echo t
+    cast[Ticks](t)
+
+    #clock_gettime(CLOCK_REALTIME, cast[Timespec](result))
+    #clock_gettime(CLOCK_REALTIME, cast[ptr Timespec](result.addr)[])
+    #echo sizeof(Timespec)
+    #echo sizeof(Ticks)
+    #doAssert false
+    #result = Ticks(int64(t.tv_sec) * 1000000000'i64 + int64(t.tv_nsec))
+    #esult = cast[Ticks](t.tv_sec)
+    #result = cast[Ticks](t.tv_nsec)
+    #result = cast[Ticks](t.tv_nsec)
+    #result = cast[Ticks](t)
+
+  #proc `-`*(a, b: Ticks): Nanos {.borrow.}
+
+  proc toNanos(a: Ticks): Nanos {.inline.} =
+    let a = cast[Timespec](a)
+    Nanos(int64(a.tv_sec) * 1000000000'i64 + int64(a.tv_nsec))
+
+  proc `-`*(a, b: Ticks): Nanos {.inline.} =
+    a.toNanos - b.toNanos
+
 elif defined(posixRealtime):
   type
     Clockid {.importc: "clockid_t", header: "<time.h>", final.} = object
