@@ -208,17 +208,17 @@ type
 
   Ipc_perm* {.importc: "struct ipc_perm",
                header: "<sys/ipc.h>", final, pure.} = object ## struct ipc_perm
-    key: Key
+    key {.importc: "__key"}: Key
     uid*: Uid    ## Owner's user ID.
     gid*: Gid    ## Owner's group ID.
     cuid*: Uid   ## Creator's user ID.
     cgid*: Gid   ## Creator's group ID.
     mode*: cshort  ## Read/write permission.
-    pad1: cshort
-    seq1: cshort
-    pad2: cshort
-    reserved1: culong
-    reserved2: culong
+    pad1 {.importc: "__pad1"}: cshort
+    seq {.importc: "__seq"}: cshort
+    pad2 {.importc: "__pad2"}: cshort
+    reserved1 {.importc: "__glibc_reserved1"}: culong
+    reserved2 {.importc: "__glibc_reserved2"}: culong
 
   Stat* {.importc: "struct stat",
            header: "<sys/stat.h>", final, pure.} = object ## struct stat
@@ -228,7 +228,7 @@ type
     st_mode*: Mode        ## Mode of file (see below).
     st_uid*: Uid          ## User ID of file.
     st_gid*: Gid          ## Group ID of file.
-    pad0: cint
+    pad0 {.importc: "__pad0"}: cint
     st_rdev*: Dev         ## Device ID (if file is character or block special).
     st_size*: Off         ## For regular files, the file size in bytes.
                            ## For symbolic links, the length in bytes of the
@@ -244,7 +244,7 @@ type
     st_atim*: Timespec   ## Time of last access.
     st_mtim*: Timespec   ## Time of last data modification.
     st_ctim*: Timespec   ## Time of last status change.
-    reserved: array[3, clong]
+    reserved {.importc: "__glibc_reserved"}: array[3, clong]
 
 
   Statvfs* {.importc: "struct statvfs", header: "<sys/statvfs.h>",
