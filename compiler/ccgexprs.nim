@@ -183,13 +183,18 @@ proc canMove(p: BProc, n: PNode; dest: TLoc): bool =
   #  echo n.info, " optimized ", n
   #  result = false
 
+proc quoted(a: string): string =
+  result.addQuoted(a)
+
 proc genRefAssign(p: BProc, dest, src: TLoc) =
   if (dest.storage == OnStack and p.config.selectedGC != gcGo) or not usesWriteBarrier(p.config):
     linefmt(p, cpsStmts, "$1 = $2;$n", [rdLoc(dest), rdLoc(src)])
   elif dest.storage == OnHeap:
-    linefmt(p, cpsStmts, "#asgnRef((void**) $1, $2);$n",
-            [addrLoc(p.config, dest), rdLoc(src)])
+    # maybeCheckDeref(p, dest, ";$n")
+    linefmt(p, cpsStmts, "$3;$n#asgnRef((void**) $1, $2);$n",
+          [addrLoc(p.config, dest), rdLoc(src), maybeCheckDeref(p, dest, "", isAssign=true)])
   else:
+    # TODO maybeCheckDeref?
     linefmt(p, cpsStmts, "#unsureAsgnRef((void**) $1, $2);$n",
             [addrLoc(p.config, dest), rdLoc(src)])
 
@@ -680,6 +685,7 @@ proc isCppRef(p: BProc; typ: PType): bool {.inline.} =
 
 proc genDeref(p: BProc, e: PNode, d: var TLoc) =
   let mt = mapType(p.config, e[0].typ)
+  # echo0b (mt, e[0].typ.kind, p.config$e.info)
   if mt in {ctArray, ctPtrToArray} and lfEnforceDeref notin d.flags:
     # XXX the amount of hacks for C's arrays is incredible, maybe we should
     # simply wrap them in a struct? --> Losing auto vectorization then?
@@ -727,7 +733,13 @@ proc genDeref(p: BProc, e: PNode, d: var TLoc) =
       # so the '&' and '*' cancel out:
       putIntoDest(p, d, lodeTyp(a.t[0]), rdLoc(a), a.storage)
     else:
-      putIntoDest(p, d, e, "(*$1)" % [rdLoc(a)], a.storage)
+      var code: Rope
+      if p.config.isSymbolDefined(nimDebugSIGSEGV):
+        # PRTEMP: instead (auto a=$1, nimDebugRef(a), *a) ? eg side effects, code size etc
+        code = "(*($1, $2))" % [maybeCheckDeref3(p, a, e).rope, rdLoc(a)]
+      else:
+        code = "(*$1)" % [rdLoc(a)]
+      putIntoDest(p, d, e, code, a.storage)
 
 proc genAddr(p: BProc, e: PNode, d: var TLoc) =
   # careful  'addr(myptrToArray)' needs to get the ampersand:

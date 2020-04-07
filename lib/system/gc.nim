@@ -232,11 +232,21 @@ proc nimGCunrefNoCycle(p: pointer) {.compilerproc, inline.} =
 proc nimGCunrefRC1(p: pointer) {.compilerproc, inline.} =
   decRef(usrToCell(p))
 
+proc c_printf(frmt: cstring): cint {.
+  importc: "printf", header: "<stdio.h>", varargs, discardable.}
+
+proc nimDebugRef(dest: PPointer, msg: cstring) {.compilerproc, inline.} =
+  if dest == nil:
+    c_printf("dest is nil D20200406T120920; msg=%s\n", msg)
+
 proc asgnRef(dest: PPointer, src: pointer) {.compilerproc, inline.} =
   # the code generator calls this proc!
   gcAssert(not isOnStack(dest), "asgnRef")
   # BUGFIX: first incRef then decRef!
   if src != nil: incRef(usrToCell(src))
+  if dest == nil:
+    c_printf("will SIGSEGV D20200406T120920; ?src:%d\n", src != nil)
+    # let z = usrToCell()
   if dest[] != nil: decRef(usrToCell(dest[]))
   dest[] = src
 

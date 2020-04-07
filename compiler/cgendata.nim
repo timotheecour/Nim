@@ -180,6 +180,9 @@ proc procSec*(p: BProc, s: TCProcSection): var Rope {.inline.} =
   # top level proc sections
   result = p.blocks[0].sections[s]
 
+var globalBProc: BProc ## PRTEMP
+proc getGlobalBProc*(): BProc = globalBProc
+
 proc newProc*(prc: PSym, module: BModule): BProc =
   new(result)
   result.prc = prc
@@ -190,6 +193,7 @@ proc newProc*(prc: PSym, module: BModule): BProc =
   result.nestedTryStmts = @[]
   result.finallySafePoints = @[]
   result.sigConflicts = initCountTable[string]()
+  globalBProc = result
 
 proc newModuleList*(g: ModuleGraph): BModuleList =
   BModuleList(typeInfoMarker: initTable[SigHash, tuple[str: Rope, owner: PSym]](),

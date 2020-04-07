@@ -43,6 +43,8 @@ when not declared(dynlib.libCandidates):
 when options.hasTinyCBackend:
   import tccgen
 
+proc maybeCheckDeref3(p: BProc, a: TLoc, e: PNode): string
+
 proc hcrOn(m: BModule): bool = m.config.hcrOn
 proc hcrOn(p: BProc): bool = p.module.config.hcrOn
 
@@ -285,10 +287,15 @@ proc getTempName(m: BModule): Rope =
   result = m.tmpBase & rope(m.labels)
   inc m.labels
 
+proc maybeCheckDeref(p: BProc, a: TLoc, suffix: string, isAssign: bool): string
+
 proc rdLoc(a: TLoc): Rope =
   # 'read' location (deref if indirect)
+  let p = getGlobalBProc()
   result = a.r
-  if lfIndirect in a.flags: result = "(*$1)" % [result]
+  if lfIndirect in a.flags:
+    # if p.config.isSymbolDefined(nimDebugSIGSEGV):
+    result = "(*$1)" % [result]
 
 proc lenField(p: BProc): Rope =
   result = rope(if p.module.compileToCpp: "len" else: "Sup.len")
@@ -2016,6 +2023,10 @@ proc myClose(graph: ModuleGraph; b: PPassContext, n: PNode): PNode =
       if m.inHcrInitGuard:
         endBlock(m.initProc)
 
+    # PRTEMP
+    # echo0b()
+    # discard cgsym(m, "nimDebugRef")
+
     if sfMainModule in m.module.flags:
       if m.hcrOn:
         # pull ("define" since they are inline when HCR is on) these functions in the main file
@@ -2070,3 +2081,51 @@ proc cgenWriteModules*(backend: RootRef, config: ConfigRef) =
   if g.generatedHeader != nil: writeHeader(g.generatedHeader)
 
 const cgenPass* = makePass(myOpen, myProcess, myClose)
+
+proc maybeCheckDeref(p: BProc, a: TLoc, suffix: string, isAssign: bool): string =
+  # TODO: is this ever used??? is is it guaranteed to call derefAccess first?
+  # maybe we could still allow "only raise on write access"
+  if p.config.isSymbolDefined(nimDebugSIGSEGV):
+    var msg = p.config$a.lode.info
+    if isAssign:
+      msg.add " (assign) "
+    # TODO: also show type etc
+    # TODO: more compact representation than `msg` string litteral
+    # linefmt(p, cpsStmts, "#nimDebugRef((void**) $1, $2);$n", [addrLoc(p.config, dest), msg.quoted])
+    # linefmt(p, cpsStmts, "#nimDebugRef((void**) $1, $2)$3", [addrLoc(p.config, a), msg.quoted, suffix])
+    # linefmt(p, cpsStmts, "#nimDebugRef((void**) $1, $2)$3", [addrLoc(p.config, a), msg.quoted, suffix])
+    # var ret = "#nimDebugRef((void**) $1, $2)$3" % [addrLoc(p.config, a), msg.quoted.rope, suffix.rope]
+    # TODO: what's consequence of dropping `#` in #nimDebugRef ?
+    # var ret = "nimDebugRef((void**) $1, $2)$3" % [addrLoc(p.config, a), msg.quoted.rope, suffix.rope]
+    var ret = "nimDebugRef((void**) $1, $2)$3" % [addrLoc(p.config, a), msg.quoted.rope, suffix.rope]
+    result = $ret # IMPROVE
+
+when false:
+ proc maybeCheckDeref2(p: BProc, a: TLoc, suffix: string): string =
+  if p.config.isSymbolDefined(nimDebugSIGSEGV):
+    var msg = p.config$a.lode.info
+    # var ret = "nimDebugRef((void*) $1, $2)$3" % [addrLoc(p.config, a), msg.quoted.rope, suffix.rope]
+    # IMPROVE
+    # result = $ropecg(p.module, "nimDebugRef((void*) $1, $2)$3", [addrLoc(p.config, a), msg.quoted.rope, suffix.rope])
+    result = $ropecg(p.module, "#nimDebugRef((void*) $1, $2)$3", [addrLoc(p.config, a), msg.quoted.rope, suffix.rope])
+    echo0b result
+    # $ropecg(p.module, frmt, args)
+    # result = $ret 
+
+proc maybeCheckDeref3(p: BProc, a: TLoc, e: PNode): string =
+  if p.config.isSymbolDefined(nimDebugSIGSEGV):
+    # var msg = p.config$a.lode.info & " " & $a.lode.kind
+    # e.typ.typeToString
+    var msg = p.config$e.info & " " & a.t.typeToString
+    # var ret = "nimDebugRef((void*) $1, $2)$3" % [addrLoc(p.config, a), msg.quoted.rope, suffix.rope]
+    # IMPROVE
+    # result = $ropecg(p.module, "nimDebugRef((void*) $1, $2)$3", [addrLoc(p.config, a), msg.quoted.rope, suffix.rope])
+    result = $ropecg(p.module, "#nimDebugRef((void*) $1, $2)", [rdLoc(a), msg.quoted.rope])
+    # echo0b result
+    # $ropecg(p.module, frmt, args)
+    # result = $ret 
+
+  # if a.lode.kind == nkSym:
+  #   result = a.lode.sym.typ
+  # else:
+  #   result = a.lode.typ
