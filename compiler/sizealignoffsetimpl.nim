@@ -383,7 +383,7 @@ proc computeSizeAlign(conf: ConfigRef; typ: PType) =
       let paddingAtEnd = int16(accum.finish())
       if typ.sym != nil and
          typ.sym.flags * {sfCompilerProc, sfImportc} == {sfImportc} and
-         tfCompleteStruct notin typ.flags:
+         (tfCompleteStruct notin typ.flags and not isDefined(conf, "nimImplicitCompleteStruct")):
         typ.size = szUnknownSize
         typ.align = szUnknownSize
         typ.paddingAtEnd = szUnknownSize
