@@ -31,7 +31,7 @@ jobs:
       #   vmImage: 'windows-2019'
       #   CPU: amd64
 
-      Linux_amd64_pkg:
+      OSX_amd64_pkg:
         vmImage: 'ubuntu-16.04'
         CPU: amd64
         NIM_TEST_PACKAGES: true
