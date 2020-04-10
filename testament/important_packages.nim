@@ -5,60 +5,60 @@ template pkg(name: string; hasDeps = false; cmd = "nimble test"; url = ""): unty
 var packages*: seq[tuple[name, cmd: string; hasDeps: bool; url: string]] = @[]
 
 
-pkg "argparse"
-pkg "arraymancer", true, "nim c tests/tests_cpu.nim"
-pkg "ast_pattern_matching", false, "nim c -r --oldgensym:on tests/test1.nim"
-pkg "asyncmysql", true
-pkg "bigints"
-pkg "binaryheap", false, "nim c -r binaryheap.nim"
-# pkg "blscurve", true # pending https://github.com/status-im/nim-blscurve/issues/39
-pkg "bncurve", true
-pkg "c2nim", false, "nim c testsuite/tester.nim"
-pkg "cascade"
-pkg "chroma"
-pkg "chronicles", true, "nim c -o:chr -r chronicles.nim"
-pkg "chronos", true
-pkg "cligen", false, "nim c -o:cligenn -r cligen.nim"
-pkg "coco", true
-pkg "combparser"
-pkg "compactdict"
-pkg "comprehension", false, "nimble test", "https://github.com/alehander42/comprehension"
-pkg "criterion"
-pkg "dashing", false, "nim c tests/functional.nim"
-pkg "docopt"
-pkg "easygl", true, "nim c -o:egl -r src/easygl.nim", "https://github.com/jackmott/easygl"
-pkg "elvis"
-pkg "fragments", false, "nim c -r fragments/dsl.nim"
-pkg "gara"
-pkg "ggplotnim", true, "nimble testCI"
-pkg "glob"
-pkg "gnuplot"
-pkg "hts", false, "nim c -o:htss src/hts.nim"
-pkg "illwill", false, "nimble examples"
-pkg "inim"
-pkg "itertools", false, "nim doc src/itertools.nim"
-pkg "iterutils"
-pkg "jstin"
-pkg "karax", false, "nim c -r tests/tester.nim"
-pkg "loopfusion"
-pkg "msgpack4nim"
-pkg "nake", false, "nim c nakefile.nim"
-pkg "neo", true, "nim c -d:blas=openblas tests/all.nim"
-# pkg "nico", true
-pkg "nicy", false, "nim c src/nicy.nim"
-pkg "nigui", false, "nim c -o:niguii -r src/nigui.nim"
-pkg "nimcrypto", false, "nim c -r tests/testall.nim"
-pkg "NimData", true, "nim c -o:nimdataa src/nimdata.nim"
-pkg "nimes", true, "nim c src/nimes.nim"
-pkg "nimfp", true, "nim c -o:nfp -r src/fp.nim"
-pkg "nimgame2", true, "nim c nimgame2/nimgame.nim"
-pkg "nimgen", true, "nim c -o:nimgenn -r src/nimgen/runcfg.nim"
-# pkg "nimlsp", true
-pkg "nimly", true
-# pkg "nimongo", true, "nimble test_ci"
-pkg "nimpy", false, "nim c -r tests/nimfrompy.nim"
-pkg "nimquery"
-pkg "nimsl", true
+# pkg "argparse"
+# pkg "arraymancer", true, "nim c tests/tests_cpu.nim"
+# pkg "ast_pattern_matching", false, "nim c -r --oldgensym:on tests/test1.nim"
+# pkg "asyncmysql", true
+# pkg "bigints"
+# pkg "binaryheap", false, "nim c -r binaryheap.nim"
+# # pkg "blscurve", true # pending https://github.com/status-im/nim-blscurve/issues/39
+# pkg "bncurve", true
+# pkg "c2nim", false, "nim c testsuite/tester.nim"
+# pkg "cascade"
+# pkg "chroma"
+# pkg "chronicles", true, "nim c -o:chr -r chronicles.nim"
+# pkg "chronos", true
+# pkg "cligen", false, "nim c -o:cligenn -r cligen.nim"
+# pkg "coco", true
+# pkg "combparser"
+# pkg "compactdict"
+# pkg "comprehension", false, "nimble test", "https://github.com/alehander42/comprehension"
+# pkg "criterion"
+# pkg "dashing", false, "nim c tests/functional.nim"
+# pkg "docopt"
+# pkg "easygl", true, "nim c -o:egl -r src/easygl.nim", "https://github.com/jackmott/easygl"
+# pkg "elvis"
+# pkg "fragments", false, "nim c -r fragments/dsl.nim"
+# pkg "gara"
+# pkg "ggplotnim", true, "nimble testCI"
+# pkg "glob"
+# pkg "gnuplot"
+# pkg "hts", false, "nim c -o:htss src/hts.nim"
+# pkg "illwill", false, "nimble examples"
+# pkg "inim"
+# pkg "itertools", false, "nim doc src/itertools.nim"
+# pkg "iterutils"
+# pkg "jstin"
+# pkg "karax", false, "nim c -r tests/tester.nim"
+# pkg "loopfusion"
+# pkg "msgpack4nim"
+# pkg "nake", false, "nim c nakefile.nim"
+# pkg "neo", true, "nim c -d:blas=openblas tests/all.nim"
+# # pkg "nico", true
+# pkg "nicy", false, "nim c src/nicy.nim"
+# pkg "nigui", false, "nim c -o:niguii -r src/nigui.nim"
+# pkg "nimcrypto", false, "nim c -r tests/testall.nim"
+# pkg "NimData", true, "nim c -o:nimdataa src/nimdata.nim"
+# pkg "nimes", true, "nim c src/nimes.nim"
+# pkg "nimfp", true, "nim c -o:nfp -r src/fp.nim"
+# pkg "nimgame2", true, "nim c nimgame2/nimgame.nim"
+# pkg "nimgen", true, "nim c -o:nimgenn -r src/nimgen/runcfg.nim"
+# # pkg "nimlsp", true
+# pkg "nimly", true
+# # pkg "nimongo", true, "nimble test_ci"
+# pkg "nimpy", false, "nim c -r tests/nimfrompy.nim"
+# pkg "nimquery"
+# pkg "nimsl", true
 pkg "nimsvg"
 # pkg "nimterop", true
 pkg "nimx", true, "nim c --threads:on test/main.nim"
