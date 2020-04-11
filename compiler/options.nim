@@ -840,9 +840,3 @@ proc floatInt64Align*(conf: ConfigRef): int16 =
       # to 4bytes (except with -malign-double)
       return 4
   return 8
-
-template isSymbolDefined*(conf: ConfigRef, ident: untyped): bool =
-  ## not to be confused with `defined(foo)`
-  ## eg usage: `if conf.isSymbolDefined(nimDebugSIGSEGV): ...`
-  ## lighter weight than introducing a new cmdline flag
-  hasKey(conf.symbols, astToStr(ident))

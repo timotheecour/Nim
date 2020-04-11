@@ -734,7 +734,7 @@ proc genDeref(p: BProc, e: PNode, d: var TLoc) =
       putIntoDest(p, d, lodeTyp(a.t[0]), rdLoc(a), a.storage)
     else:
       var code: Rope
-      if p.config.isSymbolDefined(nimDebugSIGSEGV):
+      if p.config.isDefined(nimDebugSIGSEGV):
         # PRTEMP: instead (auto a=$1, nimDebugRef(a), *a) ? eg side effects, code size etc
         code = "(*($1, $2))" % [maybeCheckDeref3(p, a, e).rope, rdLoc(a)]
       else:
