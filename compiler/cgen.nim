@@ -294,7 +294,7 @@ proc rdLoc(a: TLoc): Rope =
   let p = getGlobalBProc()
   result = a.r
   if lfIndirect in a.flags:
-    # if p.config.isDefined(nimDebugSIGSEGV):
+    # if p.config.isDefined("nimDebugSIGSEGV"):
     result = "(*$1)" % [result]
 
 proc lenField(p: BProc): Rope =
@@ -2085,7 +2085,7 @@ const cgenPass* = makePass(myOpen, myProcess, myClose)
 proc maybeCheckDeref(p: BProc, a: TLoc, suffix: string, isAssign: bool): string =
   # TODO: is this ever used??? is is it guaranteed to call derefAccess first?
   # maybe we could still allow "only raise on write access"
-  if p.config.isDefined(nimDebugSIGSEGV):
+  if p.config.isDefined("nimDebugSIGSEGV"):
     var msg = p.config$a.lode.info
     if isAssign:
       msg.add " (assign) "
@@ -2102,7 +2102,7 @@ proc maybeCheckDeref(p: BProc, a: TLoc, suffix: string, isAssign: bool): string 
 
 when false:
  proc maybeCheckDeref2(p: BProc, a: TLoc, suffix: string): string =
-  if p.config.isDefined(nimDebugSIGSEGV):
+  if p.config.isDefined("nimDebugSIGSEGV"):
     var msg = p.config$a.lode.info
     # var ret = "nimDebugRef((void*) $1, $2)$3" % [addrLoc(p.config, a), msg.quoted.rope, suffix.rope]
     # IMPROVE
@@ -2113,7 +2113,7 @@ when false:
     # result = $ret 
 
 proc maybeCheckDeref3(p: BProc, a: TLoc, e: PNode): string =
-  if p.config.isDefined(nimDebugSIGSEGV):
+  if p.config.isDefined("nimDebugSIGSEGV"):
     # var msg = p.config$a.lode.info & " " & $a.lode.kind
     # e.typ.typeToString
     var msg = p.config$e.info & " " & a.t.typeToString
