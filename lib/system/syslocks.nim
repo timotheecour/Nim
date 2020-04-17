@@ -11,6 +11,41 @@
 
 {.push stackTrace: off.}
 
+# xxx refactor with oserr.nim
+# include "includes/oserr"
+
+type
+  # OSErrorCode = distinct int32 ## Specifies an OS Error Code.
+  OSErrorCode2 = distinct cint ## Specifies an OS Error Code.
+proc `$`*(err: OSErrorCode2): string {.borrow.}
+proc `==`*(err1, err2: OSErrorCode2): bool {.borrow.}
+#[
+BUG: weird error:
+/Users/timothee/git_clone/nim/Nim_prs/lib/system/syslocks.nim(21, 6) Error: type mismatch: got <cint>
+but expected one of:
+proc `$`(err: OSErrorCode): string
+  first type mismatch at position: 1
+  required type for err: OSErrorCode
+  but expression '' is of type: cint
+
+expression: `$`()
+]#
+
+const checkLocks = compileOption("assertions")
+  # could make this conditional on something else
+
+template checkLock(a: cint) =
+  when checkLocks:
+    if a != 0:
+      # EDEADLK
+      # raiseOSError(osLastError(), path)
+      # raiseOSError(a, "TODO")
+      # raise newOSError(a, "TODO")
+      # raise newException($a)
+      # raise newException(OSError, "asdf") # TODO: LockError?
+      # raise newException(AssertionError, "asdf") # TODO: LockError?
+      doAssert false, "adsf2" 
+
 when defined(windows):
   type
     Handle = int
@@ -130,12 +165,12 @@ else:
   proc deinitSysAux(L: var SysLockObj) {.noSideEffect,
     importc: "pthread_mutex_destroy", header: "<pthread.h>".}
 
-  proc acquireSysAux(L: var SysLockObj) {.noSideEffect,
+  proc acquireSysAux(L: var SysLockObj): cint {.noSideEffect,
     importc: "pthread_mutex_lock", header: "<pthread.h>".}
   proc tryAcquireSysAux(L: var SysLockObj): cint {.noSideEffect,
     importc: "pthread_mutex_trylock", header: "<pthread.h>".}
 
-  proc releaseSysAux(L: var SysLockObj) {.noSideEffect,
+  proc releaseSysAux(L: var SysLockObj): cint {.noSideEffect,
     importc: "pthread_mutex_unlock", header: "<pthread.h>".}
 
   when defined(ios):
@@ -161,11 +196,11 @@ else:
       c_free(L)
 
     template acquireSys(L: var SysLock) =
-      acquireSysAux(L[])
+      checkLock acquireSysAux(L[])
     template tryAcquireSys(L: var SysLock): bool =
       tryAcquireSysAux(L[]) == 0'i32
     template releaseSys(L: var SysLock) =
-      releaseSysAux(L[])
+      checkLock releaseSysAux(L[])
   else:
     type
       SysLock = SysLockObj
@@ -176,11 +211,11 @@ else:
     template deinitSys(L: var SysLock) =
       deinitSysAux(L)
     template acquireSys(L: var SysLock) =
-      acquireSysAux(L)
+      checkLock  acquireSysAux(L)
     template tryAcquireSys(L: var SysLock): bool =
       tryAcquireSysAux(L) == 0'i32
     template releaseSys(L: var SysLock) =
-      releaseSysAux(L)
+      checkLock releaseSysAux(L)
 
   when insideRLocksModule:
     let SysLockType_Reentrant {.importc: "PTHREAD_MUTEX_RECURSIVE",
