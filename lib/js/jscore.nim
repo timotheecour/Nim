@@ -17,11 +17,14 @@
 when not defined(js) and not defined(Nimdoc):
   {.error: "This module only works on the JavaScript platform".}
 
+include "system/inclrtl"
+
 type
   MathLib* = ref object
   JsonLib* = ref object
   DateLib* = ref object
   DateTime* = ref object
+    ## distinct from times.DateTime
 
 var
   Math* {.importc, nodecl.}: MathLib
@@ -73,19 +76,23 @@ proc parse*(d: DateLib, s: cstring): int {.importcpp.}
 proc newDate*(): DateTime {.
   importcpp: "new Date()".}
 
-proc newDate*(date: int|int64|string): DateTime {.
+proc newDate*(date: int|int64|cstring): DateTime {.
   importcpp: "new Date(#)".}
 
 proc newDate*(year, month, day, hours, minutes,
              seconds, milliseconds: int): DateTime {.
   importcpp: "new Date(#,#,#,#,#,#,#)".}
 
-proc getDay*(d: DateTime): int {.importcpp.}
+proc getDay*(d: DateTime): range[0..6] {.importcpp.}
+  ## week day, 0 based like times.DateTime.weekday
+proc getMonthDay*(d: DateTime): range[1..31] {.importcpp: "#.getDate()", since: (1,3).}
+  ## month day, 1 based, like times.DateTime.monthday
 proc getFullYear*(d: DateTime): int {.importcpp.}
 proc getHours*(d: DateTime): int {.importcpp.}
 proc getMilliseconds*(d: DateTime): int {.importcpp.}
 proc getMinutes*(d: DateTime): int {.importcpp.}
-proc getMonth*(d: DateTime): int {.importcpp.}
+proc getMonth*(d: DateTime): range[0..11] {.importcpp.}
+  ## 0 based, like times.DateTime.month
 proc getSeconds*(d: DateTime): int {.importcpp.}
 proc getYear*(d: DateTime): int {.importcpp.}
 proc getTime*(d: DateTime): int {.importcpp.}
