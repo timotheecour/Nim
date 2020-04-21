@@ -2078,7 +2078,7 @@ const
     ## Odd for devel, even for releases.
 
 import system/dollars
-export dollars
+export dollars except toHexImpl, getNimJsObjectID
 
 const
   NimVersion*: string = $NimMajor & "." & $NimMinor & "." & $NimPatch
