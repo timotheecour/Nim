@@ -27,7 +27,7 @@ block tsetpop:
   except KeyError as e:
     echo e.msg
 
-
+# tests setosp.nim
 
 block tsets_lt:
   var s, s1: set[char]
@@ -37,6 +37,15 @@ block tsets_lt:
   doAssert s1 * s == {'a'..'c'}
   doAssert s1 <= s
 
+  let s0 = s
+  s['d'] = false
+  doAssert s == s1
+  s['d'] = true
+  doAssert s == s0
+  s[{'b', 'd', 'x'}] = false
+  doAssert s == {'a', 'c'}
+  s[{'a', 'y'}] = true
+  doAssert s == {'a', 'c', 'y'}
 
 
 block tsets2:

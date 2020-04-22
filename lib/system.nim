@@ -753,7 +753,8 @@ proc `<=`*(x, y: float): bool {.magic: "LeF64", noSideEffect.}
 proc `<`*(x, y: float): bool {.magic: "LtF64", noSideEffect.}
 
 
-include "system/setops"
+import system/setops
+export setops
 
 
 proc contains*[U, V, W](s: HSlice[U, V], value: W): bool {.noSideEffect, inline.} =

@@ -186,13 +186,14 @@ proc getDocList(): seq[string] =
   for a in withoutIndex: docIgnore.incl a
   for a in ignoredModules: docIgnore.incl a
 
-  # don't ignore these even though in lib/system
+  # don't ignore these even though in lib/system (non-include files)
   const goodSystem = """
 lib/system/io.nim
 lib/system/nimscript.nim
 lib/system/assertions.nim
 lib/system/iterators.nim
 lib/system/dollars.nim
+lib/system/setops.nim
 lib/system/widestrs.nim
 """.splitWhitespace()
 

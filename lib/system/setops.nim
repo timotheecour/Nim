@@ -92,3 +92,13 @@ proc contains*[T](x: set[T], y: T): bool {.magic: "InSet", noSideEffect.}
   ## ``set[char]``! The solution is to bind ``T`` to ``range['a'..'z']``. This
   ## is achieved by reversing the parameters for ``contains``; ``in`` then
   ## passes its arguments in reverse order.
+
+proc `[]=`*[T](s: var set[T], y: T | set[T], val: bool) =
+  ## Same as `incl` when val == true, `excl` when `val == false`
+  runnableExamples:
+    var s = {'a', 'b'}
+    s[{'a', 'x'}] = false
+    s['c'] = true
+    doAssert s == {'b', 'c'}
+  if val: incl(s, y)
+  else: excl(s, y)
