@@ -2963,7 +2963,16 @@ proc substr*(s: string, first = 0): string =
   result = substr(s, first, high(s))
 
 when defined(nimconfig):
-  include "system/nimscript"
+  proc cppDefine*(define: string) =
+    ## tell Nim that ``define`` is a C preprocessor ``#define`` and so always
+    ## needs to be mangled; needed for $nim/config/config.nims
+    discard # builtin
+  when defined(nimHasNimscriptModule):
+    when not defined(nimNimsNoimport):
+      import system/nimscript
+      export nimscript
+  else:
+    include "system/nimscript"
 
 when not defined(js):
   proc toOpenArray*[T](x: ptr UncheckedArray[T]; first, last: int): openArray[T] {.

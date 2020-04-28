@@ -347,11 +347,6 @@ proc writeTask(name, desc: string) =
     for i in 0 ..< 20 - name.len: spaces.add ' '
     echo name, spaces, desc
 
-proc cppDefine*(define: string) =
-  ## tell Nim that ``define`` is a C preprocessor ``#define`` and so always
-  ## needs to be mangled.
-  builtin
-
 proc stdinReadLine(): TaintedString {.
   tags: [ReadIOEffect], raises: [IOError].} =
   builtin

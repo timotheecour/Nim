@@ -38,13 +38,20 @@ proc setupVM*(module: PSym; cache: IdentCache; scriptName: string;
   var errorMsg: string
   var vthisDir = scriptName.splitFile.dir
 
+  const nimscriptPrefix = "stdlib.nimscript."
+
   template cbconf(name, body) {.dirty.} =
+    result.registerCallback nimscriptPrefix & astToStr(name),
+      proc (a: VmArgs) =
+        body
+
+  template cbconfSystem(name, body) {.dirty.} =
     result.registerCallback "stdlib.system." & astToStr(name),
       proc (a: VmArgs) =
         body
 
   template cbexc(name, exc, body) {.dirty.} =
-    result.registerCallback "stdlib.system." & astToStr(name),
+    result.registerCallback nimscriptPrefix & astToStr(name),
       proc (a: VmArgs) =
         errorMsg = ""
         try:
@@ -74,7 +81,7 @@ proc setupVM*(module: PSym; cache: IdentCache; scriptName: string;
   cbos createDir:
     os.createDir getString(a, 0)
 
-  result.registerCallback "stdlib.system.getError",
+  result.registerCallback nimscriptPrefix & "getError",
     proc (a: VmArgs) = setResult(a, errorMsg)
 
   cbos setCurrentDir:
@@ -184,7 +191,13 @@ proc setupVM*(module: PSym; cache: IdentCache; scriptName: string;
     conf.moduleOverrides[key] = val
   cbconf selfExe:
     setResult(a, os.getAppFilename())
-  cbconf cppDefine:
+  cbconfSystem cppDefine:
+    # We avoid making system import nimscript in case it's not needed.
+    # Instead of cppDefine with hardcoded values in $nim_prs_D/config/config.nims
+    # (which is system dependant and incomplete), we can do something more
+    # robust to fix #11153, either:
+    #   mangle unconditionally with `_0` symbols not marked as exportc/importc
+    #   or list all C preprocessor symbols via `gcc -dM -E - < /dev/null`
     options.cppDefine(conf, a.getString(0))
   cbexc stdinReadLine, EOFError:
     if defined(nimsuggest) or graph.config.cmd == cmdCheck:
