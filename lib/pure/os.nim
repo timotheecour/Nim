@@ -48,6 +48,9 @@ import
 
 const weirdTarget = defined(nimscript) or defined(js)
 
+when defined(nimscript) and defined(nimHasNimscriptModule):
+  import system/nimscript
+
 since (1, 1):
   const
     invalidFilenameChars* = {'/', '\\', ':', '*', '?', '"', '<', '>', '|', '^', '\0'} ## \
@@ -75,7 +78,7 @@ else:
   {.error: "OS module not ported to your operating system!".}
 
 when weirdTarget and defined(nimErrorProcCanHaveBody):
-  {.pragma: noNimScript, error: "this proc is not available on the NimScript target".}
+  template noNimScript(body): untyped = discard
 else:
   {.pragma: noNimScript.}
 
