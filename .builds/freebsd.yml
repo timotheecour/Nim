@@ -1,5 +1,8 @@
 # see https://man.sr.ht/builds.sr.ht/compatibility.md#freebsd
 image: freebsd/latest
+ image: freebsd/latest
+
+asdf
 
 # packages:
 # - databases/sqlite3
@@ -15,7 +18,7 @@ sources:
 environment:
   CC: /usr/bin/clang
 tasks:
-- setup: |
+-- setup: |
     # workaround https://github.com/timotheecour/Nim/issues/76
     sudo pkg update -q -f
     sudo pkg install -y -q databases/sqlite3 devel/boehm-gc-threaded devel/pcre \

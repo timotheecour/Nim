@@ -1,5 +1,6 @@
 image: openbsd/latest
-packages:
+image2: openbsd/latest
+ packages:
 - gmake
 - sqlite3
 - node
@@ -8,8 +9,15 @@ packages:
 - sfml
 - sdl2
 - libffi
+
+asdf
+asdfasdf
+sdf
+
+
 sources:
 - https://github.com/nim-lang/Nim
+#- https://github.com/nim-lang/Nim
 environment:
   CC: /usr/bin/clang
 tasks:
@@ -26,6 +34,6 @@ tasks:
       exit 1
     fi
 triggers:
-- action: email
+-- action: email
   condition: failure
   to: Andreas Rumpf <rumpf_a@web.de>
