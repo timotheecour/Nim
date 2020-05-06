@@ -8,8 +8,8 @@ packages:
 - sfml
 - sdl2
 - libffi
-sources:
-- https://github.com/nim-lang/Nim
+#sources:
+#- https://github.com/nim-lang/Nim
 environment:
   CC: /usr/bin/clang
 tasks:
