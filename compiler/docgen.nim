@@ -145,6 +145,7 @@ proc parseRst(text, filename: string,
               line, column: int, hasToc: var bool,
               rstOptions: RstParseOptions;
               conf: ConfigRef): PRstNode =
+  doAssert true # PRTEMP
   declareClosures()
   result = rstParse(text, filename, line, column, hasToc, rstOptions,
                     docgenFindFile, compilerMsgHandler)
@@ -444,26 +445,21 @@ proc testExample(d: PDoc; ex: PNode) =
   d.examples.add "import r\"" & outp.string & "\"\n"
 
 proc runAllExamples(d: PDoc) =
-  let docCmd = d.conf.docCmd
-  let backend = d.conf.backend
-  # This used to be: `let backend = if isDefined(d.conf, "js"): "js"` (etc), however
-  # using `-d:js` (etc) cannot work properly, eg would fail with `importjs`
-  # since semantics are affected by `config.backend`, not by isDefined(d.conf, "js")
-  if d.examples.len == 0 or docCmd == "skip": return
+  if d.examples.len == 0: return
   let outputDir = d.conf.getNimcacheDir / RelativeDir"runnableExamples"
   let outp = outputDir / RelativeFile(extractFilename(d.filename.changeFileExt"" &
       "_examples.nim"))
   writeFile(outp, d.examples)
-  let cmd = "$nim $backend -r --warning:UnusedImport:off --path:$path --nimcache:$nimcache $docCmd $file" % [
-    "nim", os.getAppFilename(),
-    "backend", $d.conf.backend,
-    "path", quoteShell(d.conf.projectPath),
-    "nimcache", quoteShell(outputDir),
-    "file", quoteShell(outp),
-    "docCmd", docCmd,
-  ]
-  if os.execShellCmd(cmd) != 0:
-    quit "[runnableExamples] failed: generated file: '$1' cmd: $2" % [outp.string, cmd]
+  let backend = if isDefined(d.conf, "js"): "js"
+                elif isDefined(d.conf, "cpp"): "cpp"
+                elif isDefined(d.conf, "objc"): "objc"
+                else: "c"
+  if os.execShellCmd(os.getAppFilename() & " " & backend &
+                    " --warning[UnusedImport]:off" &
+                    " --path:" & quoteShell(d.conf.projectPath) &
+                    " --nimcache:" & quoteShell(outputDir) &
+                    " -r " & quoteShell(outp)) != 0:
+    quit "[Examples] failed: see " & outp.string
   else:
     # keep generated source file `outp` to allow inspection.
     rawMessage(d.conf, hintSuccess, ["runnableExamples: " & outp.string])
@@ -1123,11 +1119,10 @@ proc genOutFile(d: PDoc): Rope =
   let bodyname = if d.hasToc and not d.isPureRst: "doc.body_toc_group"
                  elif d.hasToc: "doc.body_toc"
                  else: "doc.body_no_toc"
-  let gitUrl = getConfigVar(d.conf, "git.url")
   content = ropeFormatNamedVars(d.conf, getConfigVar(d.conf, bodyname), ["title",
-      "tableofcontents", "moduledesc", "date", "time", "content", "deprecationMsg", "url"],
+      "tableofcontents", "moduledesc", "date", "time", "content", "deprecationMsg"],
       [title.rope, toc, d.modDesc, rope(getDateStr()),
-      rope(getClockStr()), code, d.modDeprecationMsg, rope gitUrl])
+      rope(getClockStr()), code, d.modDeprecationMsg])
   if optCompileOnly notin d.conf.globalOptions:
     # XXX what is this hack doing here? 'optCompileOnly' means raw output!?
     code = ropeFormatNamedVars(d.conf, getConfigVar(d.conf, "doc.file"), [
