@@ -444,7 +444,6 @@ proc testExample(d: PDoc; ex: PNode) =
   d.examples.add "import r\"" & outp.string & "\"\n"
 
 proc runAllExamples(d: PDoc) =
-  doAssert true # PRTEMP
   let docCmd = d.conf.docCmd
   let backend = d.conf.backend
   # This used to be: `let backend = if isDefined(d.conf, "js"): "js"` (etc), however
