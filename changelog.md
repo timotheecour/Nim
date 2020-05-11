@@ -71,16 +71,16 @@
 
   Pragmas and using a name are now allowed on the lefthand side of `=>`. Here
   is an aggregate example of these changes:
-  ```nim
-  import sugar
+```nim
+import sugar
 
-  foo(x, y: int) {.noSideEffect.} => x + y
+foo(x, y: int) {.noSideEffect.} => x + y
 
-  # is transformed into
+# is transformed into
 
-  proc foo(x: int, y: int): auto {.noSideEffect.} = x + y
-  ```
-- The fields of `times.DateTime` are now private, and are accessed with getters and deprecated setters.
+proc foo(x: int, y: int): auto {.noSideEffect.} = x + y
+```
+* The fields of `times.DateTime` are now private, and are accessed with getters and deprecated setters.
 
 - The `times` module now handles the default value for `DateTime` more consistently. Most procs raise an assertion error when given
   an uninitialized `DateTime`, the exceptions are `==` and `$` (which returns `"Uninitialized DateTime"`). The proc `times.isInitialized`
@@ -92,33 +92,33 @@
 ## Language changes
 - In the newruntime it is now allowed to assign discriminator field without restrictions as long as case object doesn't have custom destructor. Discriminator value doesn't have to be a constant either. If you have custom destructor for case object and you do want to freely assign discriminator fields, it is recommended to refactor object into 2 objects like this:
 
-  ```nim
-  type
-    MyObj = object
-      case kind: bool
-        of true: y: ptr UncheckedArray[float]
-        of false: z: seq[int]
-
-  proc `=destroy`(x: MyObj) =
-    if x.kind and x.y != nil:
-      deallocShared(x.y)
-      x.y = nil
-  ```
-  Refactor into:
-  ```nim
-  type
-    MySubObj = object
-      val: ptr UncheckedArray[float]
-    MyObj = object
-      case kind: bool
-      of true: y: MySubObj
+```nim
+type
+  MyObj = object
+    case kind: bool
+      of true: y: ptr UncheckedArray[float]
       of false: z: seq[int]
 
-  proc `=destroy`(x: MySubObj) =
-    if x.val != nil:
-      deallocShared(x.val)
-      x.val = nil
-  ```
+proc `=destroy`(x: MyObj) =
+  if x.kind and x.y != nil:
+    deallocShared(x.y)
+    x.y = nil
+```
+Refactor into:
+```nim
+type
+  MySubObj = object
+    val: ptr UncheckedArray[float]
+  MyObj = object
+    case kind: bool
+    of true: y: MySubObj
+    of false: z: seq[int]
+
+proc `=destroy`(x: MySubObj) =
+  if x.val != nil:
+    deallocShared(x.val)
+    x.val = nil
+```
 
 - getImpl() on enum type symbols now returns field syms instead of idents. This helps
   with writing typed macros. Old behavior for backwards compatiblity can be restored
@@ -130,20 +130,16 @@
   built-in operations. The following always used to compile (and still does):
 
 ```nim
-
 proc mydiv(a, b): int {.raises: [].} =
   a div b # can raise an DivByZeroDefect
-
 ```
 
   Now also this compiles:
 
 ```nim
-
 proc mydiv(a, b): int {.raises: [].} =
   if b == 0: raise newException(DivByZeroDefect, "division by zero")
   else: result = a div b
-
 ```
 
   The reason for this is that `DivByZeroDefect` inherits from `Defect` and
