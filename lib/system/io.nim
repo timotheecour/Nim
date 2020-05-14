@@ -551,7 +551,8 @@ const
     # Platform specific flag for creating a File without inheritance.
     when not defined(nimInheritHandles):
       when defined(windows):
-        "N"
+        # "N" # didn't work
+        ""
       elif defined(linux) or defined(bsd):
         "e"
       else:
@@ -618,10 +619,10 @@ proc open*(f: var File, filename: string,
         close(f2)
         return false
     # c_printf("open2: D20200514T034146.2 %s\n", filename.cstring)
-    c_printf("open2: D20200514T034146.2 %s mode: %s len:%d\n", filename.cstring, FormatOpen[mode].cstring, NoInheritFlag.len.cint)
+    # c_printf("open2: D20200514T034146.2 %s mode: %s len:%d\n", filename.cstring, FormatOpen[mode].cstring, NoInheritFlag.len.cint)
     when not defined(nimInheritHandles) and declared(setInheritable) and
          NoInheritFlag.len == 0:
-      c_printf("open2: D20200514T034146.3\n")
+      # c_printf("open2: D20200514T034146.3\n")
       if not setInheritable(getOsFileHandle(f2), false):
         close(f2)
         return false
