@@ -82,8 +82,8 @@ proc main() =
       fd = parseInt(paramStr 1)
       expectLeak = parseBool(paramStr 3)
       msg = (if expectLeak: "not " else: "") & "leaked " & paramStr 2
-    # echo (msg, expectLeak, fd.isValidHandle, fd)
     if expectLeak xor fd.isValidHandle:
-      echo msg
+      echo (msg, expectLeak, fd.isValidHandle, fd)
+      # echo msg
 
 when isMainModule: main()
