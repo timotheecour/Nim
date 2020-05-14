@@ -14,6 +14,9 @@ include inclrtl
 import std/private/since
 import formatfloat
 
+proc c_printf(frmt: cstring): cint {.
+  importc: "printf", header: "<stdio.h>", varargs, discardable.}
+
 # ----------------- IO Part ------------------------------------------------
 type
   CFile {.importc: "FILE", header: "<stdio.h>",
@@ -614,8 +617,11 @@ proc open*(f: var File, filename: string,
       if c_fstat(getFileHandle(f2), res) >= 0'i32 and modeIsDir(res.st_mode):
         close(f2)
         return false
+    # c_printf("open2: D20200514T034146.2 %s\n", filename.cstring)
+    c_printf("open2: D20200514T034146.2 mode: %s len:%d\n", FormatOpen[mode].cstring, NoInheritFlag.len.cint)
     when not defined(nimInheritHandles) and declared(setInheritable) and
          NoInheritFlag.len == 0:
+      c_printf("open2: D20200514T034146.3")
       if not setInheritable(getOsFileHandle(f2), false):
         close(f2)
         return false
@@ -666,6 +672,7 @@ proc open*(filename: string,
   ## could not be opened.
   ##
   ## The file handle associated with the resulting ``File`` is not inheritable.
+  c_printf("open: D20200514T034146 %s\n", filename.cstring)
   if not open(result, filename, mode, bufSize):
     sysFatal(IOError, "cannot open: " & filename)
 
