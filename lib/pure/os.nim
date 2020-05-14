@@ -2735,6 +2735,9 @@ proc exclFilePermissions*(filename: string,
   ##   setFilePermissions(filename, getFilePermissions(filename)-permissions)
   setFilePermissions(filename, getFilePermissions(filename)-permissions)
 
+when not defined(windows):
+  import std/private/shlexutils
+
 proc parseCmdLine*(c: string): seq[string] {.
   noSideEffect, rtl, extern: "nos$1".} =
   ## Splits a `command line`:idx: into several components.
@@ -2774,16 +2777,17 @@ proc parseCmdLine*(c: string): seq[string] {.
   ## * `paramCount proc <#paramCount>`_
   ## * `paramStr proc <#paramStr,int>`_
   ## * `commandLineParams proc <#commandLineParams>`_
-
-  result = @[]
-  var i = 0
-  var a = ""
-  while true:
-    setLen(a, 0)
-    # eat all delimiting whitespace
-    while i < c.len and c[i] in {' ', '\t', '\l', '\r'}: inc(i)
-    if i >= c.len: break
-    when defined(windows):
+  when not defined(windows):
+    result = parseCmdLineImpl(c)
+  else:
+    result = @[]
+    var i = 0
+    var a = ""
+    while true:
+      setLen(a, 0)
+      # eat all delimiting whitespace
+      while i < c.len and c[i] in {' ', '\t', '\l', '\r'}: inc(i)
+      if i >= c.len: break
       # parse a single argument according to the above rules:
       var inQuote = false
       while i < c.len:
@@ -2817,20 +2821,7 @@ proc parseCmdLine*(c: string): seq[string] {.
         else:
           a.add(c[i])
           inc(i)
-    else:
-      case c[i]
-      of '\'', '\"':
-        var delim = c[i]
-        inc(i) # skip ' or "
-        while i < c.len and c[i] != delim:
-          add a, c[i]
-          inc(i)
-        if i < c.len: inc(i)
-      else:
-        while i < c.len and c[i] > ' ':
-          add(a, c[i])
-          inc(i)
-    add(result, a)
+      add(result, a)
 
 when defined(nimdoc):
   # Common forward declaration docstring block for parameter retrieval procs.
