@@ -528,7 +528,7 @@ proc runCI(cmd: string) =
   echo hostInfo()
   # boot without -d:nimHasLibFFI to make sure this still works
   kochExecFold("Boot in release mode", "boot -d:release")
-  execFold("test with -d:nimHasLibFFI", "$1 $2 -r testament/testament --nim:$1 r tests/trunner.nim" % ["nim", "c"])
+  execFold("test with -d:nimHasLibFFI", "$1 $2 -r testament/testament --nim:$1 r tests/trunner.nim" % [getCurrentCompilerExe(), "c"])
 
   # ## build nimble early on to enable remainder to depend on it if needed
   # kochExecFold("Build Nimble", "nimble")
