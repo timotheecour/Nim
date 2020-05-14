@@ -9,13 +9,16 @@ when defined(windows):
   import winlean
 else:
   import posix
+from stdtest/specialpaths import buildDir
 
 proc leakCheck(f: int | FileHandle | SocketHandle, msg: string, expectLeak = defined(nimInheritHandles)) =
-  discard startProcess(
+  let p = startProcess(
     getAppFilename(),
     args = @[$f.int, msg, $expectLeak],
     options = {poParentStreams}
-  ).waitForExit -1
+  )
+  doAssert p.waitForExit == 0
+  close p
 
 proc isValidHandle(f: int): bool =
   ## Check if a handle is valid. Requires OS-native handles.
@@ -28,12 +31,12 @@ proc isValidHandle(f: int): bool =
 proc main() =
   if paramCount() == 0:
     # Parent process
-    let f = system.open("__test_fdleak", fmReadWrite)
+    let f = system.open(buildDir / "__test_fdleak", fmReadWrite)
     defer: close f
 
     leakCheck(f.getOsFileHandle, "system.open()")
 
-    doAssert f.reopen("__test_fdleak2", fmReadWrite), "reopen failed"
+    doAssert f.reopen(buildDir / "__test_fdleak2", fmReadWrite), "reopen failed"
 
     leakCheck(f.getOsFileHandle, "reopen")
 
@@ -67,7 +70,7 @@ proc main() =
       let selector = newSelector[int]()
       leakCheck(selector.getFd, "selector()", false)
 
-    var mf = memfiles.open("__test_fdleak3", fmReadWrite, newFileSize = 1)
+    var mf = memfiles.open(buildDir / "__test_fdleak3", fmReadWrite, newFileSize = 1)
     defer: close mf
     when defined(windows):
       leakCheck(mf.fHandle, "memfiles.open().fHandle", false)
@@ -79,6 +82,7 @@ proc main() =
       fd = parseInt(paramStr 1)
       expectLeak = parseBool(paramStr 3)
       msg = (if expectLeak: "not " else: "") & "leaked " & paramStr 2
+    # echo (msg, expectLeak, fd.isValidHandle, fd)
     if expectLeak xor fd.isValidHandle:
       echo msg
 
