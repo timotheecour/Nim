@@ -133,6 +133,8 @@ else: # don't run twice the same test
     # D20200513T213820
     let file = testsDir / "stdlib/tfdleak.nim"
     let cmd = fmt"{nim} r --hints:off --nimcache:{nimcache} {file}"
-    for i in 0..<1000:
+    echo cmd
+    doAssert false # PRTEMP
+    for i in 0..<1000
       let ret = execCmdEx(cmd)
       echo ret
