@@ -881,6 +881,7 @@ type
                               # it won't cause problems
                               # for skModule the string literal to output for
                               # deprecated modules.
+    enableIf*: PNode          # consider reusing `constraint` instead
     when defined(nimsuggest):
       allUsages*: seq[TLineInfo]
 
