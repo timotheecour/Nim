@@ -154,7 +154,7 @@ jobs:
 
       # set result to omit the "bash exited with error code '1'" message
     - bash: |
-        ./koch runCI || echo '##vso[task.complete result=Failed]'
+        ./koch_error runCI || echo '##vso[task.complete result=Failed]'
       displayName: 'Run CI'
       env:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
