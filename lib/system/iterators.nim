@@ -1,10 +1,24 @@
-iterator items*[T](a: openArray[T]): lent T {.inline.} =
-  ## Iterates over each item of `a`.
-  var i = 0
-  let n = len(a)
-  while i < n:
-    yield a[i]
-    inc(i)
+# import std/private/since
+
+# since (1, 3, 5):
+# when (NimMajor, NimMinor, NimPatch) >= (1, 3, 5):
+when defined(nimDoesntTrackDefects): # PRTEMP
+  # iterator items*[T](a: openArray[T]): lent T {.inline.} =
+  iterator items*[T](a: openArray[T]): T {.inline.} =
+    ## Iterates over each item of `a`.
+    var i = 0
+    let n = len(a)
+    while i < n:
+      yield a[i]
+      inc(i)
+else:
+  iterator items*[T](a: openArray[T]): T {.inline.} =
+    ## Iterates over each item of `a`.
+    var i = 0
+    let n = len(a)
+    while i < n:
+      yield a[i]
+      inc(i)
 
 iterator mitems*[T](a: var openArray[T]): var T {.inline.} =
   ## Iterates over each item of `a` so that you can modify the yielded value.
@@ -180,14 +194,24 @@ iterator mpairs*(a: var cstring): tuple[key: int, val: var char] {.inline.} =
       yield (i, a[i])
       inc(i)
 
-iterator items*[T](a: seq[T]): lent T {.inline.} =
-  ## Iterates over each item of `a`.
-  var i = 0
-  let L = len(a)
-  while i < L:
-    yield a[i]
-    inc(i)
-    assert(len(a) == L, "the length of the seq changed while iterating over it")
+when defined(nimDoesntTrackDefects): # PRTEMP
+  iterator items*[T](a: seq[T]): lent T {.inline.} =
+    ## Iterates over each item of `a`.
+    var i = 0
+    let L = len(a)
+    while i < L:
+      yield a[i]
+      inc(i)
+      assert(len(a) == L, "the length of the seq changed while iterating over it")
+else:
+  iterator items*[T](a: seq[T]): T {.inline.} =
+    ## Iterates over each item of `a`.
+    var i = 0
+    let L = len(a)
+    while i < L:
+      yield a[i]
+      inc(i)
+      assert(len(a) == L, "the length of the seq changed while iterating over it")
 
 iterator mitems*[T](a: var seq[T]): var T {.inline.} =
   ## Iterates over each item of `a` so that you can modify the yielded value.
