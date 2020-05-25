@@ -49,7 +49,11 @@ type
     tkTemplate,
     tkTry, tkTuple, tkType, tkUsing,
     tkVar, tkWhen, tkWhile, tkXor,
-    tkYield, # end of keywords
+    tkYield,
+    tkAlias,
+      # reserved for future `alias foo = expr` where expr resolves to a symbol (nkSym)
+      # other possibilities would be: `symbol`, `using`, `as`, `aliassym` 
+    # end of keywords
     tkIntLit, tkInt8Lit, tkInt16Lit, tkInt32Lit, tkInt64Lit,
     tkUIntLit, tkUInt8Lit, tkUInt16Lit, tkUInt32Lit, tkUInt64Lit,
     tkFloatLit, tkFloat32Lit, tkFloat64Lit, tkFloat128Lit,
@@ -90,7 +94,7 @@ const
     "template",
     "try", "tuple", "type", "using",
     "var", "when", "while", "xor",
-    "yield",
+    "yield", "alias",
     "tkIntLit", "tkInt8Lit", "tkInt16Lit", "tkInt32Lit", "tkInt64Lit",
     "tkUIntLit", "tkUInt8Lit", "tkUInt16Lit", "tkUInt32Lit", "tkUInt64Lit",
     "tkFloatLit", "tkFloat32Lit", "tkFloat64Lit", "tkFloat128Lit",
