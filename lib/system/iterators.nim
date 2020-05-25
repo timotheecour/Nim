@@ -1,7 +1,8 @@
-iterator items*[T](a: openArray[T]): T {.inline.} =
+iterator items*[T](a: openArray[T]): lent T {.inline.} =
   ## Iterates over each item of `a`.
   var i = 0
-  while i < len(a):
+  let n = len(a)
+  while i < n:
     yield a[i]
     inc(i)
 
@@ -179,7 +180,7 @@ iterator mpairs*(a: var cstring): tuple[key: int, val: var char] {.inline.} =
       yield (i, a[i])
       inc(i)
 
-iterator items*[T](a: seq[T]): T {.inline.} =
+iterator items*[T](a: seq[T]): lent T {.inline.} =
   ## Iterates over each item of `a`.
   var i = 0
   let L = len(a)
