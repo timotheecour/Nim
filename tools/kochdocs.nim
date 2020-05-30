@@ -5,7 +5,8 @@ import "../compiler/nimpaths"
 
 const
   gaCode* = " --doc.googleAnalytics:UA-48159761-1"
-  nimArgs = "--hint:Conf:off --hint:Path:off --hint:Processing:off -d:boot --putenv:nimversion=$#" % system.NimVersion
+  # errormax: subsequent errors are probably consequences of 1st one
+  nimArgs = "--errormax:3 --hint:Conf:off --hint:Path:off --hint:Processing:off -d:boot --putenv:nimversion=$#" % system.NimVersion
   gitUrl = "https://github.com/nim-lang/Nim"
   docHtmlOutput = "doc/html"
   webUploadOutput = "web/upload"
