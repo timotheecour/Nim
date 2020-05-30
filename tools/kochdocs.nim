@@ -237,7 +237,7 @@ proc buildDocPackages(nimArgs, destPath: string) =
     # to avoid broken links to manual from compiler dir, but a multi-package
     # structure could be supported later
   exec("$1 -v" % [nim])
-  exec("$1 dump --dump.format:json " % [nim])
+  exec("$1 dump --dump.format:json ." % [nim])
   exec("$1 doc --project --outdir:$2/compiler $3 --git.url:$4 $5 $6" %
     [nim, destPath, nimArgs, gitUrl, extra, "compiler" / "nim.nim"])
 
