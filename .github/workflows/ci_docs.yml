@@ -1,19 +1,10 @@
 name: Nim Docs CI
 on:
   push:
-    # Run only on changes on these files
-    paths:
-      - 'lib/**.nim'
-      - 'doc/**.rst'
-      - 'doc/nimdoc.css'
-      - '.github/workflows/ci_docs.yml'
-
   pull_request:
     # Run only on changes on these files
     paths:
-      - 'lib/**.nim'
-      - 'doc/**.rst'
-      - '.github/workflows/ci_docs.yml'
+      - 'doc/nimdoc.css'
 
 jobs:
   build:
