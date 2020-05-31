@@ -1,6 +1,7 @@
 name: Nim Docs CI
 on:
   push:
+      - 'doc/nimdoc.css'
   pull_request:
     # Run only on changes on these files
     paths:
