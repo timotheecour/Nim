@@ -1,6 +1,6 @@
 name: Nim Docs CI
 on:
-  pull_request:
+  [push,pull_request]:
     paths:
       - 'doc/nimdoc.css'
 
