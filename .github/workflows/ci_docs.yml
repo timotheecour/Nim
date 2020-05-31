@@ -1,6 +1,7 @@
 name: Nim Docs CI
-on: pull_request
-  paths:
+on:
+  pull_request:
+    paths:
       - 'doc/nimdoc.css'
 
 jobs:
