@@ -12,10 +12,15 @@ proc testFdLeak() =
   var count = [0,0]
   let options = ["", "-d:nimInheritHandles"]
   for j in 0..<options.len:
+    echo (j, cmd)
+    let exe = "tests/stdlib/tfdleak"
+    let cmd = "nim c -o:$1 $2 tests/stdlib/tfdleak.nim" % [exe,options[j]]
+    let (outp1, status1) = execCmdEx(cmd)
+    doAssert status1 == 0, outp1
     for i in 0..<n:
-      let cmd = "nim c -r $1 tests/stdlib/tfdleak.nim" % options[j]
-      echo ("runCustomTest", options[j], j, i, n)
-      let (outp, status) = execCmdEx(cmd)
+      let cmd2 = exe
+      echo (j, i, n, cmd2)
+      let (outp, status) = execCmdEx(cmd2)
       doAssert status == 0
       if "leaked" in outp:
         count[j].inc
