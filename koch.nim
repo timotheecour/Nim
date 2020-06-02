@@ -522,13 +522,6 @@ proc installDeps(dep: string, commit = "") =
   else: doAssert false, "unsupported: " & dep
   # xxx: also add linenoise, niminst etc, refs https://github.com/nim-lang/RFCs/issues/206
 
-proc runCustomTest() =
-  let n = 100
-  for i in 0..<n:
-    echo ("runCustomTest", i)
-    # execFold("Run tester", "nim c -r -d:nimCoroutines testament/testament --pedantic all -d:nimCoroutines")
-    execFold("Run custom test", "nim c -r tests/stdlib/tfdleak.nim")
-
 proc runCI(cmd: string) =
   doAssert cmd.len == 0, cmd # avoid silently ignoring
   echo "runCI: ", cmd
@@ -536,9 +529,17 @@ proc runCI(cmd: string) =
   # boot without -d:nimHasLibFFI to make sure this still works
   kochExecFold("Boot in release mode", "boot -d:release")
 
-  when true: # for debugging
-    runCustomTest()
-    if true: return
+  when true:
+    #[
+    if debugging a tricky issue that's hard to investigate locally, you can
+    edit this as needed and update these to only run on the problematic OS:
+    azure-pipelines.yml
+    .github/workflows/ci_docs.yml
+    .github/workflows/ci_ssl.yml
+    .github/workflows/ci_packages.yml
+    ]#
+    execFold("Run custom test for debugging", "nim c -r tests/stdlib/mfdleakIssue14090.nim")
+    doAssert false, "remember to turn off via `when false`"
 
   ## build nimble early on to enable remainder to depend on it if needed
   kochExecFold("Build Nimble", "nimble")
