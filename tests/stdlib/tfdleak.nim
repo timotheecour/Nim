@@ -108,7 +108,4 @@ proc main() =
     if expectLeak xor fd.isValidHandle:
       echo msg
 
-when isMainModule:
-  let n = 100
-  for i in 0..<n:
-    main()
+when isMainModule: main()

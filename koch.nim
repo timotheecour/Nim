@@ -522,12 +522,23 @@ proc installDeps(dep: string, commit = "") =
   else: doAssert false, "unsupported: " & dep
   # xxx: also add linenoise, niminst etc, refs https://github.com/nim-lang/RFCs/issues/206
 
+proc runCustomTest() =
+  let n = 100
+  for i in 0..<n:
+    echo ("runCustomTest", i)
+    # execFold("Run tester", "nim c -r -d:nimCoroutines testament/testament --pedantic all -d:nimCoroutines")
+    execFold("Run custom test", "nim c -r tests/stdlib/tfdleak.nim")
+
 proc runCI(cmd: string) =
   doAssert cmd.len == 0, cmd # avoid silently ignoring
   echo "runCI: ", cmd
   echo hostInfo()
   # boot without -d:nimHasLibFFI to make sure this still works
   kochExecFold("Boot in release mode", "boot -d:release")
+
+  when true: # for debugging
+    runCustomTest()
+    if true: return
 
   ## build nimble early on to enable remainder to depend on it if needed
   kochExecFold("Build Nimble", "nimble")
