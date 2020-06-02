@@ -8,13 +8,13 @@ module named `m` to avoid running it automatically.
 import osproc, strutils
 
 proc testFdLeak() =
-  let n = 100
+  let n = 200
   var count = [0,0]
   let options = ["", "-d:nimInheritHandles"]
   for j in 0..<options.len:
-    echo (j, cmd)
     let exe = "tests/stdlib/tfdleak"
     let cmd = "nim c -o:$1 $2 tests/stdlib/tfdleak.nim" % [exe,options[j]]
+    echo (j, cmd)
     let (outp1, status1) = execCmdEx(cmd)
     doAssert status1 == 0, outp1
     for i in 0..<n:
