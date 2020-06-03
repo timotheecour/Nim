@@ -1279,7 +1279,9 @@ proc generateIndex*(d: PDoc) =
 
 proc updateOutfile(d: PDoc, outfile: AbsoluteFile) =
   if d.module == nil or sfMainModule in d.module.flags: # nil for eg for commandRst2Html
-    if d.conf.outDir.isEmpty: d.conf.outDir = d.conf.docOutDir
+    if d.conf.outDir.isEmpty:
+      # xxx can this every happen now?
+      d.conf.outDir = d.conf.docOutDir
     if d.conf.outFile.isEmpty:
       d.conf.outFile = outfile.relativeTo(d.conf.outDir)
       if isAbsolute(d.conf.outFile.string):
