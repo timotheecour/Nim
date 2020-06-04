@@ -478,15 +478,20 @@ proc runAllExamples(d: PDoc) =
     writeFile(outp, group.code)
     # most useful semantics is that `docCmd` comes after `rdoccmd`, so that we can (temporarily) override
     # via command line
-    let cmd = "$nim $backend -r --warning:UnusedImport:off --path:$path --nimcache:$nimcache $rdoccmd $docCmd $file" % [
+    let cmd = "$nim $backend -r --warning:UnusedImport:off --path:$path --nimcache:$nimcache $rdoccmd $docCmd --hint:path $file" % [
       "nim", os.getAppFilename(),
       "backend", $d.conf.backend,
-      "path", quoteShell(d.conf.projectPath),
+      "path", quoteShell(d.conf.projectPath), # BUG: because of existing bug, can that work?
       "nimcache", quoteShell(outputDir),
       "file", quoteShell(outp),
       "rdoccmd", group.rdoccmd,
       "docCmd", group.docCmd,
     ]
+    echo "D20200604T010006: ", cmd, " ", (cmd, )
+    echo group[]
+    echo group.code
+    echo outp.string
+    echo "D20200604T010006.2: "
     if os.execShellCmd(cmd) != 0:
       quit "[runnableExamples] failed: generated file: '$1' group: '$2' cmd: $3" % [outp.string, $group[], cmd]
     else:
