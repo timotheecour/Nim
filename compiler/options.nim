@@ -13,6 +13,7 @@ import
 
 from terminal import isatty
 from times import utc, fromUnix, local, getTime, format, DateTime
+import std/private/decls2
 
 const
   hasTinyCBackend* = defined(tinyc)
@@ -662,7 +663,7 @@ iterator nimbleSubs*(conf: ConfigRef; p: string): string =
   let pl = p.toLowerAscii
   if "$nimblepath" in pl or "$nimbledir" in pl:
     for i in countdown(conf.nimblePaths.len-1, 0):
-      let nimblePath = normalizePathEnd(conf.nimblePaths[i].string)
+      let nimblePath = normalizePathEnd(conf.nimblePaths[i].string.byLent)
       yield p % ["nimblepath", nimblePath, "nimbledir", nimblePath]
   else:
     yield p
