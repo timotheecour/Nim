@@ -29,7 +29,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [linux, windows, osx]
+        # target: [linux, windows, osx]
+        target: [windows]
         include:
           # - target: linux
           #   os: ubuntu-18.04
