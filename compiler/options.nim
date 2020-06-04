@@ -619,12 +619,6 @@ proc shortenDir*(conf: ConfigRef; dir: string): string {.
     return substr(dir, prefix.len)
   result = dir
 
-proc removeTrailingDirSep*(path: string): string =
-  if (path.len > 0) and (path[^1] == DirSep):
-    result = substr(path, 0, path.len - 2)
-  else:
-    result = path
-
 proc disableNimblePath*(conf: ConfigRef) =
   incl conf.globalOptions, optNoNimblePath
   conf.lazyPaths.setLen(0)
@@ -653,7 +647,7 @@ proc getNimcacheDir*(conf: ConfigRef): AbsoluteDir =
                (if isDefined(conf, "release") or isDefined(conf, "danger"): "_r" else: "_d"))
 
 proc pathSubs*(conf: ConfigRef; p, config: string): string =
-  let home = removeTrailingDirSep(os.getHomeDir())
+  let home = normalizePathEnd(os.getHomeDir())
   result = unixToNativePath(p % [
     "nim", getPrefixDir(conf).string,
     "lib", conf.libpath.string,
@@ -668,7 +662,7 @@ iterator nimbleSubs*(conf: ConfigRef; p: string): string =
   let pl = p.toLowerAscii
   if "$nimblepath" in pl or "$nimbledir" in pl:
     for i in countdown(conf.nimblePaths.len-1, 0):
-      let nimblePath = removeTrailingDirSep(conf.nimblePaths[i].string)
+      let nimblePath = normalizePathEnd(conf.nimblePaths[i].string)
       yield p % ["nimblepath", nimblePath, "nimbledir", nimblePath]
   else:
     yield p
