@@ -8,7 +8,7 @@ const
   gaCode* = " --doc.googleAnalytics:UA-48159761-1"
   # errormax: subsequent errors are probably consequences of 1st one; a simple
   # bug could cause unlimited number of errors otherwise, hard to debug in CI.
-  nimArgs = "--errormax:3 --hint:Conf:off --hint:Path:off --hint:Processing:off -d:boot --putenv:nimversion=$#" % system.NimVersion
+  nimArgs = "--errormax:3 --hint:Conf:off --hint:Path:on --hint:Processing:off -d:boot --putenv:nimversion=$#" % system.NimVersion
   gitUrl = "https://github.com/nim-lang/Nim"
   docHtmlOutput = "doc/html"
   webUploadOutput = "web/upload"
@@ -304,11 +304,26 @@ proc buildDocsDir*(args: string, dir: string) =
   let args = nimArgs & " " & args
   let docHackJsSource = buildJS()
   createDir(dir)
-  buildDocSamples(args, dir)
-  buildDoc(args, dir) # bottleneck
-  copyFile(dir / "overview.html", dir / "index.html")
-  buildDocPackages(args, dir)
-  copyFile(docHackJsSource, dir / docHackJsSource.lastPathPart)
+  let nim = findNim().quoteShell()
+
+
+  # bin\nim.exe doc --errormax:3 --hint:Conf:off --hint:Path:off --hint:Processing:off -d:boot --putenv:nimversion=1.3.5 --git.commit:devel --git.url:https://github.com/nim-lang/Nim --outdir:web\upload\1.3.5 --index:on lib\system\iterators.nim
+  let file = r"lib\system\iterators.nim"
+  # nim dump --dump.format:json .
+  echo ("D20200603T191206.1", nim, getCurrentDir())
+  echo execShellCmd("$1 dump --dump.format:json ." % [nim])
+  let cmd = nim & " doc $# --git.url:$# --outdir:$# --index:on $#" %
+      [args, gitUrl, dir, file]
+  echo (cmd, )
+  # sexec(@[cmd])
+  echo execShellCmd(cmd)
+  echo "D20200603T191206"
+
+  # buildDocSamples(args, dir)
+  # buildDoc(args, dir) # bottleneck
+  # copyFile(dir / "overview.html", dir / "index.html")
+  # buildDocPackages(args, dir)
+  # copyFile(docHackJsSource, dir / docHackJsSource.lastPathPart)
 
 proc buildDocs*(args: string) =
   buildDocsDir(args, webUploadOutput / NimVersion)

@@ -31,12 +31,12 @@ jobs:
       matrix:
         target: [linux, windows, osx]
         include:
-          - target: linux
-            os: ubuntu-18.04
+          # - target: linux
+          #   os: ubuntu-18.04
           - target: windows
             os: windows-2019
-          - target: osx
-            os: macos-10.15
+          # - target: osx
+          #   os: macos-10.15
 
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
