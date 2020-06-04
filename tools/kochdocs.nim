@@ -8,7 +8,7 @@ const
   gaCode* = " --doc.googleAnalytics:UA-48159761-1"
   # errormax: subsequent errors are probably consequences of 1st one; a simple
   # bug could cause unlimited number of errors otherwise, hard to debug in CI.
-  nimArgs = "--errormax:3 --hint:Conf:off --hint:Path:on --hint:Processing:off -d:boot --putenv:nimversion=$#" % system.NimVersion
+  nimArgs = "--errormax:3 --hint:Conf:off --hint:Path:on --hint:Processing:off -d:boot --putenv:nimversion=$#  --warning:Deprecated:off --hint:XDeclaredButNotUsed:off  " % system.NimVersion
   gitUrl = "https://github.com/nim-lang/Nim"
   docHtmlOutput = "doc/html"
   webUploadOutput = "web/upload"
@@ -259,7 +259,8 @@ proc buildDoc(nimArgs, destPath: string) =
       destPath / changeFileExt(splitFile(d).name, "html"), d]
     i.inc
 
-  mexec(commands)
+  # mexec(commands)
+  sexec(commands)
   exec(nim & " buildIndex -o:$1/theindex.html $1" % [destPath])
     # caveat: this works so long it's called before `buildDocPackages` which
     # populates `compiler/` with unrelated idx files that shouldn't be in index,
