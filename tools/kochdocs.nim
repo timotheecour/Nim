@@ -304,26 +304,28 @@ proc buildDocsDir*(args: string, dir: string) =
   let args = nimArgs & " " & args
   let docHackJsSource = buildJS()
   createDir(dir)
-  let nim = findNim().quoteShell()
 
 
-  # bin\nim.exe doc --errormax:3 --hint:Conf:off --hint:Path:off --hint:Processing:off -d:boot --putenv:nimversion=1.3.5 --git.commit:devel --git.url:https://github.com/nim-lang/Nim --outdir:web\upload\1.3.5 --index:on lib\system\iterators.nim
-  let file = r"lib\system\iterators.nim"
-  # nim dump --dump.format:json .
-  echo ("D20200603T191206.1", nim, getCurrentDir())
-  echo execShellCmd("$1 dump --dump.format:json ." % [nim])
-  let cmd = nim & " doc $# --git.url:$# --outdir:$# --index:on $#" %
-      [args, gitUrl, dir, file]
-  echo (cmd, )
-  # sexec(@[cmd])
-  echo execShellCmd(cmd)
-  echo "D20200603T191206"
+  when true:
+    block:
+      let nim = findNim().quoteShell()
+      # bin\nim.exe doc --errormax:3 --hint:Conf:off --hint:Path:off --hint:Processing:off -d:boot --putenv:nimversion=1.3.5 --git.commit:devel --git.url:https://github.com/nim-lang/Nim --outdir:web\upload\1.3.5 --index:on lib\system\iterators.nim
+      let file = r"lib\system\iterators.nim"
+      # nim dump --dump.format:json .
+      echo ("D20200603T191206.1", nim, getCurrentDir())
+      echo execShellCmd("$1 dump --dump.format:json ." % [nim])
+      let cmd = nim & " doc $# --git.url:$# --outdir:$# --index:on $#" %
+          [args, gitUrl, dir, file]
+      echo (cmd, )
+      # sexec(@[cmd])
+      echo execShellCmd(cmd)
+      echo "D20200603T191206"
 
-  # buildDocSamples(args, dir)
-  # buildDoc(args, dir) # bottleneck
-  # copyFile(dir / "overview.html", dir / "index.html")
-  # buildDocPackages(args, dir)
-  # copyFile(docHackJsSource, dir / docHackJsSource.lastPathPart)
+  buildDocSamples(args, dir)
+  buildDoc(args, dir) # bottleneck
+  copyFile(dir / "overview.html", dir / "index.html")
+  buildDocPackages(args, dir)
+  copyFile(docHackJsSource, dir / docHackJsSource.lastPathPart)
 
 proc buildDocs*(args: string) =
   buildDocsDir(args, webUploadOutput / NimVersion)
