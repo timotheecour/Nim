@@ -237,16 +237,17 @@ proc buildDoc(nimArgs, destPath: string) =
     commands = newSeq[string](rst2html.len + len(doc0) + len(doc) + withoutIndex.len)
     i = 0
   let nim = findNim().quoteShell()
-  for d in items(rst2html):
-    commands[i] = nim & " rst2html $# --git.url:$# -o:$# --index:on $#" %
-      [nimArgs, gitUrl,
-      destPath / changeFileExt(splitFile(d).name, "html"), d]
-    i.inc
-  for d in items(doc0):
-    commands[i] = nim & " doc0 $# --git.url:$# -o:$# --index:on $#" %
-      [nimArgs, gitUrl,
-      destPath / changeFileExt(splitFile(d).name, "html"), d]
-    i.inc
+  when false:
+    for d in items(rst2html):
+      commands[i] = nim & " rst2html $# --git.url:$# -o:$# --index:on $#" %
+        [nimArgs, gitUrl,
+        destPath / changeFileExt(splitFile(d).name, "html"), d]
+      i.inc
+    for d in items(doc0):
+      commands[i] = nim & " doc0 $# --git.url:$# -o:$# --index:on $#" %
+        [nimArgs, gitUrl,
+        destPath / changeFileExt(splitFile(d).name, "html"), d]
+      i.inc
   for d in items(doc):
     var nimArgs2 = nimArgs
     if d.isRelativeTo("compiler"): doAssert false
@@ -260,6 +261,7 @@ proc buildDoc(nimArgs, destPath: string) =
     i.inc
 
   # mexec(commands)
+  echo commands
   sexec(commands)
   exec(nim & " buildIndex -o:$1/theindex.html $1" % [destPath])
     # caveat: this works so long it's called before `buildDocPackages` which
