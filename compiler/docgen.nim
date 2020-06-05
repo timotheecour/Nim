@@ -470,8 +470,9 @@ proc runAllExamples(d: PDoc) =
     writeFile(outp, group.code)
     # most useful semantics is that `docCmd` comes after `rdoccmd`, so that we can (temporarily) override
     # via command line
+    echo (getCurrentCompilerExe(), os.getAppFilename())
     let cmd = "$nim $backend -r --warning:UnusedImport:off --path:$path --nimcache:$nimcache $rdoccmd $docCmd $file" % [
-      "nim", getCurrentCompilerExe(),
+      "nim", os.getAppFilename(),
         # os.getAppFilename() caused issues and using same compiler is better anyway;
         # no relocation issues can happen as we're just running tests. Else, `--lib:lib` would
         # at least be needed otherwise `nim doc system` can cause this on windows:
