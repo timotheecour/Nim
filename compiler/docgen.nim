@@ -470,16 +470,17 @@ proc runAllExamples(d: PDoc) =
     writeFile(outp, group.code)
     # most useful semantics is that `docCmd` comes after `rdoccmd`, so that we can (temporarily) override
     # via command line
-    echo (getCurrentCompilerExe(), os.getAppFilename())
-    let cmd = "$nim $backend -r --warning:UnusedImport:off --lib:$lib --nimcache:$nimcache $rdoccmd $docCmd $file" % [
+    # echo (getCurrentCompilerExe(), os.getAppFilename())
+    # let cmd = "$nim $backend -r --warning:UnusedImport:off --lib:$lib --nimcache:$nimcache $rdoccmd $docCmd $file" % [
+    let cmd = "$nim $backend -r --warning:UnusedImport:off --path:$path --nimcache:$nimcache $rdoccmd $docCmd $file" % [
       "nim", os.getAppFilename(),
         # os.getAppFilename() caused issues and using same compiler is better anyway;
         # no relocation issues can happen as we're just running tests. Else, `--lib:lib` would
         # at least be needed otherwise `nim doc system` can cause this on windows:
         # semtypes.nim(2034, 12) `c.graph.sysTypes[tySequence] == nil`
       "backend", $d.conf.backend,
-      "lib", quoteShell(d.conf.libpath.string),
-      # "path", quoteShell(d.conf.projectPath),
+      # "lib", quoteShell(d.conf.libpath.string),
+      "path", quoteShell(d.conf.projectPath),
       "nimcache", quoteShell(outputDir),
       "file", quoteShell(outp),
       "rdoccmd", group.rdoccmd,
