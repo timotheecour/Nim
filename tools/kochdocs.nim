@@ -8,6 +8,7 @@ const
   gaCode* = " --doc.googleAnalytics:UA-48159761-1"
   # errormax: subsequent errors are probably consequences of 1st one; a simple
   # bug could cause unlimited number of errors otherwise, hard to debug in CI.
+  # --hint:XDeclaredButNotUsed:off
   nimArgs = "--errormax:3 --hint:Conf:off --hint:Path:off --hint:Processing:off -d:boot --putenv:nimversion=$#" % system.NimVersion
   gitUrl = "https://github.com/nim-lang/Nim"
   docHtmlOutput = "doc/html"
@@ -197,10 +198,16 @@ proc sexec(cmds: openArray[string]) =
 
 proc mexec(cmds: openArray[string]) =
   ## Multiprocessor version of exec
-  let r = execProcesses(cmds, {poStdErrToStdOut, poParentStreams, poEchoCmd})
-  if r != 0:
-    echo "external program failed, retrying serial work queue for logs!"
-    sexec(cmds)
+  when false:
+    let r = execProcesses(cmds, {poStdErrToStdOut, poParentStreams, poEchoCmd})
+    if r != 0:
+      echo "external program failed, retrying serial work queue for logs!"
+      sexec(cmds)
+  else:
+    for i, cmd in cmds:
+      echo (i, cmd)
+      let r = execProcesses([cmd], {poStdErrToStdOut, poParentStreams, poEchoCmd})
+      doAssert r == 0, cmd
 
 proc buildDocSamples(nimArgs, destPath: string) =
   ## Special case documentation sample proc.
