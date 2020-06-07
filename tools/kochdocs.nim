@@ -244,27 +244,31 @@ proc buildDoc(nimArgs, destPath: string) =
     commands = newSeq[string](rst2html.len + len(doc0) + len(doc) + withoutIndex.len)
     i = 0
   let nim = findNim().quoteShell()
-  for d in items(rst2html):
-    commands[i] = nim & " rst2html $# --git.url:$# -o:$# --index:on $#" %
-      [nimArgs, gitUrl,
-      destPath / changeFileExt(splitFile(d).name, "html"), d]
-    i.inc
-  for d in items(doc0):
-    commands[i] = nim & " doc0 $# --git.url:$# -o:$# --index:on $#" %
-      [nimArgs, gitUrl,
-      destPath / changeFileExt(splitFile(d).name, "html"), d]
-    i.inc
+  # for d in items(rst2html):
+  #   commands[i] = nim & " rst2html $# --git.url:$# -o:$# --index:on $#" %
+  #     [nimArgs, gitUrl,
+  #     destPath / changeFileExt(splitFile(d).name, "html"), d]
+  #   i.inc
+  # for d in items(doc0):
+  #   commands[i] = nim & " doc0 $# --git.url:$# -o:$# --index:on $#" %
+  #     [nimArgs, gitUrl,
+  #     destPath / changeFileExt(splitFile(d).name, "html"), d]
+  #   i.inc
+
+  let ok = execShellCmd(r"$1 dump --dump.format:json lib\system.nim" % [nim])
+  doAssert ok
+  echo (nim,"D20200606T214012")
   for d in items(doc):
     var nimArgs2 = nimArgs
     if d.isRelativeTo("compiler"): doAssert false
     commands[i] = nim & " doc $# --git.url:$# --outdir:$# --index:on $#" %
       [nimArgs2, gitUrl, destPath, d]
     i.inc
-  for d in items(withoutIndex):
-    commands[i] = nim & " doc2 $# --git.url:$# -o:$# $#" %
-      [nimArgs, gitUrl,
-      destPath / changeFileExt(splitFile(d).name, "html"), d]
-    i.inc
+  # for d in items(withoutIndex):
+  #   commands[i] = nim & " doc2 $# --git.url:$# -o:$# $#" %
+  #     [nimArgs, gitUrl,
+  #     destPath / changeFileExt(splitFile(d).name, "html"), d]
+  #   i.inc
 
   mexec(commands)
   exec(nim & " buildIndex -o:$1/theindex.html $1" % [destPath])
