@@ -255,8 +255,9 @@ proc buildDoc(nimArgs, destPath: string) =
   #     destPath / changeFileExt(splitFile(d).name, "html"), d]
   #   i.inc
 
-  let ok = execShellCmd(r"$1 dump --dump.format:json lib\system.nim" % [nim])
-  doAssert ok
+  echo ("D20200606T214012.1")
+  let status = execShellCmd(r"$1 dump --dump.format:json lib\system.nim" % [nim])
+  doAssert status == 0
   echo (nim,"D20200606T214012")
   for d in items(doc):
     var nimArgs2 = nimArgs
