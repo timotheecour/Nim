@@ -609,6 +609,8 @@ proc setDefaultLibpath*(conf: ConfigRef) =
 
 proc canonicalizePath*(conf: ConfigRef; path: AbsoluteFile): AbsoluteFile =
   result = AbsoluteFile path.string.expandFilename
+  when not FileSystemCaseSensitive:
+    result = toLower(result)
 
 proc shortenDir*(conf: ConfigRef; dir: string): string {.
     deprecated: "use 'relativeTo' instead".} =
