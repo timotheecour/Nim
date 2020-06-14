@@ -75,8 +75,8 @@ elif defined(posix):
 else:
   {.error: "OS module not ported to your operating system!".}
 
-when weirdTarget and defined(nimErrorProcCanHaveBody):
-  {.pragma: noNimScript, error: "this proc is not available on the NimScript target".}
+when weirdTarget:
+  template noNimScript(body): untyped = discard
 else:
   {.pragma: noNimScript.}
 
@@ -2708,23 +2708,7 @@ when defined(nimdoc):
     ##   else:
     ##     # Do something else!
 
-elif defined(nimscript):
-  proc paramStr*(i: int): string =
-    ## Retrieves the ``i``'th command line parameter.
-    discard
-
-  proc paramCount*(): int =
-    ## Retrieves the number of command line parameters.
-    discard
-
-elif defined(js):
-  proc paramStr*(i: int): TaintedString {.tags: [ReadIOEffect].} =
-    raise newException(OSError, "paramStr is not implemented on JavaScript")
-
-  proc paramCount*(): int {.tags: [ReadIOEffect].} =
-    raise newException(OSError, "paramCount is not implemented on JavaScript")
-
-elif defined(nintendoswitch):
+elif defined(nintendoswitch) or weirdTarget:
   proc paramStr*(i: int): TaintedString {.tags: [ReadIOEffect].} =
     raise newException(OSError, "paramStr is not implemented on Nintendo Switch")
 
@@ -3120,7 +3104,7 @@ template rawToFormalFileInfo(rawInfo, path, formalInfo): untyped =
       assert(path != "") # symlinks can't occur for file handles
       formalInfo.kind = getSymlinkFileKind(path)
 
-when defined(js) or defined(nimscript):
+when defined(js):
   when not declared(FileHandle):
     type FileHandle = distinct int32
   when not declared(File):
