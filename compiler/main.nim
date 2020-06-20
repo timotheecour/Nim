@@ -21,6 +21,8 @@ import
   modules,
   modulegraphs, tables, rod, lineinfos, pathutils, vmprofiler
 
+import exectraceimpl
+
 when not defined(leanCompiler):
   import jsgen, docgen, docgen2
 
