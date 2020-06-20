@@ -2532,7 +2532,7 @@ template genStmtListExprImpl(exprOrStmt) {.dirty.} =
   # var frameNameExecTrace: Rope = nil
   for i in 0..<n.len - 1:
     let it = n[i]
-    dbg it.kind, i, n.len
+    # dbg it.kind, i, n.len
     if it.kind == nkComesFrom:
       if hasNimFrame and frameName == nil:
         inc p.labels
