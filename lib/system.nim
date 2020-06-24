@@ -4171,6 +4171,7 @@ when defined(cpp) and appType != "lib" and
     hostOS != "standalone" and not defined(noCppExceptions):
   proc setTerminate(handler: proc() {.noconv.})
     {.importc: "std::set_terminate", header: "<exception>".}
+  proc write_D20200623T232814(s: string) {.importc.}
   setTerminate proc() {.noconv.} =
     # Remove ourself as a handler, reinstalling the default handler.
     setTerminate(nil)
@@ -4182,8 +4183,8 @@ when defined(cpp) and appType != "lib" and
       echo trace & "Error: unhandled exception: " & ex.msg &
                    " [" & $ex.name & "]\n"
     else:
-      cstderr.rawWrite trace & "Error: unhandled exception: " & ex.msg &
-                   " [" & $ex.name & "]\n"
+      write_D20200623T232814 trace & "Error: unhandled exception: " & ex.msg &
+                    " [" & $ex.name & "]\n"
     quit 1
 
 when not defined(js):

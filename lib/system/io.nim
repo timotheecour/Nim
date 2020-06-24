@@ -189,6 +189,10 @@ proc writeChars*(f: File, a: openArray[char], start, len: Natural): int {.
 proc write*(f: File, s: string) {.tags: [WriteIOEffect], benign.} =
   if writeBuffer(f, cstring(s), s.len) != s.len:
     raiseEIO("cannot write string to file")
+
+when not defined(nimscript):
+  {.emit:"NIM_EXTERNC".}
+  proc write_D20200623T232814(s: string) {.exportc.} = write(stderr, s)
 {.pop.}
 
 when NoFakeVars:
