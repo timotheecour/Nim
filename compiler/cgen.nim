@@ -1374,11 +1374,13 @@ proc genMainProc(m: BModule) =
       "}$N$N"
 
     NimMainProc =
+      # "void wrapNimMain(void (*fun_ptr)());$N" &
       "N_CDECL(void, NimMain)(void) {$N" &
         "\tvoid (*volatile inner)(void);$N" &
         "$4" &
         "\tinner = NimMainInner;$N" &
         "$2" &
+        # "\twrapNimMain(*inner);$N" &
         "\t(*inner)();$N" &
       "}$N$N"
 

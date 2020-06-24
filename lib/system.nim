@@ -54,7 +54,6 @@ type
 
 include "system/basic_types"
 
-
 proc compileOption*(option: string): bool {.
   magic: "CompileOption", noSideEffect.}
   ## Can be used to determine an `on|off` compile-time option. Example:
@@ -3025,7 +3024,6 @@ when defined(genode):
       componentConstructHook(env)
         # Perform application initialization
         # and return to thread entrypoint.
-
 
 import system/widestrs
 export widestrs
