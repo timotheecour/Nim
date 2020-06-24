@@ -569,9 +569,11 @@ when defined(cpp) and appType != "lib" and not gotoBasedExceptions and
   proc setTerminate(handler: proc() {.noconv.})
     {.importc: "std::set_terminate", header: "<exception>".}
 
+
   setTerminate proc() {.noconv.} =
     # Remove ourself as a handler, reinstalling the default handler.
     setTerminate(nil)
+
 
     var msg = "Unknown error in unexpected exception handler"
     try:
@@ -594,8 +596,8 @@ when defined(cpp) and appType != "lib" and not gotoBasedExceptions and
       # stderr not available by default, use the LOG session
       echo msg
     else:
-      writeToStdErr msg & "\n"
-
+      proc writeToStdErrRobust(msg: string) {.importc.}
+      writeToStdErrRobust msg & "\n"
     quit 1
 
 when not defined(noSignalHandler) and not defined(useNimRtl):

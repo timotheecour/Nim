@@ -158,5 +158,6 @@ proc rawWrite*(f: CFilePtr, s: cstring) {.compilerproc, nonReloadable, inline.} 
   # we cannot throw an exception here!
   discard c_fwrite(s, 1, cast[csize_t](s.len), f)
   discard c_fflush(f)
+  # todo: same treatment as D20190117T013551 in case `c_fwrite` fails
 
 {.pop.}

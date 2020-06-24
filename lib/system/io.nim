@@ -850,3 +850,65 @@ iterator lines*(f: File): TaintedString {.tags: [ReadIOEffect].} =
   ##       result.lines += 1
   var res = TaintedString(newStringOfCap(80))
   while f.readLine(res): yield res
+
+when defined(cpp):
+  {.emit:"""
+NIM_EXTERNC int fd_is_valid(int fd) {
+ return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+}
+""".}
+
+# NIM_EXP
+when false:
+# proc wrapNimMain(fun: proc(){.cdecl.}) {.exportc.} =
+ proc wrapNimMain(fun: proc(){.cdecl.}) {.exportc, compilerproc.} =
+# proc wrapNimMain(fun: proc(){.cdecl.}) {.compilerproc.} =
+  ## used to catch un-caught exceptions instead of falling through
+  ## `std::terminate`, for example allows to fix #10343
+  # Seems simpler than `std::set_terminate` alternatives.
+  fun()
+  when defined(cpp):
+    proc fd_is_valid(fd:cint): cint {.cdecl, importc.}
+    try:
+      fun()
+    except Exception as e:
+      let file = when defined(genode):
+        # stderr not available by default, use the LOG session
+        stdout
+      else: stderr
+
+      # using `c_feof(file)` doesn't work
+      let fd = c_fileno(file)
+      if fd_is_valid(fd) != 0.cint:
+        let ex = getCurrentException()
+        let trace = ex.getStackTrace()
+        let msg = trace & "Error: unhandled exception: " & ex.msg &
+          " [" & $ex.name & "]\n"
+        file.write msg
+        # stderr.write "uncaught exception:" & e.msg
+      else:
+        # note(D20190117T013551):
+        # write to a logfile ($pid.log) if `--logerrorDir:mydir` is passed
+        discard
+      quit(1)
+  else:
+    fun()
+
+when not defined(nimscript):
+  {.emit:"""
+    NIM_EXTERNC bool fileDescriptorIsValid(int fd) {
+     return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+    }
+    """.}
+
+  proc fileDescriptorIsValid(fd:cint): bool {.cdecl, importc.}
+
+  proc writeToStdErrRobust(msg: string) {.exportc.} =
+    # using `c_feof(stderr)` doesn't give usable answer
+    let fd = c_fileno(stderr)
+    if fileDescriptorIsValid(fd):
+      stderr.write msg
+    else:
+      # note(D20190117T013551):
+      # write to a logfile ($pid.log) if `--logerrorDir:mydir` is passed
+      discard
