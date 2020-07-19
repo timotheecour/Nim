@@ -2276,7 +2276,7 @@ proc semMagic(c: PContext, n: PNode, s: PSym, flags: TExprFlags): PNode =
       activate(c, result)
       fixAbstractType(c, result)
       analyseIfAddressTakenInCall(c, result)
-      # PRTEMP
+      nimSimulateCall(c, callee, result)
       if callee.magic != mNone:
         result = magicsAfterOverloadResolution(c, result, flags)
   of mRunnableExamples:
