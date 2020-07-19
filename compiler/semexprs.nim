@@ -894,6 +894,7 @@ proc afterCallActions(c: PContext; n, orig: PNode, flags: TExprFlags): PNode =
     activate(c, result)
     fixAbstractType(c, result)
     analyseIfAddressTakenInCall(c, result)
+    nimSimulateCall(c, callee, result)
     if callee.magic != mNone:
       result = magicsAfterOverloadResolution(c, result, flags)
     when false:
@@ -1610,6 +1611,7 @@ proc takeImplicitAddr(c: PContext, n: PNode; isLent: bool): PNode =
   result.add(n)
 
 proc asgnToResultVar(c: PContext, n, le, ri: PNode) {.inline.} =
+  nimCheckViewFromCompat(c, n, le, ri)
   if le.kind == nkHiddenDeref:
     var x = le[0]
     if x.typ.kind in {tyVar, tyLent} and x.kind == nkSym and x.sym.kind == skResult:
@@ -1814,6 +1816,9 @@ proc semProcBody(c: PContext, n: PNode): PNode =
       c.p.owner.typ[0].kind == tyUntyped:
     localError(c.config, c.p.owner.info, errCannotInferReturnType %
       c.p.owner.name.s)
+  when true:
+    let fun = c.p.owner
+    dbg fun, fun.viewConstraints.nimToHumanViewConstraint, c.config$fun.info
   closeScope(c)
 
 proc semYieldVarResult(c: PContext, n: PNode, restype: PType) =
@@ -2264,12 +2269,14 @@ proc semMagic(c: PContext, n: PNode, s: PSym, flags: TExprFlags): PNode =
     if result == nil:
       result = errorNode(c, n)
     else:
+      # xxx FACTOR with `afterCallActions`
       let callee = result[0].sym
       if callee.magic == mNone:
         semFinishOperands(c, result)
       activate(c, result)
       fixAbstractType(c, result)
       analyseIfAddressTakenInCall(c, result)
+      nimSimulateCall(c, callee, result)
       if callee.magic != mNone:
         result = magicsAfterOverloadResolution(c, result, flags)
   of mRunnableExamples:

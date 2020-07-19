@@ -821,6 +821,21 @@ type
   PScope* = ref TScope
 
   PLib* = ref TLib
+
+  ViewDep* = object
+    ## for escape analysis, we model symbol dependency using a list of `ViewDep`
+    sym*: PSym ## lhs = foo.addr => ViewDep(sym: foo, addrLevel: 1)
+               ## lhs = foo      => ViewDep(sym: foo, addrLevel: 0)
+               ## lhs = foo[]    => ViewDep(sym: foo, addrLevel: -1)
+               ## lhs = foo[][]  => ViewDep(sym: foo, addrLevel: -2) etc
+    addrLevel*: int ## addressing level, <= 1, can be < 0
+  
+  ViewConstraint* = object
+    # we could model other constraints, eg whether a parameter is being written to
+    lhs*: PSym
+    rhs*: PSym
+    addrLevel*: int  # see also `ViewDep`
+
   TSym* {.acyclic.} = object of TIdObj
     # proc and type instantiations are cached in the generic symbol
     case kind*: TSymKind
@@ -830,6 +845,7 @@ type
       procInstCache*: seq[PInstantiation]
       gcUnsafetyReason*: PSym  # for better error messages wrt gcsafe
       transformedBody*: PNode  # cached body after transf pass
+      viewConstraints*: seq[ViewConstraint]
     of skModule, skPackage:
       # modules keep track of the generic symbols they use from other modules.
       # this is because in incremental compilation, when a module is about to
@@ -847,6 +863,12 @@ type
       bitsize*: int
       alignment*: int # for alignment
     else: nil
+
+    viewSyms*: seq[ViewDep] ## models dependency graph between symbols, see `ViewDep`
+      # only needed for `skLet, skVar, skField, skForVar` +  `skParam`, `skResult`
+      # see https://github.com/nim-lang/RFCs/issues/19 which would allow that,
+      # else we could use different names + 1 common accessor.
+
     magic*: TMagic
     typ*: PType
     name*: PIdent
@@ -1936,6 +1958,9 @@ proc toHumanStr*(kind: TSymKind): string =
 proc toHumanStr*(kind: TTypeKind): string =
   ## strips leading `tk`
   result = toHumanStrImpl(kind, 2)
+
+import ./debugutils
+export debugutils
 
 proc skipAddr*(n: PNode): PNode {.inline.} =
   (if n.kind == nkHiddenAddr: n[0] else: n)

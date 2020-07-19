@@ -1697,3 +1697,7 @@ proc extractDocCommentsAndRunnables*(n: NimNode): NimNode =
         result.add ni
       else: break
     else: break
+
+when defined(nimHasCapturedMsgs): # PRTEMP
+  proc debugTmp*(n: NimNode) {.compileTime.} = discard
+  proc viewConstraintsStr*(n: NimNode): string {.compileTime.} = discard
