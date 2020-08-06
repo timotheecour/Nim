@@ -23,6 +23,9 @@ whiley ends :(
 0
 new line before - @['a']
 new line after - @['a']
+finalizer
+aaaaa
+hello
 closed
 destroying variable: 20
 destroying variable: 10
@@ -257,3 +260,62 @@ echo "new line before - ", newline
 newline.insert(indent, 0)
 
 echo "new line after - ", newline
+
+# bug #15044
+
+type
+  Test = ref object
+
+proc test: Test =
+  # broken
+  new(result, proc(x: Test) =
+    echo "finalizer"
+  )
+
+proc tdirectFinalizer =
+  discard test()
+
+tdirectFinalizer()
+
+
+# bug #14480
+proc hello(): int =
+  result = 42
+
+var leaves {.global.} = hello()
+doAssert leaves == 42
+
+# bug #15052
+
+proc mutstrings =
+  var data = "hello"
+  for c in data.mitems():
+    c = 'a'
+  echo data
+
+mutstrings()
+
+# bug #15038
+
+type
+  Machine = ref object
+    hello: string
+
+var machineTypes: seq[tuple[factory: proc(): Machine]]
+
+proc registerMachine(factory: proc(): Machine) =
+  var mCreator = proc(): Machine =
+    result = factory()
+
+  machineTypes.add((factory: mCreator))
+
+proc facproc(): Machine =
+  result = Machine(hello: "hello")
+
+registerMachine(facproc)
+
+proc createMachine =
+  for machine in machineTypes:
+    echo machine.factory().hello
+
+createMachine()
