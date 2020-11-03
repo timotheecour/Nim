@@ -328,7 +328,7 @@ proc generateInstanceEnableIf*(c: PContext, fn: PSym, pt: TIdTable, info: TLineI
   when false:
     # this would be incorrect, eg when enableIf expression uses a proc in local scope
     while not isTopLevel(c): c.currentScope = c.currentScope.parent
-  let resultFun = copySym(fn)
+  let resultFun = copySym(fn, nextId c.idgen)
   resultFun.owner = fn
   resultFun.ast = n
   pushOwner(c, resultFun)

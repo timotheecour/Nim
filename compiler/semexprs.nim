@@ -2104,7 +2104,6 @@ proc tryExpr(c: PContext, n: PNode, flags: TExprFlags = {}, isSemConstExpr = fal
   try:
     if isSemConstExpr: result = semConstExpr(c, n)
     else: result = semExpr(c, n, flags)
-    result = semExpr(c, n, flags)
     if result != nil and efNoSem2Check notin flags:
       trackStmt(c, c.module, result, isTopLevel = false)
     if c.config.errorCounter != oldErrorCount:
