@@ -464,6 +464,18 @@ proc semOld(c: PContext; n: PNode): PNode =
     localError(c.config, n[1].info, n[1].sym.name.s & " does not belong to " & getCurrOwner(c).name.s)
   result = n
 
+import std/exectraces
+
+proc nimExecTraceControl(c: PContext, n: PNode): PNode =
+  let mode = c.semConstExpr(c, n[1])
+  let mode2 = TraceAction(mode.intVal)
+  case mode2
+  of kstart:
+    c.config.options.incl(optExecTrace)
+  of kstop:
+    c.config.options.excl(optExecTrace)
+  result = newNodeI(nkEmpty, n.info)
+
 proc magicsAfterOverloadResolution(c: PContext, n: PNode,
                                    flags: TExprFlags): PNode =
   ## This is the preferred code point to implement magics.
