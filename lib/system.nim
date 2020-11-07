@@ -2272,7 +2272,6 @@ when notJSnotNims:
     include "system/excpt"
   include "system/chcks"
 
-
   # we cannot compile this with stack tracing on
   # as it would recurse endlessly!
   when defined(nimNewIntegerOps):
@@ -2281,10 +2280,13 @@ when notJSnotNims:
     include "system/arithm"
   {.pop.}
 
+
 when not defined(js):
   # this is a hack: without this when statement, you would get:
   # Error: system module needs: nimGCvisit
   {.pop.} # stackTrace: off, profiler: off
+
+
 
 when notJSnotNims:
   when hostOS != "standalone" and hostOS != "any":
