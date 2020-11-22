@@ -3201,39 +3201,37 @@ proc sameFileContent*(path1, path2: string; checkSize = false; checkFiles = fals
   runnableExamples:
     doAssert sameFileContent(currentSourcePath, currentSourcePath, checkSize = true, bufferSize = 4096)
   var a, b: File
-  var mustRead = true
   var bufA, bufB: pointer
   try:  # readBuffer or open may or may not raise IOError.
     if not open(a, path1):
       if checkFiles:
         raise newException(IOError, "Can not open file: $1" % [path1])
-      mustRead = false
+      return false
     if not open(b, path2):
       if checkFiles:
         raise newException(IOError, "Can not open file: $1" % [path2])
-      mustRead = false
+      return false
     let bufferSize = if bufferSize == 0: getFileInfo(a).blockSize else: bufferSize
     bufA = alloc0(bufferSize)
     bufB = alloc0(bufferSize)
-    if checkSize and getFileInfo(a).size != getFileInfo(b).size: mustRead = false
-    if mustRead:
-      while true:
-        let readA = readBuffer(a, bufA, bufferSize)
-        let readB = readBuffer(b, bufB, bufferSize)
-        if readA != readB: break
-        if readA > 0:
-          result = equalMem(bufA, bufB, readA)
-          if not result: break
-        if readA != bufferSize:
-          let enda = endOfFile(a)
-          let endb = endOfFile(b)
-          if enda != endb: break
-          if enda:
-            result = true
-            break
+    if checkSize and getFileInfo(a).size != getFileInfo(b).size: return false
+    while true:
+      let readA = readBuffer(a, bufA, bufferSize)
+      let readB = readBuffer(b, bufB, bufferSize)
+      if readA != readB: break
+      if readA > 0:
+        result = equalMem(bufA, bufB, readA)
+        if not result: break
+      if readA != bufferSize:
+        let enda = endOfFile(a)
+        let endb = endOfFile(b)
+        if enda != endb: break
+        if enda:
+          result = true
+          break
   finally:
-    dealloc(bufA)
-    dealloc(bufB)
+    if bufA!=nil: dealloc(bufA)
+    if bufB!=nil: dealloc(bufB)
     close(a)
     close(b)
 
