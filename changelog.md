@@ -68,6 +68,13 @@
 
 - nil dereference is not allowed at compile time. `cast[ptr int](nil)[]` is rejected at compile time.
 
+- An enum now can't be converted to another enum directly, you must use `ord`:
+  ```
+  type A = enum a1, a2
+  type B = enum b1, b2
+  doAssert not compiles(a1.B)
+  doAssert compiles(a1.ord.B)
+  ```
 
 ## Compiler changes
 
