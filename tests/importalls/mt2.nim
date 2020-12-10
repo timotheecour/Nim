@@ -1,5 +1,7 @@
-from ./m1 {.all.} as m import foo1
+from ./m1 {.all.} as m import foo1, Foo5 {.fields.}
 from ./m1 {.all.} as m2 import foo7
+# from ./m1 {.all.} as m2 import foo1 # PRTEMP: Error: redefinition of 'm2'; pr
+
 doAssert foo1 == 2
 doAssert m.foo1 == 2
 doAssert m.foo2 == 2

@@ -1,4 +1,5 @@
 import ./m1 {.all, fields.} as m
+# from ./m1 {.all.} as mtmp import Foo5 {.fields.}
 doAssert foo1 == 2
 doAssert m.foo1 == 2
 

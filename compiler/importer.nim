@@ -50,7 +50,7 @@ proc rawImportSymbol(c: PContext, s, origin: PSym, importFields = false) =
     case etyp.kind
     of {tyObject}:
       # TODO: ref object? generic? etc?
-      if importFields:
+      if importFields or optImportFields in origin.options:
         c.friendSymsImportAll.add s # TODO: add if not already
     of {tyBool, tyEnum}:
       for j in 0..<etyp.n.len:
@@ -97,7 +97,7 @@ proc splitPragmas(c: PContext, n: PNode): (PNode, seq[TSpecialWord]) =
       (result[0][^1], result[1]) = splitPragmas(c, result[0][^1])
 
 proc importSymbol(c: PContext, n: PNode, fromMod: PSym) =
-  var importFields = optImportFields in fromMod.options
+  var importFields = false
   let (n, kws) = splitPragmas(c, n)
   for ai in kws:
     case ai:
@@ -248,6 +248,7 @@ proc impMod(c: PContext; it: PNode; importStmtResult: PNode) =
   if m != nil:
     # ``addDecl`` needs to be done before ``importAllSymbols``!
     addDecl(c, m, it.info) # add symbol to symbol table of module
+    # dbg m, m.options
     importAllSymbols(c, m)
     #importForwarded(c, m.ast, emptySet, m)
 
