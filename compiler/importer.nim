@@ -31,7 +31,7 @@ proc importPureEnumField*(c: PContext; s: PSym) =
       incl(c.ambiguousSymbols, checkB.id)
       incl(c.ambiguousSymbols, s.id)
 
-proc rawImportSymbol(c: PContext, s, origin: PSym) =
+proc rawImportSymbol(c: PContext, s, origin: PSym, importFields = false) =
   # This does not handle stubs, because otherwise loading on demand would be
   # pointless in practice. So importing stubs is fine here!
   # check if we have already a symbol of the same name:
@@ -44,9 +44,15 @@ proc rawImportSymbol(c: PContext, s, origin: PSym) =
   # thanks to 'export' feature, it could be we import the same symbol from
   # multiple sources, so we need to call 'StrTableAdd' here:
   strTableAdd(c.importTable.symbols, s)
+
   if s.kind == skType:
     var etyp = s.typ
-    if etyp.kind in {tyBool, tyEnum}:
+    case etyp.kind
+    of {tyObject}:
+      # TODO: ref object? generic? etc?
+      if importFields:
+        c.friendSymsImportAll.add s # TODO: add if not already
+    of {tyBool, tyEnum}:
       for j in 0..<etyp.n.len:
         var e = etyp.n[j].sym
         if e.kind != skEnumField:
@@ -66,6 +72,7 @@ proc rawImportSymbol(c: PContext, s, origin: PSym) =
             rawImportSymbol(c, e, origin)
           else:
             importPureEnumField(c, e)
+    else: discard
   else:
     if s.kind == skConverter: addConverter(c, s)
     if hasPattern(s): addPattern(c, s)
@@ -75,7 +82,28 @@ proc rawImportSymbol(c: PContext, s, origin: PSym) =
 template getTab(c: PContext, fromMod: PSym): untyped =
   fromMod.tabOpt
 
+proc splitPragmas(c: PContext, n: PNode): (PNode, seq[TSpecialWord]) =
+  template bail = globalError(c.config, n.info, "invalid pragma")
+  if n.kind == nkPragmaExpr:
+    if n.len == 2 and n[1].kind == nkPragma:
+      result[0] = n[0]
+      for ni in n[1]:
+        if ni.kind == nkIdent: result[1].add whichKeyword(ni.ident)
+        else: bail()
+    else: bail()
+  else:
+    result[0] = n
+    if result[0].safeLen > 0:
+      (result[0][^1], result[1]) = splitPragmas(c, result[0][^1])
+
 proc importSymbol(c: PContext, n: PNode, fromMod: PSym) =
+  var importFields = optImportFields in fromMod.options
+  let (n, kws) = splitPragmas(c, n)
+  for ai in kws:
+    case ai:
+    of wImportFields: importFields = true
+    else: globalError(c.config, n.info, "expected: " & ${wImportAll})
+
   let ident = lookups.considerQuotedIdent(c, n)
   let s = strTableGet(c.getTab(fromMod), ident)
   if s == nil:
@@ -92,10 +120,10 @@ proc importSymbol(c: PContext, n: PNode, fromMod: PSym) =
       while e != nil:
         if e.name.id != s.name.id: internalError(c.config, n.info, "importSymbol: 3")
         if s.kind in ExportableSymKinds:
-          rawImportSymbol(c, e, fromMod)
+          rawImportSymbol(c, e, fromMod, importFields)
         e = nextIdentIter(it, c.getTab(fromMod))
     else:
-      rawImportSymbol(c, s, fromMod)
+      rawImportSymbol(c, s, fromMod, importFields)
     suggestSym(c.config, n.info, s, c.graph.usageSym, false)
 
 proc importAllSymbolsExcept(c: PContext, fromMod: PSym, exceptSet: IntSet) =
@@ -134,6 +162,7 @@ proc importForwarded(c: PContext, n: PNode, exceptSet: IntSet; fromMod: PSym) =
 type
   ImportFlag = enum
     ifImportAll
+    ifImportFields
   ImportFlags = set[ImportFlag]
 
 proc importModuleAs(c: PContext; n: PNode, realModule: PSym, importFlags: ImportFlags): PSym =
@@ -146,27 +175,26 @@ proc importModuleAs(c: PContext; n: PNode, realModule: PSym, importFlags: Import
     # some misguided guy will write 'import abc.foo as foo' ...
     result = createModuleAlias(realModule, nextId c.idgen, n[1].ident, realModule.info,
                                c.config.options)
-  if ifImportAll in importFlags:
+  if ifImportAll in importFlags or ifImportFields in importFlags:
     if result == realModule:
       # `createModuleAlias` needed otherwise `realModule` would be affected, see D20201209T194412.
       result = createModuleAlias(realModule, nextId c.idgen, realModule.name, realModule.info,
                                c.config.options)
-    result.options.incl optImportAll
-    c.friendModulesImportAll.add realModule # `realModule` needed, not `result`
+    if ifImportAll in importFlags: result.options.incl optImportAll
+    if ifImportFields in importFlags: result.options.incl optImportFields
+    # PRTEMP c.friendModulesImportAll.add realModule # `realModule` needed, not `result`
 
 proc transformImportAs(c: PContext; n: PNode): tuple[node: PNode, importFlags: ImportFlags] =
   var ret: typeof(result)
   proc processPragma(n2: PNode): PNode =
-    if n2.kind == nkPragmaExpr:
-      if n2.len == 2 and n2[1].kind == nkPragma and n2[1].len == 1 and n2[1][0].kind == nkIdent and whichKeyword(n2[1][0].ident) == wImportAll: discard
-      else:
-        globalError(c.config, n.info, "invalid import pragma, expected: " & $wImportAll)
-      ret.importFlags.incl ifImportAll
-      result = n2[0]
-    else:
-      result = n2
-      if result.safeLen > 0:
-        result[^1] = processPragma(result[^1])
+    let (result2, kws) = splitPragmas(c, n2)
+    result = result2
+    template bail = globalError(c.config, n.info, "invalid import pragma, expected: " & ${wImportAll, wImportFields})
+    for ai in kws:
+      case ai
+      of wImportAll: ret.importFlags.incl ifImportAll
+      of wImportFields: ret.importFlags.incl ifImportFields
+      else: bail()
 
   if n.kind == nkInfix and considerQuotedIdent(c, n[0]).s == "as":
     ret.node = newNodeI(nkImportAs, n.info)
@@ -256,6 +284,8 @@ proc evalFrom*(c: PContext, n: PNode): PNode =
     addDecl(c, m, n.info)               # add symbol to symbol table of module
     for i in 1..<n.len:
       if n[i].kind != nkNilLit:
+        # if m.options.incl optImportAll
+        # if m.options.incl optImportFields:
         importSymbol(c, n[i], m)
 
 proc evalImportExcept*(c: PContext, n: PNode): PNode =

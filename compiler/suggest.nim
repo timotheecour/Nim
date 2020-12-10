@@ -258,6 +258,12 @@ proc fieldVisible*(c: PContext, f: PSym): bool {.inline.} =
       if fmoduleId == module.id: return true
     for module in c.friendModulesImportAll:
       if fmoduleId == module.id: return true
+    let symObj = getFieldOwner(f)
+    if symObj!=nil:
+      # CHECKME
+      for sym in c.friendSymsImportAll:
+        # TODO: do we need to check by id?
+        if symObj.id == sym.id: return true
 
 proc suggestField(c: PContext, s: PSym; f: PNode; info: TLineInfo; outputs: var Suggestions) =
   var pm: PrefixMatch
