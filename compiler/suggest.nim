@@ -253,14 +253,11 @@ proc filterSymNoOpr(s: PSym; prefix: PNode; res: var PrefixMatch): bool {.inline
 proc fieldVisible*(c: PContext, f: PSym): bool {.inline.} =
   let fmoduleId = getModule(f).id
   result = sfExported in f.flags or fmoduleId == c.module.id
-  for module in c.friendModules:
-    if fmoduleId == module.id:
-      result = true
-      break
-  for module in c.friendModulesImportAll:
-    if fmoduleId == module.id:
-      result = true
-      break
+  if not result:
+    for module in c.friendModules:
+      if fmoduleId == module.id: return true
+    for module in c.friendModulesImportAll:
+      if fmoduleId == module.id: return true
 
 proc suggestField(c: PContext, s: PSym; f: PNode; info: TLineInfo; outputs: var Suggestions) =
   var pm: PrefixMatch

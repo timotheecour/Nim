@@ -73,15 +73,7 @@ proc rawImportSymbol(c: PContext, s, origin: PSym) =
     c.exportIndirections.incl((origin.id, s.id))
 
 template getTab(c: PContext, fromMod: PSym): untyped =
-  # avoids doing a copy
-  let tab2 =
-    if fromMod in c.friendModulesImportAll:
-      # so that `import foo {.all.}` also works with `import foo` without `as`
-      # another option is to force `createModuleAlias` to remove this branch
-      fromMod.tabAll.addr
-    else:
-      fromMod.tabOpt.addr
-  tab2[]
+  fromMod.tabOpt
 
 proc importSymbol(c: PContext, n: PNode, fromMod: PSym) =
   let ident = lookups.considerQuotedIdent(c, n)
@@ -156,6 +148,7 @@ proc importModuleAs(c: PContext; n: PNode, realModule: PSym, importFlags: Import
                                c.config.options)
   if ifImportAll in importFlags:
     if result == realModule:
+      # `createModuleAlias` needed otherwise `realModule` would be affected, see D20201209T194412.
       result = createModuleAlias(realModule, nextId c.idgen, realModule.name, realModule.info,
                                c.config.options)
     result.options.incl optImportAll
