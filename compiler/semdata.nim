@@ -83,7 +83,6 @@ type
     friendModules*: seq[PSym]  # friend modules; may access private data;
                                # this is used so that generic instantiations
                                # can access private object fields
-    friendModulesImportAll*: seq[PSym] # enable access to private fields
     friendSymsImportAll*: seq[PSym] # enable access to private fields
     instCounter*: int          # to prevent endless instantiations
     templInstCounter*: ref int # gives every template instantiation a unique id

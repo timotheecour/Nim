@@ -102,7 +102,7 @@ proc importSymbol(c: PContext, n: PNode, fromMod: PSym) =
   for ai in kws:
     case ai:
     of wImportFields: importFields = true
-    else: globalError(c.config, n.info, "expected: " & ${wImportAll})
+    else: globalError(c.config, n.info, "expected: " & ${wImportFields})
 
   let ident = lookups.considerQuotedIdent(c, n)
   let s = strTableGet(c.getTab(fromMod), ident)
@@ -182,19 +182,17 @@ proc importModuleAs(c: PContext; n: PNode, realModule: PSym, importFlags: Import
                                c.config.options)
     if ifImportAll in importFlags: result.options.incl optImportAll
     if ifImportFields in importFlags: result.options.incl optImportFields
-    # PRTEMP c.friendModulesImportAll.add realModule # `realModule` needed, not `result`
 
 proc transformImportAs(c: PContext; n: PNode): tuple[node: PNode, importFlags: ImportFlags] =
   var ret: typeof(result)
   proc processPragma(n2: PNode): PNode =
     let (result2, kws) = splitPragmas(c, n2)
     result = result2
-    template bail = globalError(c.config, n.info, "invalid import pragma, expected: " & ${wImportAll, wImportFields})
     for ai in kws:
       case ai
       of wImportAll: ret.importFlags.incl ifImportAll
       of wImportFields: ret.importFlags.incl ifImportFields
-      else: bail()
+      else: globalError(c.config, n.info, "invalid pragma, expected: " & ${wImportAll, wImportFields})
 
   if n.kind == nkInfix and considerQuotedIdent(c, n[0]).s == "as":
     ret.node = newNodeI(nkImportAs, n.info)
@@ -242,13 +240,19 @@ proc myImportModule(c: PContext, n: var PNode, importStmtResult: PNode): PSym =
     importStmtResult.add newSymNode(result, n.info)
     #newStrNode(toFullPath(c.config, f), n.info)
 
+proc addModuleDecl(c: PContext, module: PSym, info: TLineInfo) =
+  var module = module
+  let sym = module.aliasedModule
+  if sym != nil and sym.name == module.name:
+    module = sym
+  addDecl(c, module, info) # add symbol to symbol table of module
+
 proc impMod(c: PContext; it: PNode; importStmtResult: PNode) =
   var it = it
   let m = myImportModule(c, it, importStmtResult)
   if m != nil:
     # ``addDecl`` needs to be done before ``importAllSymbols``!
-    addDecl(c, m, it.info) # add symbol to symbol table of module
-    # dbg m, m.options
+    addModuleDecl(c, m, it.info)
     importAllSymbols(c, m)
     #importForwarded(c, m.ast, emptySet, m)
 
@@ -282,11 +286,9 @@ proc evalFrom*(c: PContext, n: PNode): PNode =
   var m = myImportModule(c, n[0], result)
   if m != nil:
     n[0] = newSymNode(m)
-    addDecl(c, m, n.info)               # add symbol to symbol table of module
+    addModuleDecl(c, m, n.info)
     for i in 1..<n.len:
       if n[i].kind != nkNilLit:
-        # if m.options.incl optImportAll
-        # if m.options.incl optImportFields:
         importSymbol(c, n[i], m)
 
 proc evalImportExcept*(c: PContext, n: PNode): PNode =
@@ -295,6 +297,6 @@ proc evalImportExcept*(c: PContext, n: PNode): PNode =
   var m = myImportModule(c, n[0], result)
   if m != nil:
     n[0] = newSymNode(m)
-    addDecl(c, m, n.info)               # add symbol to symbol table of module
+    addModuleDecl(c, m, n.info)
     importAllSymbolsExcept(c, m, readExceptSet(c, n))
     #importForwarded(c, m.ast, exceptSet, m)
