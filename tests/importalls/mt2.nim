@@ -1,6 +1,5 @@
 from ./m1 {.all.} as m import foo1, Foo5 {.fields.}
 from ./m1 {.all.} as m2 import foo7
-# from ./m1 {.all.} as m2 import foo1 # PRTEMP: Error: redefinition of 'm2'; pr
 
 doAssert foo1 == 2
 doAssert m.foo1 == 2
@@ -30,3 +29,11 @@ doAssert f0.z3 == 3
 var f = m.initFoo5(z3=3)
 doAssert f.z3 == 3
 doAssert m.z3(f) == 30
+
+import ./m1
+doAssert not declared(foo2)
+doAssert not declared(m1.foo2)
+from ./m1 {.all.} import nil
+doAssert not declared(foo2)
+doAssert declared(m1.foo2)
+import ./m1 {.all.}
