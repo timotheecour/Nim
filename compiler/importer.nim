@@ -76,7 +76,7 @@ template getTab(c: PContext, fromMod: PSym): untyped =
   # avoids doing a copy
   let tab2 =
     if fromMod in c.friendModulesImportAll:
-      # so that `import foo {.all/}` also works with `import foo` without `as`
+      # so that `import foo {.all.}` also works with `import foo` without `as`
       # another option is to force `createModuleAlias` to remove this branch
       fromMod.tabAll.addr
     else:
