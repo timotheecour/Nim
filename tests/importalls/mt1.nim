@@ -1,4 +1,4 @@
-import ./m1 {.all.} as m
+import ./m1 {.all, fields.} as m
 doAssert foo1 == 2
 doAssert m.foo1 == 2
 
