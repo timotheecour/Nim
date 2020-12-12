@@ -144,7 +144,7 @@ proc prepareTestArgs(cmdTemplate, filename, options, nimcache: string,
   options.add " " & extraOptions
   result = parseCmdLine(cmdTemplate % ["target", targetToCmd[target],
                       "options", options, "file", filename.quoteShell,
-                      "filedir", filename.getFileDir()])
+                      "filedir", filename.getFileDir(), "nim", compilerPrefix])
 
 proc callCompiler(cmdTemplate, filename, options, nimcache: string,
                   target: TTarget, extraOptions = ""): TSpec =
