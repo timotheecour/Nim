@@ -2029,20 +2029,22 @@ proc getTypeInfo*[T](x: T): pointer {.magic: "GetTypeInfo", benign.}
   ## <typeinfo.html>`_ instead.
 
 {.push stackTrace: off.}
-func abs*(x: int): int {.magic: "AbsI", inline.} =
-  if x < 0: -x else: x
-func abs*(x: int8): int8 {.magic: "AbsI", inline.} =
-  if x < 0: -x else: x
-func abs*(x: int16): int16 {.magic: "AbsI", inline.} =
-  if x < 0: -x else: x
-func abs*(x: int32): int32 {.magic: "AbsI", inline.} =
-  if x < 0: -x else: x
-func abs*(x: int64): int64 {.magic: "AbsI", inline.} =
+# func abs*(x: int): int {.magic: "AbsI", inline.} =
+#   if x < 0: -x else: x
+# func abs*(x: int8): int8 {.magic: "AbsI", inline.} =
+#   if x < 0: -x else: x
+# func abs*(x: int16): int16 {.magic: "AbsI", inline.} =
+#   if x < 0: -x else: x
+# func abs*(x: int32): int32 {.magic: "AbsI", inline.} =
+#   if x < 0: -x else: x
+# func abs*(x: int64): int64 {.magic: "AbsI", inline.} =
+func abs*[T: SomeSignedInt](x: T): T {.inline.} =
   ## Returns the absolute value of `x`.
   ##
   ## If `x` is ``low(x)`` (that is -MININT for its type),
   ## an overflow exception is thrown (if overflow checking is turned on).
-  result = if x < 0: -x else: x
+  # result = if x < 0: -x else: x
+  if x < 0: -x else: x
 {.pop.}
 
 when not defined(js):
