@@ -138,7 +138,6 @@ proc evalOp(m: TMagic, n, a, b, c: PNode; g: ModuleGraph): PNode =
       result = newIntNodeT(toInt128(a.len), n, g)
   of mUnaryPlusI, mUnaryPlusF64: result = a # throw `+` away
   # XXX: Hides overflow/underflow
-  of mAbsI: result = foldAbs(getInt(a), n, g)
   of mSucc: result = foldAdd(getOrdValue(a), getInt(b), n, g)
   of mPred: result = foldSub(getOrdValue(a), getInt(b), n, g)
   of mAddI: result = foldAdd(getInt(a), getInt(b), n, g)

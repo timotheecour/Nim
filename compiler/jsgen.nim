@@ -425,7 +425,6 @@ const # magic checked op; magic unchecked op;
     mEqProc: ["", ""],
     mUnaryMinusI: ["negInt", ""],
     mUnaryMinusI64: ["negInt64", ""],
-    mAbsI: ["absInt", ""],
     mNot: ["", ""],
     mUnaryPlusI: ["", ""],
     mBitnotI: ["", ""],
@@ -647,7 +646,6 @@ proc arithAux(p: PProc, n: PNode, r: var TCompRes, op: TMagic) =
   of mEqProc: applyFormat("($1 == $2)", "($1 == $2)")
   of mUnaryMinusI: applyFormat("negInt($1)", "-($1)")
   of mUnaryMinusI64: applyFormat("negInt64($1)", "-($1)")
-  of mAbsI: applyFormat("absInt($1)", "Math.abs($1)")
   of mNot: applyFormat("!($1)", "!($1)")
   of mUnaryPlusI: applyFormat("+($1)", "+($1)")
   of mBitnotI: applyFormat("~($1)", "~($1)")

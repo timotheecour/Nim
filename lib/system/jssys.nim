@@ -508,12 +508,6 @@ proc nimFloatToString(a: float): cstring {.compilerproc.} =
     }
   """
 
-proc absInt(a: int): int {.compilerproc.} =
-  result = if a < 0: a*(-1) else: a
-
-proc absInt64(a: int64): int64 {.compilerproc.} =
-  result = if a < 0: a*(-1) else: a
-
 when not defined(nimNoZeroExtendMagic):
   proc ze*(a: int): int {.compilerproc.} =
     result = a
