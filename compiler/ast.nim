@@ -607,7 +607,8 @@ var
     ## might exclude {tfGcSafe, tfNoSideEffect}.
 
 type
-  TMagic* = enum # symbols that require compiler magic:
+  TMagic* = enum # Symbols that require compiler magic.
+                 # These can be removed or renamed if needed.
     mNone,
     mDefined, mDeclared, mDeclaredInScope, mCompiles, mArrGet, mArrPut, mAsgn,
     mLow, mHigh, mSizeOf, mAlignOf, mOffsetOf, mTypeTrait,
@@ -633,7 +634,7 @@ type
     mEqB, mLeB, mLtB,
     mEqRef, mLePtr, mLtPtr,
     mXor, mEqCString, mEqProc,
-    mUnaryMinusI, mUnaryMinusI64, mAbsI, mNot,
+    mUnaryMinusI, mUnaryMinusI64, mNot,
     mUnaryPlusI, mBitnotI,
     mUnaryPlusF64, mUnaryMinusF64,
     mCharToStr, mBoolToStr, mIntToStr, mInt64ToStr, mFloatToStr, mCStrToStr,
@@ -702,7 +703,7 @@ const
     mEqCh, mLeCh, mLtCh,
     mEqB, mLeB, mLtB,
     mEqRef, mEqProc, mLePtr, mLtPtr, mEqCString, mXor,
-    mUnaryMinusI, mUnaryMinusI64, mAbsI, mNot, mUnaryPlusI, mBitnotI,
+    mUnaryMinusI, mUnaryMinusI64, mNot, mUnaryPlusI, mBitnotI,
     mUnaryPlusF64, mUnaryMinusF64,
     mCharToStr, mBoolToStr, mIntToStr, mInt64ToStr, mFloatToStr, mCStrToStr,
     mStrToStr, mEnumToStr,

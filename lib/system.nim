@@ -1891,6 +1891,17 @@ else:
   # Autodetect coroutine support.
   const nimCoroutines* = false
 
+{.push stackTrace: off.} # pre-existing but seems un-necessary
+func abs*[T: SomeSignedInt](x: T): T {.inline.} =
+  ## Returns the absolute value of `x`.
+  # xxx consider consolidating this with `abs(float)` overload.
+  runnableExamples:
+    doAssert abs(-3) == 3
+    doAssertRaises(OverflowDefect): discard abs(int8.low)
+    doAssertRaises(OverflowDefect): discard abs(int64.low)
+  if x < 0: -x else: x
+{.pop.}
+
 {.push checks: off.}
 # obviously we cannot generate checking operations here :-)
 # because it would yield into an endless recursion
@@ -2027,23 +2038,6 @@ proc getTypeInfo*[T](x: T): pointer {.magic: "GetTypeInfo", benign.}
   ##
   ## Ordinary code should not use this, but the `typeinfo module
   ## <typeinfo.html>`_ instead.
-
-{.push stackTrace: off.}
-func abs*(x: int): int {.magic: "AbsI", inline.} =
-  if x < 0: -x else: x
-func abs*(x: int8): int8 {.magic: "AbsI", inline.} =
-  if x < 0: -x else: x
-func abs*(x: int16): int16 {.magic: "AbsI", inline.} =
-  if x < 0: -x else: x
-func abs*(x: int32): int32 {.magic: "AbsI", inline.} =
-  if x < 0: -x else: x
-func abs*(x: int64): int64 {.magic: "AbsI", inline.} =
-  ## Returns the absolute value of `x`.
-  ##
-  ## If `x` is ``low(x)`` (that is -MININT for its type),
-  ## an overflow exception is thrown (if overflow checking is turned on).
-  result = if x < 0: -x else: x
-{.pop.}
 
 when not defined(js):
 

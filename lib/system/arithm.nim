@@ -130,12 +130,6 @@ proc negInt64(a: int64): int64 {.compilerproc, inline.} =
   if a != low(int64): return -a
   raiseOverflow()
 
-proc absInt64(a: int64): int64 {.compilerproc, inline.} =
-  if a != low(int64):
-    if a >= 0: return a
-    else: return -a
-  raiseOverflow()
-
 proc divInt64(a, b: int64): int64 {.compilerproc, inline.} =
   if b == int64(0):
     raiseDivByZero()
@@ -147,12 +141,6 @@ proc modInt64(a, b: int64): int64 {.compilerproc, inline.} =
   if b == int64(0):
     raiseDivByZero()
   return a mod b
-
-proc absInt(a: int): int {.compilerproc, inline.} =
-  if a != low(int):
-    if a >= 0: return a
-    else: return -a
-  raiseOverflow()
 
 const
   asmVersion = defined(I386) and (defined(vcc) or defined(wcc) or
