@@ -1891,9 +1891,10 @@ else:
   # Autodetect coroutine support.
   const nimCoroutines* = false
 
-{.push stackTrace: off.}
+{.push stackTrace: off.} # pre-existing but seems un-necessary
 func abs*[T: SomeSignedInt](x: T): T {.inline.} =
   ## Returns the absolute value of `x`.
+  # xxx consider consolidating this with `abs(float)` overload.
   runnableExamples:
     doAssert abs(-3) == 3
     doAssertRaises(OverflowDefect): discard abs(int8.low)

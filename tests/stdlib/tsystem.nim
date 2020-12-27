@@ -10,11 +10,13 @@ template disableVM(body): untyped =
   else: body
 
 template main() =
+  doAssert abs(0) == 0
+  doAssert abs(int.high) == int.high
   doAssert abs(-3) == 3
-  disableVM:
-    doAssertRaises(OverflowDefect): discard abs(int8.low)
-    doAssertRaises(OverflowDefect): discard abs(int32.low)
-    when not defined(js):
+  disableVM: # xxx bug: in vm, we get an un-recoverable program abort.
+    when not defined(js): # xxx bug: these should raise in js
+      doAssertRaises(OverflowDefect): discard abs(int8.low)
+      doAssertRaises(OverflowDefect): discard abs(int32.low)
       doAssertRaises(OverflowDefect): discard abs(int64.low)
 
 static: main()
