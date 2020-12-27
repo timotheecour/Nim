@@ -20,8 +20,11 @@ template main() =
         doAssertRaises(OverflowDefect): discard abs(int32.low)
         doAssertRaises(OverflowDefect): discard abs(int64.low)
 
+  block: # `-`
     let a = low(int)
-    doAssertRaises(OverflowDefect): discard -a
+    disableVM:
+      when not defined(js):
+        doAssertRaises(OverflowDefect): discard -a
 
 static: main()
 main()
