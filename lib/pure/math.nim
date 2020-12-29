@@ -183,15 +183,10 @@ func copySign*[T: SomeFloat](x, y: T): T {.inline, since: (1, 5, 1).} =
         result = abs(x)
       else:
         result = -abs(x)
-
-  when nimvm:
-    impl()
+  when defined(js): impl()
   else:
-    when not defined(js):
-      result = c_copysign(x, y)
-    else:
-      impl()
-
+    when nimvm: impl()
+    else: result = c_copysign(x, y)
 
 func classify*(x: float): FloatClass =
   ## Classifies a floating point value.

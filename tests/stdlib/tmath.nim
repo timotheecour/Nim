@@ -338,8 +338,11 @@ template main =
     doAssert copySign(10.0, 0.0) == 10.0
     doAssert copySign(-1.0, NaN) == 1.0
     doAssert copySign(10.0, NaN) == 10.0
-    doAssert copySign(-1.0, -NaN) == 1.0
-    doAssert copySign(10.0, -NaN) == 10.0
+
+    when nimvm: discard
+    else:
+      doAssert copySign(-1.0, -NaN) == 1.0
+      doAssert copySign(10.0, -NaN) == 10.0
   
     doAssert copySign(NaN, NaN).isNaN
     doAssert copySign(-NaN, NaN).isNaN
