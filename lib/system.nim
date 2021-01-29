@@ -463,12 +463,14 @@ when defined(nimArrIdx):
     shallowCopy(x, y)
 
 type
-  HSlice*[T, U] = object   ## "Heterogeneous" slice type.
+  HSlice*[T: Ordinal, U: Ordinal] = object   ## "Heterogeneous" slice type.
     a*: T                  ## The lower bound (inclusive).
     b*: U                  ## The upper bound (inclusive).
   Slice*[T] = HSlice[T, T] ## An alias for ``HSlice[T, T]``.
 
-proc `..`*[T, U](a: sink T, b: sink U): HSlice[T, U] {.noSideEffect, inline, magic: "DotDot".} =
+# xxx bug: this doesn't work:
+# proc `..`*[T: Ordinal, U: Ordinal](a: T, b: U): HSlice[T, U] {.noSideEffect, inline, magic: "DotDot".} =
+proc `..`*[T: Ordinal, U: Ordinal](a: T, b: U): auto {.noSideEffect, inline, magic: "DotDot".} =
   ## Binary `slice`:idx: operator that constructs an interval ``[a, b]``, both `a`
   ## and `b` are inclusive.
   ##
@@ -480,7 +482,7 @@ proc `..`*[T, U](a: sink T, b: sink U): HSlice[T, U] {.noSideEffect, inline, mag
   ##   echo a[2 .. 3] # @[30, 40]
   result = HSlice[T, U](a: a, b: b)
 
-proc `..`*[T](b: sink T): HSlice[int, T] {.noSideEffect, inline, magic: "DotDot".} =
+proc `..`*[T](b: T): HSlice[int, T] {.noSideEffect, inline, magic: "DotDot".} =
   ## Unary `slice`:idx: operator that constructs an interval ``[default(int), b]``.
   ##
   ## .. code-block:: Nim
@@ -1551,7 +1553,8 @@ proc max*[T: not SomeFloat](x, y: T): T {.inline.} =
 proc high*(T: typedesc[SomeFloat]): T = Inf
 proc low*(T: typedesc[SomeFloat]): T = NegInf
 
-proc len*[U: Ordinal; V: Ordinal](x: HSlice[U, V]): int {.noSideEffect, inline.} =
+# proc len*[U: Ordinal; V: Ordinal](x: HSlice[U, V]): int {.noSideEffect, inline.} =
+proc len*(x: HSlice): int {.noSideEffect, inline.} =
   ## Length of ordinal slice. When x.b < x.a returns zero length.
   ##
   ## .. code-block:: Nim
@@ -2498,7 +2501,8 @@ template `^^`(s, i: untyped): untyped =
 template `[]`*(s: string; i: int): char = arrGet(s, i)
 template `[]=`*(s: string; i: int; val: char) = arrPut(s, i, val)
 
-proc `[]`*[T: Ordinal, U: Ordinal](s: string, x: HSlice[T, U]): string {.inline.} =
+# proc `[]`*[T: Ordinal, U: Ordinal](s: string, x: HSlice[T, U]): string {.inline.} =
+proc `[]`*(s: string, x: HSlice): string {.inline.} =
   ## Slice operation for strings.
   ## Returns the inclusive range `[s[x.a], s[x.b]]`:
   ##
@@ -2510,7 +2514,7 @@ proc `[]`*[T: Ordinal, U: Ordinal](s: string, x: HSlice[T, U]): string {.inline.
   result = newString(L)
   for i in 0 ..< L: result[i] = s[i + a]
 
-proc `[]=`*[T: Ordinal, U: Ordinal](s: var string, x: HSlice[T, U], b: string) =
+proc `[]=`*(s: var string, x: HSlice, b: string) =
   ## Slice assignment for strings.
   ##
   ## If ``b.len`` is not exactly the number of elements that are referred to
@@ -2528,7 +2532,7 @@ proc `[]=`*[T: Ordinal, U: Ordinal](s: var string, x: HSlice[T, U], b: string) =
   else:
     spliceImpl(s, a, L, b)
 
-proc `[]`*[Idx, T; U: Ordinal, V: Ordinal](a: array[Idx, T], x: HSlice[U, V]): seq[T] =
+proc `[]`*[Idx, T](a: array[Idx, T], x: HSlice): seq[T] =
   ## Slice operation for arrays.
   ## Returns the inclusive range `[a[x.a], a[x.b]]`:
   ##
@@ -2540,7 +2544,7 @@ proc `[]`*[Idx, T; U: Ordinal, V: Ordinal](a: array[Idx, T], x: HSlice[U, V]): s
   result = newSeq[T](L)
   for i in 0..<L: result[i] = a[Idx(i + xa)]
 
-proc `[]=`*[Idx, T; U: Ordinal, V: Ordinal](a: var array[Idx, T], x: HSlice[U, V], b: openArray[T]) =
+proc `[]=`*[Idx, T](a: var array[Idx, T], x: HSlice, b: openArray[T]) =
   ## Slice assignment for arrays.
   ##
   ## .. code-block:: Nim
@@ -2554,7 +2558,7 @@ proc `[]=`*[Idx, T; U: Ordinal, V: Ordinal](a: var array[Idx, T], x: HSlice[U, V
   else:
     sysFatal(RangeDefect, "different lengths for slice assignment")
 
-proc `[]`*[T; U: Ordinal, V: Ordinal](s: openArray[T], x: HSlice[U, V]): seq[T] =
+proc `[]`*[T](s: openArray[T], x: HSlice): seq[T] =
   ## Slice operation for sequences.
   ## Returns the inclusive range `[s[x.a], s[x.b]]`:
   ##
@@ -2566,7 +2570,7 @@ proc `[]`*[T; U: Ordinal, V: Ordinal](s: openArray[T], x: HSlice[U, V]): seq[T] 
   newSeq(result, L)
   for i in 0 ..< L: result[i] = s[i + a]
 
-proc `[]=`*[T; U: Ordinal, V: Ordinal](s: var seq[T], x: HSlice[U, V], b: openArray[T]) =
+proc `[]=`*[T](s: var seq[T], x: HSlice, b: openArray[T]) =
   ## Slice assignment for sequences.
   ##
   ## If ``b.len`` is not exactly the number of elements that are referred to
