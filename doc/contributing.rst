@@ -10,7 +10,23 @@ reviewed before it can be merged and the Continuous Integration should be green.
 
 The PR has to be approved by two core developers or by Araq.
 
+Hello1 `foo1` ``foo2`` "foo3"
 
+```nim
+bar
+```
+
+Hello2 `foo1` ``foo2`` "foo3"
+
+.. default-role:: subscript
+
+
+Hello3 `foo1` ``foo2`` "foo3"
+
+.. default-role:: emphasis
+
+
+Hello4 `foo1` ``foo2`` "foo3"
 
 Writing tests
 =============
@@ -39,7 +55,11 @@ There are 4 types of tests:
 Not all the tests follow the convention here, feel free to change the ones
 that don't. Always leave the code cleaner than you found it.
 
-Stdlib
+# Stdlib1
+
+## Stdlib2
+
+Stdlib3
 ------
 
 Each stdlib module (anything under ``lib/``, e.g. ``lib/pure/os.nim``) should
