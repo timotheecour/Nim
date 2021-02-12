@@ -20,6 +20,9 @@ There are 4 types of tests:
 1. ``runnableExamples`` documentation comment tests, ran by ``nim doc mymod.nim``
    These end up in documentation and ensure documentation stays in sync with code.
 
+1. `runnableExamples` documentation comment tests, ran by ``nim doc mymod.nim``
+   These end up in documentation and ensure documentation stays in sync with code.
+
 2. separate test files, e.g.: ``tests/stdlib/tos.nim``.
    In nim repo, `testament` (see below) runs all `$nim/tests/*/t*.nim` test files;
    for nimble packages, see https://github.com/nim-lang/nimble#tests.
