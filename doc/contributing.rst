@@ -39,6 +39,10 @@ Hello5 `foo1` ``foo2`` "foo3"
 
 Hello_bold `foo1` ``foo2`` "foo3"
 
+.. default-role:: code
+
+Hello_code `foo1` ``foo2`` "foo3"
+
 Writing tests
 =============
 
