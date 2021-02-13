@@ -25,8 +25,19 @@ Hello3 `foo1` ``foo2`` "foo3"
 
 .. default-role:: emphasis
 
+Hello4 `foo1` ``foo2`` "foo3"
+
+.. default-role:: emphasis
 
 Hello4 `foo1` ``foo2`` "foo3"
+
+.. default-role:: monospace
+
+Hello5 `foo1` ``foo2`` "foo3"
+
+.. default-role:: bold
+
+Hello_bold `foo1` ``foo2`` "foo3"
 
 Writing tests
 =============
