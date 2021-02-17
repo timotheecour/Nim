@@ -81,6 +81,10 @@ type
     value*: T
   SinglyLinkedNode*[T] = ref SinglyLinkedNodeObj[T]
 
+  SinglyLinkedNodePtr*[T] = object
+    next*: ptr SinglyLinkedNodePtr[T]
+    value*: T
+
   SinglyLinkedList*[T] = object ## \
     ## A singly linked list.
     ##
@@ -88,6 +92,10 @@ type
     ## a new empty list.
     head*: <//>(SinglyLinkedNode[T])
     tail* {.cursor.}: SinglyLinkedNode[T]
+
+  SinglyLinkedListPtr*[T] = object
+    head*: ptr SinglyLinkedNodePtr[T]
+    tail*: ptr SinglyLinkedNodePtr[T]
 
   DoublyLinkedList*[T] = object ## \
     ## A doubly linked list.
@@ -112,7 +120,7 @@ type
     ## a new empty ring.
     head*: DoublyLinkedNode[T]
 
-  SomeLinkedList*[T] = SinglyLinkedList[T] | DoublyLinkedList[T]
+  SomeLinkedList*[T] = SinglyLinkedList[T] | DoublyLinkedList[T] | SinglyLinkedListPtr[T]
 
   SomeLinkedRing*[T] = SinglyLinkedRing[T] | DoublyLinkedRing[T]
 
@@ -124,6 +132,9 @@ proc initSinglyLinkedList*[T](): SinglyLinkedList[T] =
   ## Creates a new singly linked list that is empty.
   runnableExamples:
     var a = initSinglyLinkedList[int]()
+  discard
+
+proc initSinglyLinkedListPtr*[T](): SinglyLinkedListPtr[T] =
   discard
 
 proc initDoublyLinkedList*[T](): DoublyLinkedList[T] =
@@ -399,8 +410,9 @@ proc prependMoved*[T: SomeLinkedList](a, b: var T) {.since: (1, 5, 1).} =
     (b, a) = (a, b)
   else: swap a, b
 
-proc add*[T](L: var SinglyLinkedList[T],
-             n: SinglyLinkedNode[T]) {.inline.} =
+# proc add*[T](L: var (SinglyLinkedList[T] | SinglyLinkedListPtr[T]), n: type(L.tail)) {.inline.} = # xxx make this work
+proc add*[T](L: var (SinglyLinkedList[T] | SinglyLinkedListPtr[T]),
+             n: SinglyLinkedNode[T] | ptr SinglyLinkedNodePtr[T]) {.inline.} =
   ## Appends (adds to the end) a node `n` to `L`. Efficiency: O(1).
   ##
   ## See also:
