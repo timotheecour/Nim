@@ -231,3 +231,11 @@ block remove: # return value check
   doAssert l.toSeq == [1]
   doAssert l.remove(l.head) == true
   doAssert l.toSeq == []
+
+block: # SinglyLinkedNodePtr, etc
+  var list = initSinglyLinkedListPtr[int]()
+  var nodes: array[4, SinglyLinkedNodePtr[int]]
+  for i,n in mpairs(nodes):
+    n.value = i
+    list.add n.addr
+  doAssert toSeq(list) == [0,1,2,3]
