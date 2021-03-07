@@ -75,3 +75,35 @@ func `[]=`*[T](t: var set[T], key: T, val: bool) {.inline.} =
     s[a3] = true
     assert s == {a2, a3}
   if val: t.incl key else: t.excl key
+
+func `[]=`*[T](s: var set[T], arg: set[T], val: bool) {.inline.} =
+  ## Syntax sugar for `if val: t.incl key else: t.excl key`,
+  ## though takes a set instead of a single value.
+  runnableExamples:
+    type A = enum
+      a0, a1, a2, a3
+    var s = {a0, a3}
+    s[{a0, a1}] = false
+    assert s == {a3}
+    s[{a2, a3}] = true
+    assert s == {a2, a3}
+  if val:
+    s.incl arg
+  else:
+    s.excl arg
+
+macro `[]=`*[T](s: var set[T], args: varargs[T], val: bool): untyped = 
+  ## Syntax sugar for `if val: t.incl key else: t.excl key`,
+  ## though takes comma seperated values, converted to the `set[T]` variant
+  runnableExamples:
+    type A = enum
+      a0, a1, a2, a3
+    var s = {a0, a3}
+    s[a0, a1] = false
+    assert s == {a3}
+    s[a2, a3] = true
+    assert s == {a2, a3}
+  var addSet = nnkCurly.newNimNode
+  args.copyChildrenTo(addSet)
+  quote do:
+    `s`[`addSet`] = `val`
