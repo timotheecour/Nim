@@ -39,7 +39,10 @@ jobs:
     - checkout: self
       fetchDepth: 1
 
-    - bash: git clone --depth 1 https://github.com/nim-lang/csources
+    - bash: |
+        . ci/funs.sh
+      apt install git
+      git clone --depth 1 https://github.com/nim-lang/csources
       displayName: 'Checkout Nim csources'
 
     - task: NodeTool@0
@@ -58,18 +61,21 @@ jobs:
       condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['CPU'], 'amd64'))
 
     - bash: |
-        echo "ok1"
-        set -e
-        echo "ok2"
+        set +e
         . ci/funs.sh
-        echo "ok3"
-        echo_run dpkg --add-architecture i386
+        # echo_run dpkg --add-architecture i386
         # echo_run apt-fast update -qq
-        echo_run apt-fast update -qq || echo "failed, see bug #17343"
+        echo_run apt update
+        # echo_run apt-fast update -qq || echo "failed, see bug #17343"
         # `:i386` (e.g. in `libffi-dev:i386`) is needed otherwise you may get:
         # `could not load: libffi.so` during dynamic loading.
-        DEBIAN_FRONTEND='noninteractive' \
-          echo_run apt-fast install --no-install-recommends --allow-downgrades -yq \
+
+        export DEBIAN_FRONTEND='noninteractive'
+        echo_run apt install --no-install-recommends --allow-downgrades -y \
+          g++-multilib gcc-multilib libcurl4-openssl-dev:i386 libgc-dev:i386 \
+            libsdl1.2-dev:i386 libsfml-dev:i386 libglib2.0-dev:i386 libffi-dev:i386
+
+        echo_run apt install --no-install-recommends --allow-downgrades -yq \
             g++-multilib gcc-multilib libcurl4-openssl-dev:i386 libgc-dev:i386 \
             libsdl1.2-dev:i386 libsfml-dev:i386 libglib2.0-dev:i386 libffi-dev:i386
 
