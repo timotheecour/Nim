@@ -23,10 +23,10 @@ jobs:
   pool:
     vmImage: $(vmImage)
 
-  # container: ubuntu:18.04
+  container: ubuntu:18.04
   # container: i386/ubuntu
   # docker run --rm -it arm32v7/ubuntu:18.04 bash
-  container: i386/ubuntu:18.04
+  # container: i386/ubuntu:18.04
 
   workspace:
     clean: all
@@ -58,8 +58,11 @@ jobs:
       condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['CPU'], 'amd64'))
 
     - bash: |
+        echo "ok1"
         set -e
+        echo "ok2"
         . ci/funs.sh
+        echo "ok3"
         echo_run dpkg --add-architecture i386
         # echo_run apt-fast update -qq
         echo_run apt-fast update -qq || echo "failed, see bug #17343"
