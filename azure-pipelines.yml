@@ -23,6 +23,8 @@ jobs:
   pool:
     vmImage: $(vmImage)
 
+  container: ubuntu:18.04
+
   workspace:
     clean: all
 
