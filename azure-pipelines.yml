@@ -41,9 +41,9 @@ jobs:
 
     - bash: |
         . ci/funs.sh
-      apt install git
-      git clone --depth 1 https://github.com/nim-lang/csources
-      displayName: 'Checkout Nim csources'
+        apt install git
+        git clone --depth 1 https://github.com/nim-lang/csources
+        displayName: 'Checkout Nim csources'
 
     - task: NodeTool@0
       inputs:
