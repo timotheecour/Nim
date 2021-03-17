@@ -1,0 +1,22 @@
+jobs:
+  vm:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo This job does not specify a container.
+          echo It runs directly on the virtual machine.
+        name: Run on VM
+  container:
+    runs-on: ubuntu-latest
+    # container: node:10.16-jessie
+    # container: node:10.16-jessie
+    container: ubuntu:18.04
+    steps:
+      - run: |
+          echo This job does specify a container.
+          echo It runs in the container instead of the VM.
+          apt update
+          apt-get update
+          apt-get install git
+
+        name: Run in container
