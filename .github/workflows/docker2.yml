@@ -1,19 +1,60 @@
-name: Nim docker2 CI
-# on: [push, pull_request]
-on: [pull_request]
-# action.yml
-# on: pull_request
-description: 'Greet someone and record the time'
-inputs:
-  who-to-greet:  # id of input
-    description: 'Who to greet'
-    required: true
-    default: 'World'
-outputs:
-  time: # id of output
-    description: 'The time we greeted you'
-runs:
-  using: 'docker'
-  image: 'Dockerfile'
-  args:
-    - ${{ inputs.who-to-greet }}
+on: [push]
+
+jobs:
+  hello_world_job:
+    runs-on: ubuntu-latest
+    name: A job to say hello
+    steps:
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Hello world action step
+        uses: ./ # Uses an action in the root directory
+        id: hello
+        with:
+          who-to-greet: 'Mona the Octocat'
+      # Use the output from the `hello` step
+      - name: Get the output time
+        run: echo "The time was ${{ steps.hello.outputs.time }}"
+
+
+# name: Nim docker2 CI
+# # on: [push, pull_request]
+# on: [pull_request]
+
+# jobs:
+#   docker-example:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - uses: actions/checkout@v2
+#     - name: Run box version
+#       #uses: docker://foundeo/minibox:latest
+#       uses: docker://i386/ubuntu:18.04
+#       #container: i386/ubuntu:18.04
+#       with:
+#         entrypoint: /opt/box/box
+#         args: version
+#     # - name: What OS is running
+#     #   run: uname -a
+#     # - name: What java version do we have
+#     #   run: java -version
+
+
+
+# # # action.yml
+# # # on: pull_request
+# # description: 'Greet someone and record the time'
+# # inputs:
+# #   who-to-greet:  # id of input
+# #     description: 'Who to greet'
+# #     required: true
+# #     default: 'World'
+# # outputs:
+# #   time: # id of output
+# #     description: 'The time we greeted you'
+# # runs:
+# #   using: 'docker'
+# #   image: 'Dockerfile'
+# #   args:
+# #     - ${{ inputs.who-to-greet }}
