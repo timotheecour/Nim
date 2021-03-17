@@ -7,4 +7,6 @@ FROM alpine:3.10
 # Code file to execute when the docker container starts up (`entrypoint.sh`)
 # ENTRYPOINT ["/entrypoint.sh"]
 #ENTRYPOINT ["/entrypoint.sh"]
-ENTRYPOINT ["sh build_all.sh"]
+#ENTRYPOINT ["sh build_all.sh"]
+CMD "pwd && ls && sh build_all.sh"
+
