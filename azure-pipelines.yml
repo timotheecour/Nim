@@ -39,6 +39,11 @@ jobs:
     - checkout: self
       fetchDepth: 1
 
+    - run: |
+        apt-get update
+        apt-get install -y software-properties-common
+        apt-get install -y git
+
     - bash: |
         . ci/funs.sh
         set +e
