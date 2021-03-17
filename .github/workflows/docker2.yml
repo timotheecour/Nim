@@ -9,14 +9,15 @@ jobs:
       # you must check out the repository
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Hello world action step
-        uses: ./ # Uses an action in the root directory
-        id: hello
-        with:
-          who-to-greet: 'Mona the Octocat'
+      - name: Hello world action step v2
+        # uses: ./ # Uses an action in the root directory
+        image: 'Dockerfile'
+        # id: hello
+        # with:
+        #   who-to-greet: 'Mona the Octocat'
       # Use the output from the `hello` step
-      - name: Get the output time
-        run: echo "The time was ${{ steps.hello.outputs.time }}"
+      # - name: Get the output time
+      #   run: echo "The time was ${{ steps.hello.outputs.time }}"
 
 
 # name: Nim docker2 CI
