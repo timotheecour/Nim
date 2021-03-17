@@ -1,7 +1,7 @@
-# name: Nim docker CI
+name: Nim docker2 CI
 # on: [push, pull_request]
+on: [pull_request]
 # action.yml
-name: 'Hello World'
 # on: pull_request
 description: 'Greet someone and record the time'
 inputs:
