@@ -12,7 +12,7 @@ jobs:
       - name: Hello world action step v2
         # uses: ./ # Uses an action in the root directory
         using: 'docker'
-        image: 'Dockerfile'
+        image: 'ci.Dockerfile'
         # id: hello
         # with:
         #   who-to-greet: 'Mona the Octocat'
