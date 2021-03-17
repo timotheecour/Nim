@@ -14,37 +14,19 @@ jobs:
 
   strategy:
     matrix:
-      Linux_amd64:
-        vmImage: 'ubuntu-16.04'
-        CPU: amd64
       Linux_i386:
         # bug #17325: fails on 'ubuntu-16.04' because it now errors with:
         # g++-multilib : Depends: gcc-multilib (>= 4:5.3.1-1ubuntu1) but it is not going to be installed
         vmImage: 'ubuntu-18.04'
         CPU: i386
-      OSX_amd64:
-        vmImage: 'macOS-10.15'
-        CPU: amd64
-      OSX_amd64_cpp:
-        vmImage: 'macOS-10.15'
-        CPU: amd64
-        NIM_COMPILE_TO_CPP: true
-      Windows_amd64_batch0_3:
-        vmImage: 'windows-2019'
-        CPU: amd64
-        # see also: `NIM_TEST_PACKAGES`
-        NIM_TESTAMENT_BATCH: "0_3"
-      Windows_amd64_batch1_3:
-        vmImage: 'windows-2019'
-        CPU: amd64
-        NIM_TESTAMENT_BATCH: "1_3"
-      Windows_amd64_batch2_3:
-        vmImage: 'windows-2019'
-        CPU: amd64
-        NIM_TESTAMENT_BATCH: "2_3"
 
   pool:
     vmImage: $(vmImage)
+
+  container: ubuntu:18.04
+  # container: i386/ubuntu
+  # docker run --rm -it arm32v7/ubuntu:18.04 bash
+  # container: i386/ubuntu:18.04
 
   workspace:
     clean: all
@@ -57,7 +39,23 @@ jobs:
     - checkout: self
       fetchDepth: 1
 
-    - bash: git clone --depth 1 https://github.com/nim-lang/csources
+    - run: |
+        apt-get update
+        apt-get install -y software-properties-common
+        apt-get install -y git
+
+    - bash: |
+        . ci/funs.sh
+        set +e
+        echo_run apt update
+        echo_run apt-get update
+        echo_run apt install git
+        echo_run apt-get install git
+        echo_run sudo apt install git
+        echo_run sudo apt-get install git
+        echo_run whoami
+        echo_run pwd
+        echo_run git clone --depth 1 https://github.com/nim-lang/csources
       displayName: 'Checkout Nim csources'
 
     - task: NodeTool@0
@@ -76,24 +74,21 @@ jobs:
       condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['CPU'], 'amd64'))
 
     - bash: |
-        set -e
+        set +e
         . ci/funs.sh
-        echo_run sudo dpkg --add-architecture i386
-        # Downgrade llvm:
-        # - llvm has to be downgraded to have 32bit version installed for sfml.
-
-        cat << EOF | sudo tee /etc/apt/preferences.d/pin-to-rel
-        Package: libllvm6.0
-        Pin: origin "azure.archive.ubuntu.com"
-        Pin-Priority: 1001
-        EOF
-
-        # echo_run sudo apt-fast update -qq
-        echo_run sudo apt-fast update -qq || echo "failed, see bug #17343"
+        # echo_run dpkg --add-architecture i386
+        # echo_run apt-fast update -qq
+        echo_run apt update
+        # echo_run apt-fast update -qq || echo "failed, see bug #17343"
         # `:i386` (e.g. in `libffi-dev:i386`) is needed otherwise you may get:
         # `could not load: libffi.so` during dynamic loading.
-        DEBIAN_FRONTEND='noninteractive' \
-          echo_run sudo apt-fast install --no-install-recommends --allow-downgrades -yq \
+
+        export DEBIAN_FRONTEND='noninteractive'
+        echo_run apt install --no-install-recommends --allow-downgrades -y \
+          g++-multilib gcc-multilib libcurl4-openssl-dev:i386 libgc-dev:i386 \
+            libsdl1.2-dev:i386 libsfml-dev:i386 libglib2.0-dev:i386 libffi-dev:i386
+
+        echo_run apt install --no-install-recommends --allow-downgrades -yq \
             g++-multilib gcc-multilib libcurl4-openssl-dev:i386 libgc-dev:i386 \
             libsdl1.2-dev:i386 libsfml-dev:i386 libglib2.0-dev:i386 libffi-dev:i386
 
