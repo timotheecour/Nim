@@ -9,5 +9,6 @@ FROM alpine:3.10
 #ENTRYPOINT ["/entrypoint.sh"]
 #ENTRYPOINT ["sh build_all.sh"]
 # CMD "pwd && ls && sh build_all.sh"
-ENTRYPOINT pwd && ls && sh build_all.sh
+# ENTRYPOINT pwd && ls && sh build_all.sh
+ENTRYPOINT sh ci/dockerrun.sh
 
