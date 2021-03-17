@@ -50,13 +50,6 @@ jobs:
         echo_run apt-get update
         echo_run apt-get install -y cmake make gcc g++ git curl
 
-    - run: |
-        apt-get update
-        apt-get install -y software-properties-common
-        add-apt-repository -y ppa:git-core/ppa
-        apt-get update
-        apt-get install -y cmake make gcc g++ git curl
-
     - bash: |
         . ci/funs.sh
         set +e
