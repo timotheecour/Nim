@@ -24,12 +24,11 @@ jobs:
       #     node-version: '12.x'
 
       - run: |
-          apt-get update
-          apt-get install -y software-properties-common
-          add-apt-repository -y ppa:git-core/ppa
-          apt-get update
-          apt-get install -y cmake make gcc g++ git curl
-
+          apt-get update -qq
+          apt-get install -yqq software-properties-common
+          add-apt-repository -yqq ppa:git-core/ppa
+          apt-get update -qq
+          apt-get install -yqq cmake make gcc g++ git curl
           pwd
           ls
           # git clone 
