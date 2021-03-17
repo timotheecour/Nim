@@ -1,3 +1,8 @@
+name: Nim docker CI
+on:
+  push:
+  pull_request:
+
 jobs:
   vm:
     runs-on: ubuntu-latest
