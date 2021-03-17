@@ -8,13 +8,15 @@ jobs:
     # container: ubuntu:18.04
     container: i386/ubuntu:18.04
     steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v2
-      - name: 'Checkout csources'
-        uses: actions/checkout@v2
-        with:
-          repository: nim-lang/csources
-          path: csources
+
+      # - name: 'Checkout'
+      #   uses: actions/checkout@v2
+
+      # - name: 'Checkout csources'
+      #   uses: actions/checkout@v2
+      #   with:
+      #     repository: nim-lang/csources
+      #     path: csources
 
       - name: 'Install node.js 12.x'
         uses: actions/setup-node@v1
@@ -35,13 +37,13 @@ jobs:
 
       - uses: actions/checkout@v2
 
-  vm:
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          echo This job does not specify a container.
-          echo It runs directly on the virtual machine.
-        name: Run on VM
+  # vm:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: |
+  #         echo This job does not specify a container.
+  #         echo It runs directly on the virtual machine.
+  #       name: Run on VM
 
   # build:
   #   if: |
