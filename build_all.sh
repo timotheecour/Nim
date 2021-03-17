@@ -17,16 +17,21 @@ nim_csources=bin/nim_csources
 
 build_nim_csources_via_script(){
   echo_run cd csources
+  echo "D20210317T004050"
+  echo "$@"
   echo_run sh build.sh "$@"
 }
 
 build_nim_csources(){
   # avoid changing dir in case of failure
   (
+    echo_run echo "ok1"
     if [ $# -ne 0 ]; then
       # some args were passed (e.g.: `--cpu i386`), need to call build.sh
+      echo_run echo "ok2"
       build_nim_csources_via_script "$@"
     else
+      echo_run echo "ok3"
       # no args, use multiple Make jobs (5X faster on 16 cores: 10s instead of 50s)
       makeX=make
       unamestr=$(uname)
