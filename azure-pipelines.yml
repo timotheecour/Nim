@@ -10,6 +10,7 @@ pr:
 variables:
     SKIP_CI_FILTER: '[skip ci]'
 
+
 jobs:
 - job: packages
   # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
