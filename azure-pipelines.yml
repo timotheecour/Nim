@@ -7,8 +7,13 @@ pr:
     include:
     - '*'
 
+variables:
+    SKIP_CI_FILTER: '[skip ci]'
+
 jobs:
 - job: packages
+  # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  condition: not(contains(variables['Build.SourceVersionMessage'], variables['SKIP_CI_FILTER']))
 
   timeoutInMinutes: 90 # default `60` led to lots of cancelled jobs; use 0 for unlimited (may be undesirable)
 
