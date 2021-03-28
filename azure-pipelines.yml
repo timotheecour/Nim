@@ -11,12 +11,8 @@ variables:
     SKIP_CI_FILTER: '[skip ci]'
 
 
-
-
 jobs:
 - job: packages
-  # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-  condition: not(contains(variables['Build.SourceVersionMessage'], variables['SKIP_CI_FILTER']))
 
   timeoutInMinutes: 90 # default `60` led to lots of cancelled jobs; use 0 for unlimited (may be undesirable)
 
@@ -58,6 +54,14 @@ jobs:
     clean: all
 
   steps:
+      # condition: and(succeeded(), ne(variables['build.sourceBranchName'], 'DoUAT'))
+      # condition: not(contains(variables['Build.SourceVersionMessage'], variables['SKIP_CI_FILTER']))
+    - bash: |
+      echo "D20210328T165246"
+      echo $(Build.SourceBranchName)
+      echo $(Build.SourceVersionMessage)
+      exit 1
+
     - bash: git config --global core.autocrlf false
       displayName: 'Disable auto conversion to CRLF by git (Windows-only)'
       condition: eq(variables['Agent.OS'], 'Windows_NT')
