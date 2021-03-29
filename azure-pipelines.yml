@@ -66,10 +66,12 @@ jobs:
         # refs https://github.com/microsoft/azure-pipelines-agent/issues/2944
         # --no-merges needed to avoid merge commits which occur for PR's.
         # $(Build.SourceVersionMessage) isn't helpful
-        echo "ok1b"
+        echo "ok1c"
         git log -5 --pretty=format:"%s"
         echo "ok2"
+        echo "\nok2b"
         git log --no-merges -5 --pretty=format:"%s"
+        echo
         echo "ok3"
         commitMsg=$(git log --no-merges -1 --pretty=format:"%s")
         echo commitMsg: $commitMsg
