@@ -60,7 +60,7 @@ jobs:
       condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
     - checkout: self
-      fetchDepth: 1
+      fetchDepth: 2
 
     - bash: |
         # refs https://github.com/microsoft/azure-pipelines-agent/issues/2944
