@@ -66,10 +66,16 @@ jobs:
         # refs https://github.com/microsoft/azure-pipelines-agent/issues/2944
         # --no-merges needed to avoid merge commits which occur for PR's.
         # $(Build.SourceVersionMessage) isn't helpful
+        echo "ok1"
+        git log -5 --pretty=format:"%s"
+        echo "ok2"
+        git log --no-merges -5 --pretty=format:"%s"
+        echo "ok3"
         commitMsg=$(git log --no-merges -1 --pretty=format:"%s")
         echo commitMsg: $commitMsg
         echo $commitMsg | grep -v '\[skip ci\]'
       condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+      displayName: 'Check whether to skip CI'
 
     - bash: git clone --depth 1 https://github.com/nim-lang/csources
       displayName: 'Checkout Nim csources'
