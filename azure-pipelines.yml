@@ -58,11 +58,24 @@ jobs:
       # condition: and(succeeded(), ne(variables['build.sourceBranchName'], 'DoUAT'))
       # condition: not(contains(variables['Build.SourceVersionMessage'], variables['SKIP_CI_FILTER']))
     - bash: |
-        echo "D20210328T165246"
-        echo $(Build.SourceBranchName)
-        echo $(Build.SourceVersionMessage)
-        git log -n2 --pretty=format:"%s"
-        exit 1
+        echo_run () {
+          # echo's a command before running it, which helps understanding logs
+          echo ""
+          echo "$@"
+          "$@"
+        }
+        set +e
+        echo_run echo "D20210328T165246"
+        echo_run echo $(Build.SourceBranchName)
+        echo_run echo $(Build.SourceVersionMessage)
+        echo_run echo $(Build.Reason)
+        echo_run git log -n2 --pretty=format:"%s"
+        echo_run git log HEAD^..HEAD --pretty=format:"%s"
+        echo_run git log HEAD^^..HEAD^ --pretty=format:"%s"
+        echo_run git log HEAD^^..HEAD^ --pretty=format:"%s" | gook3
+        echo_run git log HEAD^^..HEAD^ --pretty=format:"%s" | gook4
+        echo_run exit 1
+        exit 3
 
     - bash: git config --global core.autocrlf false
       displayName: 'Disable auto conversion to CRLF by git (Windows-only)'
