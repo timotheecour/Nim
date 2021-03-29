@@ -61,11 +61,12 @@ jobs:
         echo "D20210328T165246"
         echo $(Build.SourceBranchName)
         echo $(Build.SourceVersionMessage)
+        git log -n2 --pretty=format:"%s"
         exit 1
 
     - bash: git config --global core.autocrlf false
       displayName: 'Disable auto conversion to CRLF by git (Windows-only)'
-      condition: eq(variables['Agent.OS'], 'Windows_NT')
+      condition: eq(succeeded(), variables['Agent.OS'], 'Windows_NT')
 
     - checkout: self
       fetchDepth: 1
@@ -86,7 +87,7 @@ jobs:
           echo_run sudo apt-fast install --no-install-recommends -yq \
             libcurl4-openssl-dev libgc-dev libsdl1.2-dev libsfml-dev valgrind libc6-dbg
       displayName: 'Install dependencies (amd64 Linux)'
-      condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['CPU'], 'amd64'))
+      condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['CPU'], 'amd64'))
 
     - bash: |
         set -e
@@ -126,11 +127,11 @@ jobs:
         echo_run chmod 755 bin/g++
 
       displayName: 'Install dependencies (i386 Linux)'
-      condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['CPU'], 'i386'))
+      condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'), eq(variables['CPU'], 'i386'))
 
     - bash: brew install boehmgc make sfml
       displayName: 'Install dependencies (OSX)'
-      condition: eq(variables['Agent.OS'], 'Darwin')
+      condition: eq(succeeded(), variables['Agent.OS'], 'Darwin')
 
     - bash: |
         set -e
@@ -143,7 +144,7 @@ jobs:
         echo_run echo '##vso[task.prependpath]$(System.DefaultWorkingDirectory)/dist/mingw64/bin'
 
       displayName: 'Install dependencies (Windows)'
-      condition: eq(variables['Agent.OS'], 'Windows_NT')
+      condition: eq(succeeded(), variables['Agent.OS'], 'Windows_NT')
 
     - bash: echo '##vso[task.prependpath]$(System.DefaultWorkingDirectory)/bin'
       displayName: 'Add build binaries to PATH'
