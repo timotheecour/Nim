@@ -72,8 +72,8 @@ jobs:
         echo_run git log -n2 --pretty=format:"%s"
         echo_run git log HEAD^..HEAD --pretty=format:"%s"
         echo_run git log HEAD^^..HEAD^ --pretty=format:"%s"
-        echo_run git log HEAD^^..HEAD^ --pretty=format:"%s" | gook3
-        echo_run git log HEAD^^..HEAD^ --pretty=format:"%s" | gook4
+        echo_run git log HEAD^^..HEAD^ --pretty=format:"%s" | gook5
+        echo_run git log HEAD^^..HEAD^ --pretty=format:"%s" | gook6
         echo_run exit 1
         exit 3
 
