@@ -55,7 +55,13 @@ jobs:
     clean: all
 
   steps:
-      # condition: not(contains(variables['Build.SourceVersionMessage'], variables['SKIP_CI_FILTER']))
+    - bash: git config --global core.autocrlf false
+      displayName: 'Disable auto conversion to CRLF by git (Windows-only)'
+      condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+
+    - checkout: self
+      fetchDepth: 1
+
     - bash: |
         echo_run () {
           # echo's a command before running it, which helps understanding logs
@@ -63,25 +69,11 @@ jobs:
           echo "$@"
           "$@"
         }
-        set +e
-        echo_run echo "D20210328T165246"
-        echo_run echo $(Build.SourceBranchName)
-        echo_run echo $(Build.SourceVersionMessage)
-        echo_run echo $(Build.Reason)
-        echo_run git log -n2 --pretty=format:"%s"
-        echo_run git log HEAD^..HEAD --pretty=format:"%s"
-        echo_run git log HEAD^^..HEAD^ --pretty=format:"%s"
-        echo_run git log HEAD^^..HEAD^ --pretty=format:"%s" | gook5
-        echo_run git log HEAD^^..HEAD^ --pretty=format:"%s" | gook6
-        echo_run exit 1
-        exit 3
-
-    - bash: git config --global core.autocrlf false
-      displayName: 'Disable auto conversion to CRLF by git (Windows-only)'
-      condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
-
-    - checkout: self
-      fetchDepth: 1
+        # refs https://github.com/microsoft/azure-pipelines-agent/issues/2944
+        # --no-merges needed to avoid merge commits which occur for PR's.
+        # $(Build.SourceVersionMessage) isn't helpful
+        git log --no-merges -1 --pretty=format:"%s" | grep -v '\[skip ci\]'
+      condition: eqs(variables['Build.Reason'], 'PullRequest')
 
     - bash: git clone --depth 1 https://github.com/nim-lang/csources
       displayName: 'Checkout Nim csources'
