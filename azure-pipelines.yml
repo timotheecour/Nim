@@ -55,7 +55,6 @@ jobs:
     clean: all
 
   steps:
-      # condition: and(succeeded(), ne(variables['build.sourceBranchName'], 'DoUAT'))
       # condition: not(contains(variables['Build.SourceVersionMessage'], variables['SKIP_CI_FILTER']))
     - bash: |
         echo_run () {
@@ -79,7 +78,7 @@ jobs:
 
     - bash: git config --global core.autocrlf false
       displayName: 'Disable auto conversion to CRLF by git (Windows-only)'
-      condition: eq(succeeded(), variables['Agent.OS'], 'Windows_NT')
+      condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
     - checkout: self
       fetchDepth: 1
@@ -144,7 +143,7 @@ jobs:
 
     - bash: brew install boehmgc make sfml
       displayName: 'Install dependencies (OSX)'
-      condition: eq(succeeded(), variables['Agent.OS'], 'Darwin')
+      condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
 
     - bash: |
         set -e
@@ -157,7 +156,7 @@ jobs:
         echo_run echo '##vso[task.prependpath]$(System.DefaultWorkingDirectory)/dist/mingw64/bin'
 
       displayName: 'Install dependencies (Windows)'
-      condition: eq(succeeded(), variables['Agent.OS'], 'Windows_NT')
+      condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
     - bash: echo '##vso[task.prependpath]$(System.DefaultWorkingDirectory)/bin'
       displayName: 'Add build binaries to PATH'
