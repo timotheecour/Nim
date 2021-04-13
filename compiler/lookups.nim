@@ -495,7 +495,7 @@ proc lookUp*(c: PContext, n: PNode): PSym =
 
 type
   TLookupFlag* = enum
-    checkAmbiguity, checkUndeclared, checkModule, checkPureEnumFields
+    checkAmbiguity, checkUndeclared, checkModule, checkPureEnumFields, checkOverloadResolve
 
 proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
   const allExceptModule = {low(TSymKind)..high(TSymKind)} - {skModule, skPackage}
@@ -520,7 +520,7 @@ proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
         if amb and checkAmbiguity in flags:
           errorUseQualifier(c, n.info, candidates)
 
-    if result == nil and checkUndeclared in flags:
+    if result == nil and checkUndeclared in flags and checkOverloadResolve notin flags:
       result = errorUndeclaredIdentifierHint(c, n, ident)
     elif checkAmbiguity in flags and result != nil and amb:
       result = errorUseQualifier(c, n.info, result, amb)
@@ -541,7 +541,7 @@ proc qualifiedLookUp*(c: PContext, n: PNode, flags: set[TLookupFlag]): PSym =
           result = strTableGet(c.topLevelScope.symbols, ident).skipAlias(n, c.config)
         else:
           result = someSym(c.graph, m, ident).skipAlias(n, c.config)
-        if result == nil and checkUndeclared in flags:
+        if result == nil and checkUndeclared in flags and checkOverloadResolve notin flags:
           result = errorUndeclaredIdentifierHint(c, n[1], ident)
       elif n[1].kind == nkSym:
         result = n[1].sym
