@@ -2863,8 +2863,11 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
       result = semDirectOp(c, n, flags)
     else:
       result = semIndirectOp(c, n, flags)
-
-    if nfDefaultRefsParam in result.flags:
+    if result == nil:
+      # dbg "D20210413T120912" # PRTEMP
+      discard
+    elif nfDefaultRefsParam in result.flags:
+    # if nfDefaultRefsParam in result.flags:
       result = result.copyTree #XXX: Figure out what causes default param nodes to be shared.. (sigmatch bug?)
       # We've found a default value that references another param.
       # See the notes in `hoistParamsUsedInDefault` for more details.
