@@ -1,10 +1,12 @@
 discard """
-  cmd: "nim check $file"
+  cmd: "nim check --hints:off $file"
   errormsg: "selector must be of an ordinal type, float or string"
   nimout: '''
-t10735.nim(38, 5) Error: 'let' symbol requires an initialization
-t10735.nim(39, 10) Error: undeclared identifier: 'pos'
-t10735.nim(39, 9) Error: type mismatch: got <cstring, >
+t10735.nim(46, 5) Error: 'let' symbol requires an initialization
+t10735.nim(47, 10) Error: undeclared identifier: 'pos'
+t10735.nim(47, 10) Error: expression 'error pos' has no type (or is ambiguous)
+t10735.nim(47, 10) Error: invalid expression: error pos
+t10735.nim(47, 9) Error: type mismatch: got <cstring, >
 but expected one of:
 proc `[]`(s: string; i: BackwardsIndex): char
   first type mismatch at position: 0
@@ -29,12 +31,18 @@ proc `[]`[T](s: var openArray[T]; i: BackwardsIndex): var T
 template `[]`(s: string; i: int): char
   first type mismatch at position: 0
 
-expression: `[]`(buf, pos)
-t10735.nim(39, 9) Error: selector must be of an ordinal type, float or string
+expression: `[]`(buf, error pos)
+t10735.nim(47, 9) Error: selector must be of an ordinal type, float or string
 '''
   joinable: false
 """
 
+#[
+PRTEMP: fix:
+expression: `[]`(buf, error pos)
+]#
+
+# line 45
 let buf: cstring
 case buf[pos]
 else:
