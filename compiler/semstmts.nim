@@ -618,7 +618,7 @@ proc semVarOrLet(c: PContext, n: PNode, symkind: TSymKind): PNode =
         # allow let to not be initialised if imported from C:
         if v.kind == skLet and sfImportc notin v.flags:
           # D20210426T153714:here
-          dbg a.kind, v.kind, def, def.kind
+          # dbg a.kind, v.kind, def, def.kind
           localError(c.config, a.info, errLetNeedsInit)
       if sfCompileTime in v.flags:
         var x = newNodeI(result.kind, v.info)

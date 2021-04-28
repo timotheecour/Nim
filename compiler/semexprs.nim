@@ -2806,7 +2806,7 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
         # because nim can't distinguish with `let a {.importc:"foo".}` which is valid.
         result = newError(n, "D20210427T212052.1")
         result.flags.incl nfErrorShown # hacky, instead `errorSym` should do this
-        dbg result.flags, cast[int](result)
+        # dbg result.flags, cast[int](result)
       else:
         #liMessage(n.info, warnUser, renderTree(n));
         result = semIndirectOp(c, n, flags)

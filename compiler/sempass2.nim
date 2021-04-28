@@ -1137,7 +1137,8 @@ proc track(tracked: PEffects, n: PNode) =
     for i in 1 ..< n.len: track(tracked, n[i])
     inc tracked.leftPartOfAsgn
   of nkError:
-    dbg n.flags, tracked.config$n.info
+    echo "in nkError D20210428T112031"
+    # dbg n.flags, tracked.config$n.info
     # if nfErrorShown notin n.flags:
     #   localError(tracked.config, n.info, errorToString(tracked.config, n))
     #   dbg cast[int](n), n.flags, tracked.config$n.info, n
