@@ -78,6 +78,7 @@ type
     inheritancePenalty: int   # to prefer closest father object type
     firstMismatch*: MismatchInfo # mismatch info for better error messages
     diagnosticsEnabled*: bool
+    errorNode*: PNode
 
   TTypeRelFlag* = enum
     trDontBind

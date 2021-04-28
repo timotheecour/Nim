@@ -33,7 +33,6 @@ proc errorSubNode*(n: PNode): PNode =
       if result != nil: break
 
 proc newError*(wrongNode: PNode; k: ErrorKind; args: varargs[PNode]): PNode =
-  assert wrongNode.kind != nkError
   let innerError = errorSubNode(wrongNode)
   if innerError != nil:
     return innerError
@@ -43,7 +42,6 @@ proc newError*(wrongNode: PNode; k: ErrorKind; args: varargs[PNode]): PNode =
   for a in args: result.add a
 
 proc newError*(wrongNode: PNode; msg: string): PNode =
-  assert wrongNode.kind != nkError
   let innerError = errorSubNode(wrongNode)
   if innerError != nil:
     return innerError

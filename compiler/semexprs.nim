@@ -12,7 +12,7 @@
 
 when defined(nimCompilerStackraceHints):
   import std/stackframes
-
+import errorhandling
 const
   errExprXHasNoType = "expression '$1' has no type (or is ambiguous)"
   errXExpectsTypeOrValue = "'$1' expects a type or value"
@@ -68,14 +68,20 @@ proc semExprCheck(c: PContext, n: PNode, flags: TExprFlags): PNode =
   rejectEmptyNode(n)
   result = semExpr(c, n, flags+{efWantValue})
   if result.kind == nkEmpty or (result.typ != nil and result.typ.kind == tyError):
-    # do not produce another redundant error message:
-    result = errorNode(c, n)
+    result = newError(result, "D20210427T212052.2")
 
 proc semExprWithType(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   result = semExprCheck(c, n, flags)
+  # dbg result.typ, result.kind
+  # if result.typ != nil:
+    # dbg result.typ.kind
   if result.typ == nil and efInTypeof in flags:
     result.typ = c.voidType
-  elif result.typ == nil or result.typ == c.enforceVoidContext:
+  elif result.kind == nkError:
+    if nfErrorShown notin result.flags:
+      localError(c.config, n.info, errExprXHasNoType % renderTree(result, {renderNoComments}))
+      result.flags.incl nfErrorShown # PRTEMP FACTOR
+  elif result.typ == nil or result.typ == c.enforceVoidContext or result.kind == nkError:
     localError(c.config, n.info, errExprXHasNoType %
                 renderTree(result, {renderNoComments}))
     result.typ = errorType(c)
@@ -860,6 +866,7 @@ proc semOverloadedCallAnalyseEffects(c: PContext, n: PNode, nOrig: PNode,
       {skProc, skFunc, skMethod, skConverter, skMacro, skTemplate}, flags)
 
   if result != nil:
+    if result.kind == nkError: return result
     if result[0].kind != nkSym:
       internalError(c.config, "semOverloadedCallAnalyseEffects")
       return
@@ -2799,10 +2806,12 @@ proc semExpr(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
         if s.magic == mNone: result = semDirectOp(c, n, flags)
         else: result = semMagic(c, n, s, flags)
       of skUnknown:
-        # xxx: see also `errorSubNode`, `newError`; `errorNode` uses `skEmpty`
+        # `errorNode` uses `skEmpty`
         # which causes redundant errors in D20210426T153714 for `let a = nonexistant`,
         # because nim can't distinguish with `let a {.importc:"foo".}` which is valid.
-        result = errorNode(c, n)
+        result = newError(n, "D20210427T212052.1")
+        result.flags.incl nfErrorShown # hacky, instead `errorSym` should do this
+        dbg result.flags, cast[int](result)
       else:
         #liMessage(n.info, warnUser, renderTree(n));
         result = semIndirectOp(c, n, flags)

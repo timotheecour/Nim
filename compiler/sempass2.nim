@@ -1137,7 +1137,12 @@ proc track(tracked: PEffects, n: PNode) =
     for i in 1 ..< n.len: track(tracked, n[i])
     inc tracked.leftPartOfAsgn
   of nkError:
-    localError(tracked.config, n.info, errorToString(tracked.config, n))
+    dbg n.flags, tracked.config$n.info
+    # if nfErrorShown notin n.flags:
+    #   localError(tracked.config, n.info, errorToString(tracked.config, n))
+    #   dbg cast[int](n), n.flags, tracked.config$n.info, n
+    #   n.flags.incl nfErrorShown
+    #   # echo getStacktrace()
   else:
     for i in 0..<n.safeLen: track(tracked, n[i])
 

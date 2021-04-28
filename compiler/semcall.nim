@@ -11,6 +11,7 @@
 # included from sem.nim
 
 from algorithm import sort
+import errorhandling
 
 proc sameMethodDispatcher(a, b: PSym): bool =
   result = false
@@ -413,6 +414,8 @@ proc resolveOverloads(c: PContext, n, orig: PNode,
       if efNoUndeclared notin flags: # for tests/pragmas/tcustom_pragma.nim
         # xxx adapt/use errorUndeclaredIdentifierHint(c, n, f.ident)
         localError(c.config, n.info, getMsgDiagnostic(c, flags, n, f))
+        result.errorNode = newError(n, "D20210428T023435")
+        result.errorNode.flags.incl nfErrorShown
       return
     elif result.state != csMatch:
       if nfExprCall in n.flags:
@@ -568,6 +571,9 @@ proc semOverloadedCall(c: PContext, n, nOrig: PNode,
                        filter: TSymKinds, flags: TExprFlags): PNode {.nosinks.} =
   var errors: CandidateErrors = @[] # if efExplain in flags: @[] else: nil
   var r = resolveOverloads(c, n, nOrig, filter, flags, errors, efExplain in flags)
+  if r.errorNode != nil:
+    assert r.errorNode.kind == nkError
+    return r.errorNode
   if r.state == csMatch:
     # this may be triggered, when the explain pragma is used
     if errors.len > 0:
