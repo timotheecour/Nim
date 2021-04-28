@@ -269,7 +269,7 @@ proc presentFailedCandidates(c: PContext, n: PNode, errors: CandidateErrors):
 
 const
   errTypeMismatch = "type mismatch: got <"
-  errButExpected = "but expected one of: "
+  errButExpected = "but expected one of:"
   errUndeclaredField = "undeclared field: '$1'"
   errUndeclaredRoutine = "attempting to call undeclared routine: '$1'"
   errBadRoutine = "attempting to call routine: '$1'$2"
@@ -338,7 +338,9 @@ proc getMsgDiagnostic(c: PContext, flags: TExprFlags, n, f: PNode): string =
       discard
     else:
       typeHint = " for type " & getProcHeader(c.config, sym)
-    result = errUndeclaredField % ident & typeHint & " " & result
+    if result.len > 0:
+      result = " " & result
+    result = errUndeclaredField % ident & typeHint & result
   else:
     if result.len == 0: result = errUndeclaredRoutine % ident
     else: result = errBadRoutine % [ident, result]
