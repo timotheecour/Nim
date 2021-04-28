@@ -60,43 +60,37 @@ proc semOperand(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   elif {efWantStmt, efAllowStmt} * flags != {}:
     result.typ = newTypeS(tyVoid, c)
   else:
-    localError(c.config, n.info, errExprXHasNoType %
+    result = localErrorShown(c.config, n.info, errExprXHasNoType %
                renderTree(result, {renderNoComments}))
-    result.typ = errorType(c)
 
 proc semExprCheck(c: PContext, n: PNode, flags: TExprFlags): PNode =
   rejectEmptyNode(n)
   result = semExpr(c, n, flags+{efWantValue})
   if result.kind == nkEmpty or (result.typ != nil and result.typ.kind == tyError):
-    result = newError(result, "D20210427T212052.2")
+    result = newError(result, "D20210428T103116") # PRTEMP
+    # result = newErrorShown(result)
 
 proc semExprWithType(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   result = semExprCheck(c, n, flags)
-  # dbg result.typ, result.kind
-  # if result.typ != nil:
-    # dbg result.typ.kind
   if result.typ == nil and efInTypeof in flags:
     result.typ = c.voidType
   elif result.kind == nkError:
     if nfErrorShown notin result.flags:
       localError(c.config, n.info, errExprXHasNoType % renderTree(result, {renderNoComments}))
       result.flags.incl nfErrorShown # PRTEMP FACTOR
-  elif result.typ == nil or result.typ == c.enforceVoidContext or result.kind == nkError:
-    localError(c.config, n.info, errExprXHasNoType %
+  elif result.typ == nil or result.typ == c.enforceVoidContext:
+    result = localErrorShown(c.config, n.info, errExprXHasNoType %
                 renderTree(result, {renderNoComments}))
-    result.typ = errorType(c)
   elif result.typ.kind == tyError:
-    # associates the type error to the current owner
-    result.typ = errorType(c)
+    doAssert false
   else:
     if result.typ.kind in {tyVar, tyLent}: result = newDeref(result)
 
 proc semExprNoDeref(c: PContext, n: PNode, flags: TExprFlags = {}): PNode =
   result = semExprCheck(c, n, flags)
   if result.typ == nil:
-    localError(c.config, n.info, errExprXHasNoType %
+    result = localErrorShown(c.config, n.info, errExprXHasNoType %
                renderTree(result, {renderNoComments}))
-    result.typ = errorType(c)
 
 proc semSymGenericInstantiation(c: PContext, n: PNode, s: PSym): PNode =
   result = symChoice(c, n, s, scClosed)
@@ -104,8 +98,7 @@ proc semSymGenericInstantiation(c: PContext, n: PNode, s: PSym): PNode =
 proc inlineConst(c: PContext, n: PNode, s: PSym): PNode {.inline.} =
   result = copyTree(s.ast)
   if result.isNil:
-    localError(c.config, n.info, "constant of type '" & typeToString(s.typ) & "' has no value")
-    result = newSymNode(s)
+    result = localErrorShown(c.config, n.info, "constant of type '" & typeToString(s.typ) & "' has no value")
   else:
     result.typ = s.typ
     result.info = n.info
@@ -256,8 +249,7 @@ proc isOwnedSym(c: PContext; n: PNode): bool =
 
 proc semConv(c: PContext, n: PNode): PNode =
   if n.len != 2:
-    localError(c.config, n.info, "a type conversion takes exactly one argument")
-    return n
+    result = localErrorShown(c.config, n.info, "a type conversion takes exactly one argument")
 
   result = newNodeI(nkConv, n.info)
 
@@ -298,7 +290,7 @@ proc semConv(c: PContext, n: PNode): PNode =
   # special case to make MyObject(x = 3) produce a nicer error message:
   if n[1].kind == nkExprEqExpr and
       targetType.skipTypes(abstractPtrs).kind == tyObject:
-    localError(c.config, n.info, "object construction uses ':', not '='")
+    return localErrorShown(c.config, n.info, "object construction uses ':', not '='")
   var op = semExprWithType(c, n[1])
   if targetType.kind != tyGenericParam and targetType.isMetaType:
     let final = inferWithMetatype(c, targetType, op, true)
@@ -329,12 +321,12 @@ proc semConv(c: PContext, n: PNode): PNode =
     of convNotLegal:
       result = fitNode(c, result.typ, result[1], result.info)
       if result == nil:
-        localError(c.config, n.info, "illegal conversion from '$1' to '$2'" %
+        return localErrorShown(c.config, n.info, "illegal conversion from '$1' to '$2'" %
           [op.typ.typeToString, result.typ.typeToString])
     of convNotInRange:
       let value =
         if op.kind in {nkCharLit..nkUInt64Lit}: $op.getInt else: $op.getFloat
-      localError(c.config, n.info, errGenerated, value & " can't be converted to " &
+      return localErrorShown(c.config, n.info, value & " can't be converted to " &
         result.typ.typeToString)
   else:
     for i in 0..<op.len:
@@ -353,12 +345,12 @@ proc semCast(c: PContext, n: PNode): PNode =
   let targetType = semTypeNode(c, n[0], nil)
   let castedExpr = semExprWithType(c, n[1])
   if tfHasMeta in targetType.flags:
-    localError(c.config, n[0].info, "cannot cast to a non concrete type: '$1'" % $targetType)
+    return localErrorShown(c.config, n[0].info, "cannot cast to a non concrete type: '$1'" % $targetType)
   if not isCastable(c, targetType, castedExpr.typ):
     let tar = $targetType
     let alt = typeToString(targetType, preferDesc)
     let msg = if tar != alt: tar & "=" & alt else: tar
-    localError(c.config, n.info, "expression cannot be cast to " & msg)
+    return localErrorShown(c.config, n.info, "expression cannot be cast to " & msg)
   result = newNodeI(nkCast, n.info)
   result.typ = targetType
   result.add copyTree(n[0])
@@ -368,7 +360,7 @@ proc semLowHigh(c: PContext, n: PNode, m: TMagic): PNode =
   const
     opToStr: array[mLow..mHigh, string] = ["low", "high"]
   if n.len != 2:
-    localError(c.config, n.info, errXExpectsTypeOrValue % opToStr[m])
+    return localErrorShown(c.config, n.info, errXExpectsTypeOrValue % opToStr[m])
   else:
     n[1] = semExprWithType(c, n[1], {efDetermineType})
     var typ = skipTypes(n[1].typ, abstractVarRange + {tyTypeDesc, tyUserTypeClassInst})
@@ -387,7 +379,8 @@ proc semLowHigh(c: PContext, n: PNode, m: TMagic): PNode =
       # that could easily turn into an infinite recursion in semtypinst
       n.typ = makeTypeFromExpr(c, n.copyTree)
     else:
-      localError(c.config, n.info, "invalid argument for: " & opToStr[m])
+      return localErrorShown(c.config, n.info, "invalid argument for: " & opToStr[m])
+
   result = n
 
 proc fixupStaticType(c: PContext, n: PNode) =
@@ -454,7 +447,7 @@ proc isOpImpl(c: PContext, n: PNode, flags: TExprFlags): PNode =
 
 proc semIs(c: PContext, n: PNode, flags: TExprFlags): PNode =
   if n.len != 3:
-    localError(c.config, n.info, "'is' operator takes 2 arguments")
+    return localErrorShown(c.config, n.info, "'is' operator takes 2 arguments")
 
   let boolType = getSysType(c.graph, n.info, tyBool)
   result = n
@@ -592,7 +585,7 @@ proc semArrayConstr(c: PContext, n: PNode, flags: TExprFlags): PNode =
     if x.kind == nkExprColonExpr and x.len == 2:
       var idx = semConstExpr(c, x[0])
       if not isOrdinalType(idx.typ):
-        localError(c.config, idx.info, "expected ordinal value for array " &
+        return localErrorShown(c.config, idx.info, "expected ordinal value for array " &
                    "index, got '$1'" % renderTree(idx))
       else:
         firstIndex = getOrdValue(idx)
@@ -609,7 +602,7 @@ proc semArrayConstr(c: PContext, n: PNode, flags: TExprFlags): PNode =
       if lastIndex == lastValidIndex:
         let validIndex = makeRangeType(c, toInt64(firstIndex), toInt64(lastValidIndex), n.info,
                                        indexType)
-        localError(c.config, n.info, "size of array exceeds range of index " &
+        return localErrorShown(c.config, n.info, "size of array exceeds range of index " &
           "type '$1' by $2 elements" % [typeToString(validIndex), $(n.len-i)])
 
       x = n[i]
@@ -617,7 +610,7 @@ proc semArrayConstr(c: PContext, n: PNode, flags: TExprFlags): PNode =
         var idx = semConstExpr(c, x[0])
         idx = fitNode(c, indexType, idx, x.info)
         if lastIndex+1 != getOrdValue(idx):
-          localError(c.config, x.info, "invalid order in array constructor")
+          return localErrorShown(c.config, x.info, "invalid order in array constructor")
         x = x[1]
 
       let xx = semExprWithType(c, x, flags*{efAllowDestructor})
@@ -689,7 +682,7 @@ proc newHiddenAddrTaken(c: PContext, n: PNode): PNode =
     result = newNodeIT(nkHiddenAddr, n.info, makeVarType(c, n.typ))
     result.add n
     if isAssignable(c, n) notin {arLValue, arLocalLValue}:
-      localError(c.config, n.info, errVarForOutParamNeededX % renderNotLValue(n))
+      return localErrorShown(c.config, n.info, errVarForOutParamNeededX % renderNotLValue(n))
 
 proc analyseIfAddressTaken(c: PContext, n: PNode): PNode =
   result = n
@@ -1022,7 +1015,9 @@ proc semIndirectOp(c: PContext, n: PNode, flags: TExprFlags): PNode =
       # See bug #904 of how to trigger it:
       return result
   #result = afterCallActions(c, result, nOrig, flags)
-  if result[0].kind == nkSym:
+  if result.kind == nkError:
+    discard
+  elif result[0].kind == nkSym:
     result = afterCallActions(c, result, nOrig, flags)
   else:
     fixAbstractType(c, result)

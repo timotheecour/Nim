@@ -50,6 +50,13 @@ proc newError*(wrongNode: PNode; msg: string): PNode =
   result.add newIntNode(nkIntLit, ord(CustomError))
   result.add newStrNode(msg, wrongNode.info)
 
+proc newErrorShown*(wrongNode: PNode = nil): PNode =
+  if wrongNode == nil:
+    result = newNodeIT(nkError, PNode.default.info.type.default, newType(tyError, ItemId(module: -1, item: -1), nil))
+  else:
+    result = newError(wrongNode, "already shown D20210428T104841")
+  result.flags.incl nfErrorShown
+
 proc errorToString*(config: ConfigRef; n: PNode): string =
   assert n.kind == nkError
   assert n.len > 1
