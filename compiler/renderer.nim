@@ -1694,7 +1694,8 @@ proc gsub(g: var TSrcGen, n: PNode, c: TContext, fromStmtList = false) =
   of nkError:
     putWithSpace(g, tkSymbol, "error")
     #gcomma(g, n, c)
-    gsub(g, n[0], c)
+    if n.len > 0:
+      gsub(g, n[0], c)
   else:
     #nkNone, nkExplicitTypeListCall:
     internalError(g.config, n.info, "rnimsyn.gsub(" & $n.kind & ')')

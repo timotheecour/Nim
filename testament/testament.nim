@@ -376,6 +376,8 @@ proc nimoutCheck(expected, given: TSpec): bool =
   result = true
   if expected.nimoutFull:
     if expected.nimout != given.nimout:
+      echo (expected.nimout,)
+      echo (given.nimout,)
       result = false
   elif expected.nimout.len > 0 and not greedyOrderedSubsetLines(expected.nimout, given.nimout):
     result = false
