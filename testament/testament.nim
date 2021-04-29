@@ -318,11 +318,10 @@ proc addResult(r: var TResults, test: TTest, target: TTarget,
       # expected is empty, no reason to print it.
       echo given
     else:
-      # maybeStyledEcho fgYellow, "Expected:"
-      # maybeStyledEcho styleBright, expected, "\n"
-      # maybeStyledEcho fgYellow, "Gotten:"
-      # maybeStyledEcho styleBright, given, "\n"
-      showDiff(expected, given)
+      maybeStyledEcho fgYellow, "Expected:"
+      maybeStyledEcho styleBright, expected, "\n"
+      maybeStyledEcho fgYellow, "Gotten:"
+      maybeStyledEcho styleBright, given, "\n"
 
   if backendLogging and (isAppVeyor or isAzure):
     let (outcome, msg) =
@@ -391,8 +390,6 @@ proc nimoutCheck(expected, given: TSpec): bool =
   result = true
   if expected.nimoutFull:
     if expected.nimout != given.nimout:
-      echo (expected.nimout,)
-      echo (given.nimout,)
       result = false
   elif expected.nimout.len > 0 and not greedyOrderedSubsetLines(expected.nimout, given.nimout):
     result = false
