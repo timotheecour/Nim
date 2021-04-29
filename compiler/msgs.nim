@@ -10,6 +10,7 @@
 import
   options, strutils, os, tables, ropes, terminal, macros,
   lineinfos, pathutils
+import ast
 import std/private/miscdollars
 import strutils2
 
@@ -591,6 +592,10 @@ template localError*(conf: ConfigRef; info: TLineInfo, msg: TMsgKind, arg = "") 
 
 template localError*(conf: ConfigRef; info: TLineInfo, arg: string) =
   liMessage(conf, info, errGenerated, arg, doNothing, instLoc())
+
+template localErrorShown*(conf: ConfigRef; info: TLineInfo, arg: string): PNode =
+  liMessage(conf, info, errGenerated, arg, doNothing, instLoc())
+  newErrorShown(nil)
 
 template message*(conf: ConfigRef; info: TLineInfo, msg: TMsgKind, arg = "") =
   liMessage(conf, info, msg, arg, doNothing, instLoc())

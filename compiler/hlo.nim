@@ -82,13 +82,20 @@ proc hlo(c: PContext, n: PNode): PNode =
     else:
       # perform type checking, so that the replacement still fits:
       if isEmptyType(n.typ) and isEmptyType(result.typ):
+        # dbg n.typ, result.typ
         discard
       else:
+        # dbg n.typ, c.config$n.info
         result = fitNode(c, n.typ, result, n.info)
+        # dbg result.kind
       # optimization has been applied so check again:
+      # dbg result.kind, c.config$n.info
       result = commonOptimizations(c.graph, c.idgen, c.module, result)
+      # dbg result.kind
       result = hlo(c, result)
+      # dbg result.kind
       result = commonOptimizations(c.graph, c.idgen, c.module, result)
+      # dbg result.kind
 
 proc hloBody(c: PContext, n: PNode): PNode =
   # fast exit:

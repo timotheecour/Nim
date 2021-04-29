@@ -84,6 +84,7 @@ proc fitNodePostMatch(c: PContext, formal: PType, arg: PNode): PNode =
 
 
 proc fitNode(c: PContext, formal: PType, arg: PNode; info: TLineInfo): PNode =
+  # dbg arg.typ, formal, arg.kind
   if arg.typ.isNil:
     localError(c.config, arg.info, "expression has no type: " &
                renderTree(arg, {renderNoComments}))

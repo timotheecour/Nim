@@ -33,7 +33,6 @@ proc errorSubNode*(n: PNode): PNode =
       if result != nil: break
 
 proc newError*(wrongNode: PNode; k: ErrorKind; args: varargs[PNode]): PNode =
-  assert wrongNode.kind != nkError
   let innerError = errorSubNode(wrongNode)
   if innerError != nil:
     return innerError
@@ -43,7 +42,6 @@ proc newError*(wrongNode: PNode; k: ErrorKind; args: varargs[PNode]): PNode =
   for a in args: result.add a
 
 proc newError*(wrongNode: PNode; msg: string): PNode =
-  assert wrongNode.kind != nkError
   let innerError = errorSubNode(wrongNode)
   if innerError != nil:
     return innerError
@@ -51,6 +49,13 @@ proc newError*(wrongNode: PNode; msg: string): PNode =
   result.add wrongNode
   result.add newIntNode(nkIntLit, ord(CustomError))
   result.add newStrNode(msg, wrongNode.info)
+
+proc newErrorShown*(wrongNode: PNode = nil): PNode =
+  if wrongNode == nil:
+    result = newNodeIT(nkError, PNode.default.info.type.default, newType(tyError, ItemId(module: -1, item: -1), nil))
+  else:
+    result = newError(wrongNode, "already shown D20210428T104841")
+  result.flags.incl nfErrorShown
 
 proc errorToString*(config: ConfigRef; n: PNode): string =
   assert n.kind == nkError

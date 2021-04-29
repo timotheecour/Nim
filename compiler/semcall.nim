@@ -11,6 +11,7 @@
 # included from sem.nim
 
 from algorithm import sort
+import errorhandling
 
 proc sameMethodDispatcher(a, b: PSym): bool =
   result = false
@@ -268,7 +269,7 @@ proc presentFailedCandidates(c: PContext, n: PNode, errors: CandidateErrors):
 
 const
   errTypeMismatch = "type mismatch: got <"
-  errButExpected = "but expected one of: "
+  errButExpected = "but expected one of:"
   errUndeclaredField = "undeclared field: '$1'"
   errUndeclaredRoutine = "attempting to call undeclared routine: '$1'"
   errBadRoutine = "attempting to call routine: '$1'$2"
@@ -337,7 +338,9 @@ proc getMsgDiagnostic(c: PContext, flags: TExprFlags, n, f: PNode): string =
       discard
     else:
       typeHint = " for type " & getProcHeader(c.config, sym)
-    result = errUndeclaredField % ident & typeHint & " " & result
+    if result.len > 0:
+      result = " " & result
+    result = errUndeclaredField % ident & typeHint & result
   else:
     if result.len == 0: result = errUndeclaredRoutine % ident
     else: result = errBadRoutine % [ident, result]
@@ -413,6 +416,8 @@ proc resolveOverloads(c: PContext, n, orig: PNode,
       if efNoUndeclared notin flags: # for tests/pragmas/tcustom_pragma.nim
         # xxx adapt/use errorUndeclaredIdentifierHint(c, n, f.ident)
         localError(c.config, n.info, getMsgDiagnostic(c, flags, n, f))
+        result.errorNode = newError(n, "D20210428T023435")
+        result.errorNode.flags.incl nfErrorShown
       return
     elif result.state != csMatch:
       if nfExprCall in n.flags:
@@ -568,6 +573,9 @@ proc semOverloadedCall(c: PContext, n, nOrig: PNode,
                        filter: TSymKinds, flags: TExprFlags): PNode {.nosinks.} =
   var errors: CandidateErrors = @[] # if efExplain in flags: @[] else: nil
   var r = resolveOverloads(c, n, nOrig, filter, flags, errors, efExplain in flags)
+  if r.errorNode != nil:
+    assert r.errorNode.kind == nkError
+    return r.errorNode
   if r.state == csMatch:
     # this may be triggered, when the explain pragma is used
     if errors.len > 0:

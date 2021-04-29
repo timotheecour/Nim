@@ -263,6 +263,21 @@ Tests failed and allowed to fail: $3 / $1 <br />
 Tests skipped: $4 / $1 <br />
 """ % [$x.total, $x.passed, $x.failedButAllowed, $x.skipped]
 
+import std/tempfiles
+proc showDiff(a, b: string) =
+  # PRTEMP FACTOR MOVE std/private/gitutils.nim
+  let (fda, patha) = createTempFile("", "")
+  let (fdb, pathb) = createTempFile("", "")
+  defer:
+    close fda
+    removeFile(patha)
+    close fdb
+    removeFile(pathb)
+  writeFile(patha, a)
+  writeFile(pathb, b)
+  # discard execShellCmd("diff -uNdr $1 $2" % [patha.quoteShell, pathb.quoteShell])
+  discard execShellCmd("git diff --no-index $1 $2" % [patha.quoteShell, pathb.quoteShell])
+
 proc addResult(r: var TResults, test: TTest, target: TTarget,
                expected, given: string, successOrig: TResultEnum, allowFailure = false) =
   # test.name is easier to find than test.name.extractFilename
@@ -307,7 +322,6 @@ proc addResult(r: var TResults, test: TTest, target: TTarget,
       maybeStyledEcho styleBright, expected, "\n"
       maybeStyledEcho fgYellow, "Gotten:"
       maybeStyledEcho styleBright, given, "\n"
-
 
   if backendLogging and (isAppVeyor or isAzure):
     let (outcome, msg) =
