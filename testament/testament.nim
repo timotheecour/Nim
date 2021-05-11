@@ -19,14 +19,11 @@ import lib/stdtest/testutils
 from lib/stdtest/specialpaths import splitTestFile
 from std/private/gitutils import diffStrings
 import timn/dbgs
+
 proc trimUnitSep(x: var string) =
   let L = x.len
   if L > 0 and x[^1] == '\31':
     setLen x, L-1
-
-var useColors = true
-var backendLogging = true
-var optVerbose = false
 
 proc verboseCmd(cmd: string) =
   if optVerbose:
@@ -67,38 +64,12 @@ Experimental: using environment variable `NIM_TESTAMENT_REMOTE_NETWORKING=1` ena
 tests with remote networking (as in CI).
 """ % resultsFile
 
-type
-  Category = distinct string
-  TResults = object
-    total, passed, failedButAllowed, skipped: int
-      ## xxx rename passed to passedOrAllowedFailure
-    data: string
-    config*: TestManager
-  TestManager* = ref object
-    flatTests*: seq[TTest] # flat tests
-    useMegatest: bool
-    simulate: bool
-  TTest = object
-    name: string
-    cat: Category
-    options: string
-    args: seq[string]
-    spec: TSpec
-    startTime: float
-    debugInfo: string
-    nimcache: string
-
 proc initResults: TResults =
   result.total = 0
   result.passed = 0
   result.failedButAllowed = 0
   result.skipped = 0
   result.data = ""
-
-proc initTestManager*(): TestManager =
-  # analog to ConfigRef in nim compiler: holds global data
-  result = TestManager()
-  result.useMegatest = true
 
 # ----------------------------------------------------------------------------
 proc isTestEnabled(r: var TResults, test: TTest): bool
@@ -173,7 +144,7 @@ proc prepareTestArgs(cmdTemplate, filename, options, nimcache: string,
   options.add ' ' & extraOptions
   result = parseCmdLine(cmdTemplate % ["target", targetToCmd[target],
                       "options", options, "file", filename.quoteShell,
-                      "filedir", filename.getFileDir(), "nim", compilerPrefix])
+                      "filedir", filename.getFileDir(), "nim", testamentData0.compilerPrefix])
 
 proc callNimCompiler(cmdTemplate, filename, options, nimcache: string,
                      target: TTarget, extraOptions = ""): TSpec =
@@ -255,7 +226,7 @@ macro ignoreStyleEcho(args: varargs[typed]): untyped =
       result.add(arg)
 
 template maybeStyledEcho(args: varargs[untyped]): untyped =
-  if useColors:
+  if testamentData0.useColors:
     styledEcho(args)
   else:
     ignoreStyleEcho(args)
@@ -284,7 +255,7 @@ proc addResult(r: var TResults, test: TTest, target: TTarget,
                 else: successOrig
 
   let durationStr = duration.formatFloat(ffDecimal, precision = 2).align(5)
-  if backendLogging:
+  if testamentData0.backendLogging:
     backend.writeTestResult(name = name,
                             category = test.cat.string,
                             target = $target,
@@ -317,7 +288,7 @@ proc addResult(r: var TResults, test: TTest, target: TTarget,
       maybeStyledEcho styleBright, given, "\n"
       echo diffStrings(expected, given).output
 
-  if backendLogging and (isAppVeyor or isAzure):
+  if testamentData0.backendLogging and (isAppVeyor or isAzure):
     let (outcome, msg) =
       case success
       of reSuccess:
@@ -471,7 +442,7 @@ proc equalModuloLastNewline(a, b: string): bool =
   result = a == b or b.endsWith("\n") and a == b[0 ..< ^1]
 
 proc testSpecHelper(r: var TResults, test: TTest) =
-  r.config.flatTests.add test
+  testamentData0.flatTests.add test
 
 proc runFlatSpec(r: var TResults, test: TTest) =
   var test = test
@@ -549,79 +520,37 @@ proc runFlatSpec(r: var TResults, test: TTest) =
 
 import std/jsonutils
 
-when false:
-  proc testRunnerThread(work: string) =
-    {.gcsafe.}:
-      dbg "D20210510T190000"
-      dbg work.len
-      let tests = work.parseJson.jsonTo(seq[TTest])
-      dbg tests.len
-
-      var r = initResults()
-      r.config = initTestManager()
-      for i, test in tests:
-        dbg i, tests.len
-        runFlatSpec(r, test)
-
 type WorkerData = object
   numBatches: int
   batch: int
   file: string
 
 proc runAccumulatedTests(r: var TResults) =
-  let n = countProcessors()
-  var cmds: seq[string]
-  cmds.setLen n
-  let file = "/tmp/D20210510T192652.json"
-  writeFile(file, $r.config.flatTests.toJson)
-  for i in 0..<n:
-    # TODO: could also use stdin for communication, or even http
-    let data = WorkerData(batch: i, numBatches: n, file: file)
-    let cmd = "$1 --worker:$2" % [getAppFilename().quoteShell, ($data.toJson).quoteShell]
-    dbg cmd
-    cmds.add cmd
+  if testamentData0.isParallel:
+    let n = countProcessors()
+    var cmds: seq[string]
+    cmds.setLen n
+    let file = "/tmp/D20210510T192652.json"
+    writeFile(file, $testamentData0.flatTests.toJson)
+    for i in 0..<n:
+      # TODO: could also use stdin for communication, or even http
+      let data = WorkerData(batch: i, numBatches: n, file: file)
+      let cmd = "$1 --worker:$2" % [getAppFilename().quoteShell, ($data.toJson).quoteShell]
+      dbg cmd
+      cmds.add cmd
 
-  proc progressStatus(idx: int) =
-    echo "progress2[all]: $1/$2" % [$idx, $n]
+    proc progressStatus(idx: int) =
+      echo "progress2[all]: $1/$2" % [$idx, $n]
 
-  # addExitProc azure.finalize # PRTEMP
-  # doAssert false
-  let m = osproc.execProcesses(cmds, {poEchoCmd, poStdErrToStdOut, poUsePath, poParentStreams}, beforeRunEvent = progressStatus)
-  dbg m
-  quit m
-
-  when false:
-    let isMultithread = true
-    if isMultithread:
-      const nMax = 20 # PRTEMP
-      let n = min(countProcessors(), nMax) # TODO: countProcessors() * 2?
-      echo n
-      var workers: array[nMax, Thread[string]]
-      var flatTests: seq[seq[TTest]]
-      var works: seq[string]
-      flatTests.setLen n
-      for i in 0..<n:
-        for j in 0..<r.config.flatTests.len:
-          if j mod n == i:
-            flatTests[i].add r.config.flatTests[j]
-        works.add $flatTests[i].toJson
-      for i in 0..<n:
-        dbg works[i].len
-        doAssert false
-        # let work = $flatTests[i].toJson
-        # createThread(workers[i], testRunnerThread, flatTests[i])
-        # dbg work.len
-        # createThread(workers[i], testRunnerThread, work)
-        createThread(workers[i], testRunnerThread, works[i])
-        dbg i
-        # testRunnerThread(work)
-      dbg "D20210510T190303.1"
-      joinThreads(workers)
-      dbg "D20210510T190303.2"
-    else:
-      for i, test in r.config.flatTests:
-        dbg i, r.config.flatTests.len
-        runFlatSpec(r, test)
+    # addExitProc azure.finalize # PRTEMP
+    # doAssert false
+    let m = osproc.execProcesses(cmds, {poEchoCmd, poStdErrToStdOut, poUsePath, poParentStreams}, beforeRunEvent = progressStatus)
+    dbg m
+    quit m
+  else:
+    for i, test in testamentData0.flatTests:
+      dbg i, testamentData0.flatTests.len
+      runFlatSpec(r, test)
 
 let workArg = "--worker:"
 
@@ -632,7 +561,6 @@ proc workerProcess(arg: string) =
   dbg data
   let tests = data.file.readFile.parseJson.jsonTo(seq[TTest])
   var r = initResults()
-  r.config = initTestManager()
   for i in 0..<tests.len:
     if i mod data.numBatches == data.batch:
       let test = tests[i]
@@ -641,14 +569,13 @@ proc workerProcess(arg: string) =
   dbg "done" # TODO: check resutls
 
 proc targetHelper(r: var TResults, test: TTest) =
-  doAssert r.config != nil
   doAssert test.spec.isFlat
   let target = test.spec.targetFlat
   inc(r.total)
   if target notin gTargets: # PRTEMP?
     r.addResult(test, target, "", "", reDisabled)
     inc(r.skipped)
-  elif r.config.simulate:
+  elif testamentData0.simulate:
     inc count
     echo "testSpec count: ", count, " expected: ", test.spec
   else:
@@ -778,50 +705,44 @@ proc loadSkipFrom(name: string): seq[string] =
     if sline.len > 0 and not sline.startsWith('#'):
       result.add sline
 
+proc parseOnOff(val: string): bool =
+  case val:
+  of "on", "": true
+  of "off": false
+  else:
+    quit Usage
+
 proc main() =
   let args = commandLineParams()
   if args.len == 1 and args[0].startsWith(workArg):
     workerProcess(args[0])
     return
-
-  let config = initTestManager()
   var r = initResults()
-  r.config = config
-
   azure.init()
   backend.open()
-  # xxx move these inside `TestManager`
   var optPrintResults = false
   var optFailing = false
   var targetsStr = ""
   var isMainProcess = true
   var skipFrom = ""
 
-
   var p = initOptParser()
   p.next()
   while p.kind in {cmdLongOption, cmdShortOption}:
     case p.key.normalize
-    of "print": optPrintResults = true
-    of "verbose": optVerbose = true
-    of "failing": optFailing = true
+    of "print": testamentData0.optPrintResults = parseOnOff(p.val)
+    of "verbose": optVerbose = parseOnOff(p.val)
+    of "failing": testamentData0.optFailing = parseOnOff(p.val)
     of "pedantic": discard # deadcode refs https://github.com/nim-lang/Nim/issues/16731
     of "targets":
       targetsStr = p.val
       gTargets = parseTargets(targetsStr)
       targetsSet = true
     of "nim":
-      compilerPrefix = addFileExt(p.val.absolutePath, ExeExt)
+      testamentData0.compilerPrefix = addFileExt(p.val.absolutePath, ExeExt)
     of "directory":
       setCurrentDir(p.val)
-    of "colors":
-      case p.val:
-      of "on":
-        useColors = true
-      of "off":
-        useColors = false
-      else:
-        quit Usage
+    of "colors": testamentData0.useColors = parseOnOff(p.val)
     of "batch":
       testamentData0.batchArg = p.val
       if p.val != "_" and p.val.len > 0 and p.val[0] in {'0'..'9'}:
@@ -831,24 +752,9 @@ proc main() =
         testamentData0.testamentNumBatch = s[1].parseInt
         doAssert testamentData0.testamentNumBatch > 0
         doAssert testamentData0.testamentBatch >= 0 and testamentData0.testamentBatch < testamentData0.testamentNumBatch
-    of "simulate":
-      config.simulate = true
-    of "megatest":
-      case p.val:
-      of "on":
-        config.useMegatest = true
-      of "off":
-        config.useMegatest = false
-      else:
-        quit Usage
-    of "backendlogging":
-      case p.val:
-      of "on":
-        backendLogging = true
-      of "off":
-        backendLogging = false
-      else:
-        quit Usage
+    of "simulate": testamentData0.simulate = parseOnOff(p.val)
+    of "megatest": testamentData0.useMegatest = parseOnOff(p.val)
+    of "backendlogging": testamentData0.backendLogging = parseOnOff(p.val)
     of "skipfrom":
       skipFrom = p.val
     else:
@@ -862,13 +768,11 @@ proc main() =
 
   case action
   of "all":
-    #processCategory(r, Category"megatest", p.cmdLineRest, testsDir, runJoinableTests = false)
-
     var myself = quoteShell(getAppFilename())
     if targetsStr.len > 0:
       myself &= " " & quoteShell("--targets:" & targetsStr)
 
-    myself &= " " & quoteShell("--nim:" & compilerPrefix)
+    myself &= " " & quoteShell("--nim:" & testamentData0.compilerPrefix)
     if testamentData0.batchArg.len > 0:
       myself &= " --batch:" & testamentData0.batchArg
 
@@ -884,25 +788,14 @@ proc main() =
         cats.add cat
     if isNimRepoTests():
       cats.add AdditionalCategories
-    if config.useMegatest: cats.add "megatest"
+    if testamentData0.useMegatest: cats.add "megatest"
 
-    var cmds: seq[string]
     for cat in cats:
-      let runtype = if config.useMegatest: " pcat " else: " cat "
-      cmds.add(myself & runtype & quoteShell(cat) & rest)
-
-    proc progressStatus(idx: int) =
-      echo "progress[all]: $1/$2 starting: cat: $3" % [$idx, $cats.len, cats[idx]]
-
-    # if config.simulate:
-    if config.simulate or true: # PRTEMP
-      skips = loadSkipFrom(skipFrom)
-      for i, cati in cats:
-        progressStatus(i)
-        processCategory(r, Category(cati), p.cmdLineRest, testsDir, runJoinableTests = false)
-    else:
-      addExitProc azure.finalize
-      quit osproc.execProcesses(cmds, {poEchoCmd, poStdErrToStdOut, poUsePath, poParentStreams}, beforeRunEvent = progressStatus)
+      let runtype = if testamentData0.useMegatest: " pcat " else: " cat "
+    skips = loadSkipFrom(skipFrom)
+    for i, cati in cats:
+      processCategory(r, Category(cati), p.cmdLineRest, testsDir, runJoinableTests = false)
+      # addExitProc azure.finalize
   of "c", "cat", "category":
     skips = loadSkipFrom(skipFrom)
     var cat = Category(p.key)
@@ -920,7 +813,7 @@ proc main() =
     skips = loadSkipFrom(skipFrom)
     let pattern = p.key
     p.next
-    processPattern(r, pattern, p.cmdLineRest, config.simulate)
+    processPattern(r, pattern, p.cmdLineRest, testamentData0.simulate)
   of "r", "run":
     let (cat, path) = splitTestFile(p.key)
     processSingleTest(r, cat.Category, p.cmdLineRest, path, gTargets, targetsSet)
@@ -942,7 +835,7 @@ proc main() =
       r.skipped, " failed: ", failed
     quit(QuitFailure)
   if isMainProcess:
-    echo "Used ", compilerPrefix, " to run the tests. Use --nim to override."
+    echo "Used ", testamentData0.compilerPrefix, " to run the tests. Use --nim to override."
 
 if paramCount() == 0:
   quit Usage

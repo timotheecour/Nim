@@ -654,7 +654,7 @@ proc runJoinedTest(r: var TResults, cat: Category, testsDir: string, options: st
   sort(specs, cmp = cmp) # reproducible order
   echo "magatest joinable specs: target: $# options: $# count: $#: " % [$target, matrixFlat, $specs.len]
 
-  if r.config.simulate:
+  if testamentData0.simulate:
     var s = "runJoinedTest: $1 $2" % [$target, matrixFlat]
     for a in specs: s.add a.file & " "
     echo s
@@ -688,7 +688,7 @@ proc runJoinedTest(r: var TResults, cat: Category, testsDir: string, options: st
 
   args.add options.parseCmdLine
   args.add megatestFile
-  var (cmdLine, buf, exitCode) = execCmdEx2(command = compilerPrefix, args = args, input = "")
+  var (cmdLine, buf, exitCode) = execCmdEx2(command = testamentData0.compilerPrefix, args = args, input = "")
   if exitCode != 0:
     echo "$ " & cmdLine & "\n" & buf
     quit(failString & "$1 compilation failed" % megatestName)

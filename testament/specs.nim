@@ -9,16 +9,7 @@
 
 import sequtils, parseutils, strutils, os, streams, parsecfg,
   tables, hashes, sets
-
-type TestamentData* = ref object
-  # better to group globals under 1 object; could group the other ones here too
-  batchArg*: string
-  testamentNumBatch*: int
-  testamentBatch*: int
-
-let testamentData0* = TestamentData()
-
-var compilerPrefix* = findExe("nim")
+# import timn/dbgs
 
 let isTravis* = existsEnv("TRAVIS")
 let isAppVeyor* = existsEnv("APPVEYOR")
@@ -31,7 +22,7 @@ proc isNimRepoTests*(): bool =
   let file = "testament"/"testament.nim.cfg"
   result = file.fileExists
 
-var skips*: seq[string]
+var skips*: seq[string] # MOVE
 
 type
   TTestAction* = enum
@@ -114,7 +105,48 @@ type
                       # but don't rely on much precision
     inlineErrors*: seq[InlineError] # line information to error message
 
-# import timn/dbgs
+  Category* = distinct string
+  TResults* = object
+    total*, passed*, failedButAllowed*, skipped*: int
+      ## xxx rename passed to passedOrAllowedFailure
+    data*: string
+  TTest* = object
+    name*: string
+    cat*: Category
+    options*: string
+    args*: seq[string]
+    spec*: TSpec
+    startTime*: float
+    debugInfo*: string
+    nimcache*: string
+
+  TestamentData* = ref object
+    # analog to ConfigRef in nim compiler: holds global data
+    # better to group globals under 1 object; could group the other ones here too
+    batchArg*: string
+    testamentNumBatch*: int
+    testamentBatch*: int
+    compilerPrefix*: string
+    flatTests*: seq[TTest] # flat tests
+    useMegatest*: bool
+    simulate*: bool
+    useColors*: bool
+    optPrintResults*: bool
+    optFailing*: bool
+    backendLogging*: bool
+    isParallel*: bool
+
+var optVerbose*: bool # not in TestamentData to avoid gcsafe warning
+
+proc initTestamentData*(): TestamentData =
+  result = TestamentData()
+  result.compilerPrefix = findExe("nim")
+  result.useColors = true
+  result.backendLogging = true
+  result.isParallel = true
+
+let testamentData0* = initTestamentData()
+
 
 iterator flattentSepc*(a: TSpec): TSpec =
   doAssert not a.isFlat
@@ -138,7 +170,7 @@ iterator flattentSepc*(a: TSpec): TSpec =
 
 proc getCmd*(s: TSpec): string =
   if s.cmd.len == 0:
-    result = compilerPrefix & " $target --hints:on -d:testing --clearNimblePath --nimblePath:build/deps/pkgs $options $file"
+    result = testamentData0.compilerPrefix & " $target --hints:on -d:testing --clearNimblePath --nimblePath:build/deps/pkgs $options $file"
   else:
     result = s.cmd
 
@@ -400,7 +432,7 @@ proc parseSpec*(filename: string): TSpec =
           result.parseErrors.addLine "cannot interpret as a bool: ", e.value
       of "cmd":
         if e.value.startsWith("nim "):
-          result.cmd = compilerPrefix & e.value[3..^1]
+          result.cmd = testamentData0.compilerPrefix & e.value[3..^1]
         else:
           result.cmd = e.value
       of "ccodecheck":
