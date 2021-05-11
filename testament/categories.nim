@@ -116,7 +116,8 @@ proc runBasicDLLTest(c, r: var TResults, cat: Category, options: string) =
 
 proc dllTests(r: var TResults, cat: Category, options: string) =
   # dummy compile result:
-  var c = initResults()
+  # var c = initResults()
+  template c: untyped = r # D20210510T180314
 
   runBasicDLLTest c, r, cat, options
   runBasicDLLTest c, r, cat, options & " -d:release"
@@ -184,7 +185,8 @@ proc longGCTests(r: var TResults, cat: Category, options: string) =
   else:
     let cOptions = "-ldl"
 
-  var c = initResults()
+  # var c = initResults()
+  template c: untyped = r # D20210510T180314
   # According to ioTests, this should compile the file
   testSpec c, makeTest("tests/realtimeGC/shared", options, cat)
   #        ^- why is this not appended to r? Should this be discarded?
@@ -206,7 +208,8 @@ proc threadTests(r: var TResults, cat: Category, options: string) =
 proc ioTests(r: var TResults, cat: Category, options: string) =
   # We need readall_echo to be compiled for this test to run.
   # dummy compile result:
-  var c = initResults()
+  # var c = initResults()
+  template c: untyped = r # PRTEMP D20210510T180314:here
   testSpec c, makeTest("tests/system/helpers/readall_echo", options, cat)
   testSpec r, makeTest("tests/system/tio", options, cat)
 
@@ -651,7 +654,7 @@ proc runJoinedTest(r: var TResults, cat: Category, testsDir: string, options: st
   sort(specs, cmp = cmp) # reproducible order
   echo "magatest joinable specs: target: $# options: $# count: $#: " % [$target, matrixFlat, $specs.len]
 
-  if simulate:
+  if r.config.simulate:
     var s = "runJoinedTest: $1 $2" % [$target, matrixFlat]
     for a in specs: s.add a.file & " "
     echo s

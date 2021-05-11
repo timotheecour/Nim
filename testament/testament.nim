@@ -26,7 +26,6 @@ proc trimUnitSep(x: var string) =
 
 var useColors = true
 var backendLogging = true
-var simulate = false
 var optVerbose = false
 
 proc verboseCmd(cmd: string) =
@@ -78,6 +77,7 @@ type
   TestManager* = ref object
     flatTests*: seq[TTest] # flat tests
     useMegatest: bool
+    simulate: bool
   TTest = object
     name: string
     cat: Category
@@ -547,21 +547,108 @@ proc runFlatSpec(r: var TResults, test: TTest) =
     let given = callNimCompilerImpl()
     cmpMsgs(r, expected, given, test, target)
 
+import std/jsonutils
+
+when false:
+  proc testRunnerThread(work: string) =
+    {.gcsafe.}:
+      dbg "D20210510T190000"
+      dbg work.len
+      let tests = work.parseJson.jsonTo(seq[TTest])
+      dbg tests.len
+
+      var r = initResults()
+      r.config = initTestManager()
+      for i, test in tests:
+        dbg i, tests.len
+        runFlatSpec(r, test)
+
+type WorkerData = object
+  numBatches: int
+  batch: int
+  file: string
+
 proc runAccumulatedTests(r: var TResults) =
-  # dbg "D20210510T172419"
-  # dbg r.config.flatTests.len
-  for i, test in r.config.flatTests:
-    dbg i, r.config.flatTests.len
-    runFlatSpec(r, test)
+  let n = countProcessors()
+  var cmds: seq[string]
+  cmds.setLen n
+  let file = "/tmp/D20210510T192652.json"
+  writeFile(file, $r.config.flatTests.toJson)
+  for i in 0..<n:
+    # TODO: could also use stdin for communication, or even http
+    let data = WorkerData(batch: i, numBatches: n, file: file)
+    let cmd = "$1 --worker:$2" % [getAppFilename().quoteShell, ($data.toJson).quoteShell]
+    dbg cmd
+    cmds.add cmd
+
+  proc progressStatus(idx: int) =
+    echo "progress2[all]: $1/$2" % [$idx, $n]
+
+  # addExitProc azure.finalize # PRTEMP
+  # doAssert false
+  let m = osproc.execProcesses(cmds, {poEchoCmd, poStdErrToStdOut, poUsePath, poParentStreams}, beforeRunEvent = progressStatus)
+  dbg m
+  quit m
+
+  when false:
+    let isMultithread = true
+    if isMultithread:
+      const nMax = 20 # PRTEMP
+      let n = min(countProcessors(), nMax) # TODO: countProcessors() * 2?
+      echo n
+      var workers: array[nMax, Thread[string]]
+      var flatTests: seq[seq[TTest]]
+      var works: seq[string]
+      flatTests.setLen n
+      for i in 0..<n:
+        for j in 0..<r.config.flatTests.len:
+          if j mod n == i:
+            flatTests[i].add r.config.flatTests[j]
+        works.add $flatTests[i].toJson
+      for i in 0..<n:
+        dbg works[i].len
+        doAssert false
+        # let work = $flatTests[i].toJson
+        # createThread(workers[i], testRunnerThread, flatTests[i])
+        # dbg work.len
+        # createThread(workers[i], testRunnerThread, work)
+        createThread(workers[i], testRunnerThread, works[i])
+        dbg i
+        # testRunnerThread(work)
+      dbg "D20210510T190303.1"
+      joinThreads(workers)
+      dbg "D20210510T190303.2"
+    else:
+      for i, test in r.config.flatTests:
+        dbg i, r.config.flatTests.len
+        runFlatSpec(r, test)
+
+let workArg = "--worker:"
+
+proc workerProcess(arg: string) =
+  let val = arg[workArg.len..<arg.len]
+  dbg val
+  let data = val.parseJson.jsonTo(WorkerData)
+  dbg data
+  let tests = data.file.readFile.parseJson.jsonTo(seq[TTest])
+  var r = initResults()
+  r.config = initTestManager()
+  for i in 0..<tests.len:
+    if i mod data.numBatches == data.batch:
+      let test = tests[i]
+      dbg i, tests.len, test.name
+      runFlatSpec(r, test)
+  dbg "done" # TODO: check resutls
 
 proc targetHelper(r: var TResults, test: TTest) =
+  doAssert r.config != nil
   doAssert test.spec.isFlat
   let target = test.spec.targetFlat
   inc(r.total)
   if target notin gTargets: # PRTEMP?
     r.addResult(test, target, "", "", reDisabled)
     inc(r.skipped)
-  elif simulate:
+  elif r.config.simulate:
     inc count
     echo "testSpec count: ", count, " expected: ", test.spec
   else:
@@ -692,6 +779,11 @@ proc loadSkipFrom(name: string): seq[string] =
       result.add sline
 
 proc main() =
+  let args = commandLineParams()
+  if args.len == 1 and args[0].startsWith(workArg):
+    workerProcess(args[0])
+    return
+
   let config = initTestManager()
   var r = initResults()
   r.config = config
@@ -704,6 +796,7 @@ proc main() =
   var targetsStr = ""
   var isMainProcess = true
   var skipFrom = ""
+
 
   var p = initOptParser()
   p.next()
@@ -739,7 +832,7 @@ proc main() =
         doAssert testamentData0.testamentNumBatch > 0
         doAssert testamentData0.testamentBatch >= 0 and testamentData0.testamentBatch < testamentData0.testamentNumBatch
     of "simulate":
-      simulate = true
+      config.simulate = true
     of "megatest":
       case p.val:
       of "on":
@@ -763,6 +856,7 @@ proc main() =
     p.next()
   if p.kind != cmdArgument:
     quit Usage
+
   var action = p.key.normalize
   p.next()
 
@@ -800,7 +894,8 @@ proc main() =
     proc progressStatus(idx: int) =
       echo "progress[all]: $1/$2 starting: cat: $3" % [$idx, $cats.len, cats[idx]]
 
-    if simulate:
+    # if config.simulate:
+    if config.simulate or true: # PRTEMP
       skips = loadSkipFrom(skipFrom)
       for i, cati in cats:
         progressStatus(i)
@@ -825,7 +920,7 @@ proc main() =
     skips = loadSkipFrom(skipFrom)
     let pattern = p.key
     p.next
-    processPattern(r, pattern, p.cmdLineRest, simulate)
+    processPattern(r, pattern, p.cmdLineRest, config.simulate)
   of "r", "run":
     let (cat, path) = splitTestFile(p.key)
     processSingleTest(r, cat.Category, p.cmdLineRest, path, gTargets, targetsSet)
