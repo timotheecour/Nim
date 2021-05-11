@@ -10,7 +10,7 @@
 ## This program verifies Nim against the testcases.
 
 import
-  strutils, pegs, os, osproc, streams, json, std/exitprocs,
+  strutils, pegs, os, osproc, streams, json,
   backend, parseopt, specs, htmlgen, browsers, terminal,
   algorithm, times, md5, azure, intsets, macros
 from std/sugar import dup
@@ -520,32 +520,24 @@ proc runFlatSpec(r: var TResults, test: TTest) =
 
 import std/jsonutils
 
-type WorkerData = object
-  numBatches: int
-  batch: int
-  file: string
-
 proc runAccumulatedTests(r: var TResults) =
   if testamentData0.isParallel:
     let n = countProcessors()
     var cmds: seq[string]
     cmds.setLen n
     let file = "/tmp/D20210510T192652.json"
-    writeFile(file, $testamentData0.flatTests.toJson)
+    writeFile(file, $testamentData0.toJson)
     for i in 0..<n:
       # TODO: could also use stdin for communication, or even http
       let data = WorkerData(batch: i, numBatches: n, file: file)
       let cmd = "$1 --worker:$2" % [getAppFilename().quoteShell, ($data.toJson).quoteShell]
       dbg cmd
       cmds.add cmd
-
     proc progressStatus(idx: int) =
       echo "progress2[all]: $1/$2" % [$idx, $n]
-
-    # addExitProc azure.finalize # PRTEMP
-    # doAssert false
     let m = osproc.execProcesses(cmds, {poEchoCmd, poStdErrToStdOut, poUsePath, poParentStreams}, beforeRunEvent = progressStatus)
     dbg m
+    azure.finalize()
     quit m
   else:
     for i, test in testamentData0.flatTests:
@@ -558,13 +550,17 @@ proc workerProcess(arg: string) =
   let val = arg[workArg.len..<arg.len]
   dbg val
   let data = val.parseJson.jsonTo(WorkerData)
-  dbg data
-  let tests = data.file.readFile.parseJson.jsonTo(seq[TTest])
+  testamentData0 = data.file.readFile.parseJson.jsonTo(TestamentData)
+  dbg testamentData0.compilerPrefix
+  # dbg testamentData0
+  # let tests = data.file.readFile.parseJson.jsonTo(TestamentData)
+  # testamentData0 = initTestamentData()
+  # dbg data
+  # let tests = data.file.readFile.parseJson.jsonTo(seq[TTest])
   var r = initResults()
-  for i in 0..<tests.len:
+  for i, test in testamentData0.flatTests:
     if i mod data.numBatches == data.batch:
-      let test = tests[i]
-      dbg i, tests.len, test.name
+      dbg i, testamentData0.flatTests.len, test.name
       runFlatSpec(r, test)
   dbg "done" # TODO: check resutls
 
@@ -709,8 +705,7 @@ proc parseOnOff(val: string): bool =
   case val:
   of "on", "": true
   of "off": false
-  else:
-    quit Usage
+  else: quit Usage
 
 proc main() =
   let args = commandLineParams()
@@ -718,6 +713,7 @@ proc main() =
     workerProcess(args[0])
     return
   var r = initResults()
+  testamentData0 = initTestamentData()
   azure.init()
   backend.open()
   var optPrintResults = false
@@ -730,9 +726,9 @@ proc main() =
   p.next()
   while p.kind in {cmdLongOption, cmdShortOption}:
     case p.key.normalize
-    of "print": testamentData0.optPrintResults = parseOnOff(p.val)
+    of "print": optPrintResults = parseOnOff(p.val)
     of "verbose": optVerbose = parseOnOff(p.val)
-    of "failing": testamentData0.optFailing = parseOnOff(p.val)
+    of "failing": optFailing = parseOnOff(p.val)
     of "pedantic": discard # deadcode refs https://github.com/nim-lang/Nim/issues/16731
     of "targets":
       targetsStr = p.val
@@ -771,34 +767,18 @@ proc main() =
 
   case action
   of "all":
-    var myself = quoteShell(getAppFilename())
-    if targetsStr.len > 0:
-      myself &= " " & quoteShell("--targets:" & targetsStr)
-
-    myself &= " " & quoteShell("--nim:" & testamentData0.compilerPrefix)
-    if testamentData0.batchArg.len > 0:
-      myself &= " --batch:" & testamentData0.batchArg
-
-    if skipFrom.len > 0:
-      myself &= " " & quoteShell("--skipFrom:" & skipFrom)
-
     var cats: seq[string]
-    let rest = if p.cmdLineRest.len > 0: " " & p.cmdLineRest else: ""
+    # cmdLineRest PRTMEP
     for kind, dir in walkDir(testsDir):
       assert testsDir.startsWith(testsDir)
       let cat = dir[testsDir.len .. ^1]
       if kind == pcDir and cat notin ["testdata", "nimcache"]:
         cats.add cat
-    if isNimRepoTests():
-      cats.add AdditionalCategories
+    if isNimRepoTests(): cats.add AdditionalCategories
     if testamentData0.useMegatest: cats.add "megatest"
-
-    for cat in cats:
-      let runtype = if testamentData0.useMegatest: " pcat " else: " cat "
     getSkip()
     for i, cati in cats:
       processCategory(r, Category(cati), p.cmdLineRest, testsDir, runJoinableTests = false)
-      # addExitProc azure.finalize
   of "c", "cat", "category":
     getSkip()
     var cat = Category(p.key)

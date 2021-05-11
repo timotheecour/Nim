@@ -129,13 +129,14 @@ type
     useMegatest*: bool
     simulate*: bool
     useColors*: bool
-    optPrintResults*: bool
-    optFailing*: bool
     backendLogging*: bool
     isParallel*: bool
     skips*: seq[string]
 
-var optVerbose*: bool # not in TestamentData to avoid gcsafe warning
+  WorkerData* = object
+    numBatches*: int
+    batch*: int
+    file*: string
 
 proc initTestamentData*(): TestamentData =
   result = TestamentData()
@@ -144,7 +145,9 @@ proc initTestamentData*(): TestamentData =
   result.backendLogging = true
   result.isParallel = true
 
-let testamentData0* = initTestamentData()
+var optVerbose*: bool # not in TestamentData to avoid gcsafe warning
+# let testamentData0* = initTestamentData()
+var testamentData0*: TestamentData
 
 iterator flattentSepc*(a: TSpec): TSpec =
   doAssert not a.isFlat
