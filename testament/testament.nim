@@ -18,7 +18,7 @@ import compiler/nodejs
 import lib/stdtest/testutils
 from lib/stdtest/specialpaths import splitTestFile
 from std/private/gitutils import diffStrings
-# import timn/dbgs
+import timn/dbgs
 proc trimUnitSep(x: var string) =
   let L = x.len
   if L > 0 and x[^1] == '\31':
@@ -76,7 +76,7 @@ type
     data: string
     config*: TestManager
   TestManager* = ref object
-    flatSpecs*: seq[TSpec] # flat tests
+    flatTests*: seq[TTest] # flat tests
     useMegatest: bool
   TTest = object
     name: string
@@ -86,6 +86,7 @@ type
     spec: TSpec
     startTime: float
     debugInfo: string
+    nimcache: string
 
 proc initResults: TResults =
   result.total = 0
@@ -469,8 +470,17 @@ proc equalModuloLastNewline(a, b: string): bool =
   # allow lazy output spec that omits last newline, but really those should be fixed instead
   result = a == b or b.endsWith("\n") and a == b[0 ..< ^1]
 
-proc testSpecHelper(r: var TResults, test: var TTest, expected: TSpec,
-                    target: TTarget, nimcache: string, extraOptions = "") =
+proc testSpecHelper(r: var TResults, test: TTest) =
+  r.config.flatTests.add test
+
+proc runFlatSpec(r: var TResults, test: TTest) =
+  var test = test
+  var expected = test.spec
+  doAssert expected.isFlat
+  let extraOptions = expected.matrixFlat
+  let target = expected.targetFlat
+  let nimcache = test.nimcache
+  doAssert nimcache.len > 0
   test.startTime = epochTime()
   template callNimCompilerImpl(): untyped = 
     # xxx this used to also pass: `--stdout --hint:Path:off`, but was done inconsistently
@@ -537,21 +547,27 @@ proc testSpecHelper(r: var TResults, test: var TTest, expected: TSpec,
     let given = callNimCompilerImpl()
     cmpMsgs(r, expected, given, test, target)
 
-proc targetHelper(r: var TResults, test: TTest, expected: TSpec) =
-  doAssert expected.isFlat
+proc runAccumulatedTests(r: var TResults) =
+  # dbg "D20210510T172419"
+  # dbg r.config.flatTests.len
+  for i, test in r.config.flatTests:
+    dbg i, r.config.flatTests.len
+    runFlatSpec(r, test)
+
+proc targetHelper(r: var TResults, test: TTest) =
   doAssert test.spec.isFlat
-  let target = expected.targetFlat
+  let target = test.spec.targetFlat
   inc(r.total)
   if target notin gTargets: # PRTEMP?
     r.addResult(test, target, "", "", reDisabled)
     inc(r.skipped)
   elif simulate:
     inc count
-    echo "testSpec count: ", count, " expected: ", expected
+    echo "testSpec count: ", count, " expected: ", test.spec
   else:
-    let nimcache = nimcacheDir(test.name, test.options, target)
-    var testClone = test
-    testSpecHelper(r, testClone, expected, target, nimcache, expected.matrixFlat)
+    var test = test
+    test.nimcache = nimcacheDir(test.name, test.options, target)
+    testSpecHelper(r, test)
 
 proc testSpec(r: var TResults, test: TTest, targets: set[TTarget] = {}) =
   var expected = test.spec
@@ -564,22 +580,23 @@ proc testSpec(r: var TResults, test: TTest, targets: set[TTarget] = {}) =
   if expected.targets == {}:
     expected.targets = {getTestSpecTarget()}
   if expected.isFlat:
-    if isTestEnabled(r, test):
-      targetHelper(r, test, expected)
+    var test = test
+    test.spec = expected
+    if isTestEnabled(r, test): targetHelper(r, test)
   else:
-    for spec2 in flattentSepc(expected):
+    for spec in flattentSepc(expected):
       var test = test
-      test.spec = spec2
-      if isTestEnabled(r, test):
-        targetHelper(r, test, spec2)
+      test.spec = spec
+      if isTestEnabled(r, test): targetHelper(r, test)
 
 proc testSpecWithNimcache(r: var TResults, test: TTest; nimcache: string) {.used.} =
-  for spec2 in flattentSepc(test.spec):
+  for spec in flattentSepc(test.spec):
     var test = test
-    test.spec = spec2
+    test.spec = spec
     if isTestEnabled(r, test):
       inc(r.total)
-      testSpecHelper(r, test, spec2, spec2.targetFlat, nimcache, spec2.matrixFlat) # PRTEMP: bugfix: honors matrix
+      test.nimcache = nimcache
+      testSpecHelper(r, test) # PRTEMP: bugfix: honors matrix
 
 proc testC(r: var TResults, test: TTest, action: TTestAction) =
   # runs C code. Doesn't support any specs, just goes by exit code.
@@ -816,6 +833,8 @@ proc main() =
     generateHtml(resultsFile, optFailing)
   else:
     quit Usage
+
+  runAccumulatedTests(r)
 
   if optPrintResults:
     if action == "html": openDefaultBrowser(resultsFile)
