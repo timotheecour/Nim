@@ -766,6 +766,9 @@ proc main() =
   var action = p.key.normalize
   p.next()
 
+  template getSkip =
+    testamentData0.skips = loadSkipFrom(skipFrom)
+
   case action
   of "all":
     var myself = quoteShell(getAppFilename())
@@ -792,16 +795,16 @@ proc main() =
 
     for cat in cats:
       let runtype = if testamentData0.useMegatest: " pcat " else: " cat "
-    skips = loadSkipFrom(skipFrom)
+    getSkip()
     for i, cati in cats:
       processCategory(r, Category(cati), p.cmdLineRest, testsDir, runJoinableTests = false)
       # addExitProc azure.finalize
   of "c", "cat", "category":
-    skips = loadSkipFrom(skipFrom)
+    getSkip()
     var cat = Category(p.key)
     processCategory(r, cat, p.cmdLineRest, testsDir, runJoinableTests = true)
   of "pcat":
-    skips = loadSkipFrom(skipFrom)
+    getSkip()
     # 'pcat' is used for running a category in parallel. Currently the only
     # difference is that we don't want to run joinable tests here as they
     # are covered by the 'megatest' category.
@@ -810,7 +813,7 @@ proc main() =
     p.next
     processCategory(r, cat, p.cmdLineRest, testsDir, runJoinableTests = false)
   of "p", "pat", "pattern":
-    skips = loadSkipFrom(skipFrom)
+    getSkip()
     let pattern = p.key
     p.next
     processPattern(r, pattern, p.cmdLineRest, testamentData0.simulate)

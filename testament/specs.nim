@@ -22,8 +22,6 @@ proc isNimRepoTests*(): bool =
   let file = "testament"/"testament.nim.cfg"
   result = file.fileExists
 
-var skips*: seq[string] # MOVE
-
 type
   TTestAction* = enum
     actionRun = "run"
@@ -135,6 +133,7 @@ type
     optFailing*: bool
     backendLogging*: bool
     isParallel*: bool
+    skips*: seq[string]
 
 var optVerbose*: bool # not in TestamentData to avoid gcsafe warning
 
@@ -146,7 +145,6 @@ proc initTestamentData*(): TestamentData =
   result.isParallel = true
 
 let testamentData0* = initTestamentData()
-
 
 iterator flattentSepc*(a: TSpec): TSpec =
   doAssert not a.isFlat
@@ -465,7 +463,7 @@ proc parseSpec*(filename: string): TSpec =
       break
   close(p)
 
-  if skips.anyIt(it in result.file):
+  if testamentData0.skips.anyIt(it in result.file):
     result.err = reDisabled
 
   result.inCurrentBatch = isCurrentBatch(testamentData0, filename) or result.unbatchable
