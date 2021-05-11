@@ -15,7 +15,7 @@
 import important_packages
 import std/strformat
 from std/sequtils import filterIt
-
+# import timn/dbgs
 const
   specialCategories = [
     "assert",
@@ -26,7 +26,6 @@ const
     "flags",
     "gc",
     "io",
-    "js",
     "ic",
     "lib",
     "longgc",
@@ -43,6 +42,9 @@ const
     "dir with space",
     "destructor"
   ]
+  # specialCategories2 = [ # PRTEMP
+  #   "js",
+  # ]
 
 proc isTestFile*(file: string): bool =
   let (_, name, ext) = splitFile(file)
@@ -114,7 +116,8 @@ proc runBasicDLLTest(c, r: var TResults, cat: Category, options: string) =
 
 proc dllTests(r: var TResults, cat: Category, options: string) =
   # dummy compile result:
-  var c = initResults()
+  # var c = initResults()
+  template c: untyped = r # D20210510T180314
 
   runBasicDLLTest c, r, cat, options
   runBasicDLLTest c, r, cat, options & " -d:release"
@@ -182,7 +185,8 @@ proc longGCTests(r: var TResults, cat: Category, options: string) =
   else:
     let cOptions = "-ldl"
 
-  var c = initResults()
+  # var c = initResults()
+  template c: untyped = r # D20210510T180314
   # According to ioTests, this should compile the file
   testSpec c, makeTest("tests/realtimeGC/shared", options, cat)
   #        ^- why is this not appended to r? Should this be discarded?
@@ -204,7 +208,8 @@ proc threadTests(r: var TResults, cat: Category, options: string) =
 proc ioTests(r: var TResults, cat: Category, options: string) =
   # We need readall_echo to be compiled for this test to run.
   # dummy compile result:
-  var c = initResults()
+  # var c = initResults()
+  template c: untyped = r # PRTEMP D20210510T180314:here
   testSpec c, makeTest("tests/system/helpers/readall_echo", options, cat)
   testSpec r, makeTest("tests/system/tio", options, cat)
 
@@ -218,7 +223,7 @@ proc asyncTests(r: var TResults, cat: Category, options: string) =
 # ------------------------- debugger tests ------------------------------------
 
 proc debuggerTests(r: var TResults, cat: Category, options: string) =
-  if fileExists("tools/nimgrep.nim"):
+  if fileExists("tools/nimgrep.nim"): # PRTEMP: isNimRepoTests
     var t = makeTest("tools/nimgrep", options & " --debugger:on", cat)
     t.spec.action = actionCompile
     # force target to C because of MacOS 10.15 SDK headers bug
@@ -230,11 +235,14 @@ proc debuggerTests(r: var TResults, cat: Category, options: string) =
 
 proc jsTests(r: var TResults, cat: Category, options: string) =
   template test(filename: untyped) =
-    testSpec r, makeTest(filename, options, cat), {targetJS}
-    testSpec r, makeTest(filename, options & " -d:release", cat), {targetJS}
+    var test = makeTest(filename, options, cat)
+    testSpec r, test, {targetJS}
+    test.spec.matrix = test.spec.matrix & @["-d:release"]
+    testSpec r, test, {targetJS}
 
   for t in os.walkFiles("tests/js/t*.nim"):
     test(t)
+  # xxx these should use `targets: "c js"`
   for testfile in ["exception/texceptions", "exception/texcpt1",
                    "exception/texcsub", "exception/tfinally",
                    "exception/tfinally2", "exception/tfinally3",
@@ -547,7 +555,11 @@ proc icTests(r: var TResults; testsDir: string, cat: Category, options: string;
 # ----------------------------------------------------------------------------
 
 const AdditionalCategories = ["debugger", "examples", "lib", "ic", "navigator"]
-const MegaTestCat = "megatest"
+let megatestCats = [
+  (targetC, ""),
+  (targetJS, ""),
+  (targetJS, "-d:release"),
+]
 
 proc `&.?`(a, b: string): string =
   # candidate for the stdlib?
@@ -561,9 +573,10 @@ proc processSingleTest(r: var TResults, cat: Category, options, test: string, ta
   doAssert fileExists(test), test & " test does not exist"
   testSpec r, makeTest(test, options, cat), targets
 
-proc isJoinableSpec(spec: TSpec): bool =
+proc isJoinableSpec(spec: TSpec, target: TTarget, matrixFlat: string): bool =
   # xxx simplify implementation using a whitelist of fields that are allowed to be
   # set to non-default values (use `fieldPairs`), to avoid issues like bug #16576.
+  doAssert spec.isFlat
   result = not spec.sortoutput and
     spec.action == actionRun and
     not fileExists(spec.file.changeFileExt("cfg")) and
@@ -579,19 +592,39 @@ proc isJoinableSpec(spec: TSpec): bool =
     spec.nimoutFull == false and
       # so that tests can have `nimoutFull: true` with `nimout.len == 0` with
       # the meaning that they expect empty output.
-    spec.matrix.len == 0 and
+    spec.matrixFlat == matrixFlat and
     spec.outputCheck != ocSubstr and
     spec.ccodeCheck.len == 0 and
-    (spec.targets == {} or spec.targets == {targetC})
+    spec.targetFlat == target
   if result:
     if spec.file.readFile.contains "when isMainModule":
       result = false
+
+proc isJoinableSpec(spec: TSpec): bool =
+  for (t, m) in megatestCats:
+    if isJoinableSpec(spec, t, m): return true
+  result = false
+
+proc isTestEnabled(r: var TResults, test: TTest): bool =
+  doAssert test.spec.isFlat
+  var test = test
+  if isNimRepoTests() and test.cat.string in specialCategories:
+    test.spec.unjoinable = true
+  result = true
+  if test.spec.err in {reDisabled}: result = false
+  elif isJoinableSpec(test.spec):
+    test.spec.err = reJoined
+    result = false
+  if not result:
+    r.addResult(test, test.spec.targetFlat, "", "", test.spec.err)
+    inc(r.skipped)
+    inc(r.total)
 
 proc quoted(a: string): string =
   # todo: consider moving to system.nim
   result.addQuoted(a)
 
-proc runJoinedTest(r: var TResults, cat: Category, testsDir: string, options: string) =
+proc runJoinedTest(r: var TResults, cat: Category, testsDir: string, options: string, target: TTarget, matrixFlat: string) =
   ## returns a list of tests that have problems
   #[
   xxx create a reusable megatest API after abstracting out testament specific code,
@@ -613,54 +646,65 @@ proc runJoinedTest(r: var TResults, cat: Category, testsDir: string, options: st
             # specs; this will be handled elsewhere
             echo "parseSpec failed for: '$1', assuming this will be handled outside of megatest" % file
             continue
-          if isJoinableSpec(spec):
-            specs.add spec
+          for spec2 in flattentSepc(spec):
+            if isJoinableSpec(spec2, target, matrixFlat):
+              specs.add spec2
 
   proc cmp(a: TSpec, b: TSpec): auto = cmp(a.file, b.file)
   sort(specs, cmp = cmp) # reproducible order
-  echo "joinable specs: ", specs.len
+  echo "magatest joinable specs: target: $# options: $# count: $#: " % [$target, matrixFlat, $specs.len]
 
-  if simulate:
-    var s = "runJoinedTest: "
+  if testamentData0.simulate:
+    var s = "runJoinedTest: $1 $2" % [$target, matrixFlat]
     for a in specs: s.add a.file & " "
     echo s
     return
 
+  let megatestName = "megatest_" & $target
+  let buildDir = if isNimRepoTests(): "build" else: "." # FACTOR
+  let megatestFile = testsDir / (megatestName & ".nim") # so it uses testsDir / "config.nims"
+  let outputExceptedFile = buildDir / megatestName & "_expected.txt"
+  let outputGottenFile = buildDir / megatestName & "_gotten.txt"
+
   var megatest: string
-  # xxx (minor) put outputExceptedFile, outputGottenFile, megatestFile under here or `buildDir`
-  var outDir = nimcacheDir(testsDir / "megatest", "", targetC)
+  var outDir = nimcacheDir(testsDir / megatestName, "", target)
   template toMarker(file, i): string =
     "megatest:processing: [$1] $2" % [$i, file]
   for i, runSpec in specs:
     let file = runSpec.file
-    let file2 = outDir / ("megatest_a_$1.nim" % $i)
+    let file2 = outDir / ("$1_a_$2.nim" % [megatestName, $i])
     # `include` didn't work with `trecmod2.nim`, so using `import`
     let code = "echo $1\nstatic: echo \"CT:\", $1\n" % [toMarker(file, i).quoted]
     createDir(file2.parentDir)
     writeFile(file2, code)
     megatest.add "import $1\nimport $2 as megatest_b_$3\n" % [file2.quoted, file.quoted, $i]
 
-  let megatestFile = testsDir / "megatest.nim" # so it uses testsDir / "config.nims"
   writeFile(megatestFile, megatest)
 
   let root = getCurrentDir()
+  let optionsExtra = defaultOptions(target)
+  var args = @[$target, "--nimCache:" & outDir, "-d:testing", "-d:nimMegatest", "--listCmd", "--path:" & root]
+  if optionsExtra.len > 0: args.add optionsExtra.split # PRTEMP D20210509T235553
 
-  var args = @["c", "--nimCache:" & outDir, "-d:testing", "-d:nimMegatest", "--listCmd",
-              "--path:" & root]
   args.add options.parseCmdLine
   args.add megatestFile
-  var (cmdLine, buf, exitCode) = execCmdEx2(command = compilerPrefix, args = args, input = "")
+  var (cmdLine, buf, exitCode) = execCmdEx2(command = testamentData0.compilerPrefix, args = args, input = "")
   if exitCode != 0:
     echo "$ " & cmdLine & "\n" & buf
-    quit(failString & "megatest compilation failed")
+    quit(failString & "$1 compilation failed" % megatestName)
 
-  (buf, exitCode) = execCmdEx(megatestFile.changeFileExt(ExeExt).dup normalizeExe)
+  case target
+  of targetC:
+    (buf, exitCode) = execCmdEx(megatestFile.changeFileExt(ExeExt).dup normalizeExe)
+  of targetJs:
+    let output = megatestFile.changeFileExt("js")
+    let cmd2 = "$1 --unhandled-rejections=strict $2" % [findNodeJs(), output.quoteShell]
+    (buf, exitCode) = execCmdEx(cmd2)
+  else: doAssert false
   if exitCode != 0:
     echo buf
-    quit(failString & "megatest execution failed")
+    quit(failString & "$1 execution failed" % megatestName)
 
-  const outputExceptedFile = "outputExpected.txt"
-  const outputGottenFile = "outputGotten.txt"
   writeFile(outputGottenFile, buf)
   var outputExpected = ""
   for i, runSpec in specs:
@@ -673,15 +717,13 @@ proc runJoinedTest(r: var TResults, cat: Category, testsDir: string, options: st
   if buf != outputExpected:
     writeFile(outputExceptedFile, outputExpected)
     echo diffFiles(outputGottenFile, outputExceptedFile).output
-    echo failString & "megatest output different, see $1 vs $2" % [outputGottenFile, outputExceptedFile]
-    # outputGottenFile, outputExceptedFile not removed on purpose for debugging.
+    echo failString & "$# output different, see $# vs $#" % [megatestName, outputGottenFile, outputExceptedFile]
     quit 1
   else:
-    echo "megatest output OK"
+    echo "$1 output OK" % megatestName
 
 
 # ---------------------------------------------------------------------------
-
 proc processCategory(r: var TResults, cat: Category,
                      options, testsDir: string,
                      runJoinableTests: bool) =
@@ -691,12 +733,7 @@ proc processCategory(r: var TResults, cat: Category,
     handled = true
     case cat2
     of "js":
-      # only run the JS tests on Windows or Linux because Travis is bad
-      # and other OSes like Haiku might lack nodejs:
-      if not defined(linux) and isTravis:
-        discard
-      else:
-        jsTests(r, cat, options)
+      jsTests(r, cat, options)
     of "dll":
       dllTests(r, cat, options)
     of "flags":
@@ -739,7 +776,9 @@ proc processCategory(r: var TResults, cat: Category,
   if not handled:
     case cat2
     of "megatest":
-      runJoinedTest(r, cat, testsDir, options)
+      for (t, m) in megatestCats:
+      # for (t, m) in megatestCats[^1..^1]: # PRTEMP
+        runJoinedTest(r, cat, testsDir, options, t, m)
     else:
       var testsRun = 0
       var files: seq[string]
@@ -747,13 +786,14 @@ proc processCategory(r: var TResults, cat: Category,
         if isTestFile(file): files.add file
       files.sort # give reproducible order
       for i, name in files:
-        var test = makeTest(name, options, cat)
-        if runJoinableTests or not isJoinableSpec(test.spec) or cat.string in specialCategories:
-          discard "run the test"
-        else:
-          test.spec.err = reJoined
-        testSpec r, test
-        inc testsRun
+        var test = makeTest(name, options, cat) # we could factor with the code already doing this in `runJoinedTest`
+        if runJoinableTests:
+          test.spec.unjoinable = true
+        for spec2 in flattentSepc(test.spec):
+          var test = test
+          test.spec = spec2
+          testSpec r, test
+          inc testsRun
       if testsRun == 0:
         const whiteListedDirs = ["deps", "htmldocs", "pkgs"]
           # `pkgs` because bug #16556 creates `pkgs` dirs and this can affect some users

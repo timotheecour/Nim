@@ -10,7 +10,7 @@
 ## This program verifies Nim against the testcases.
 
 import
-  strutils, pegs, os, osproc, streams, json, std/exitprocs,
+  strutils, pegs, os, osproc, streams, json,
   backend, parseopt, specs, htmlgen, browsers, terminal,
   algorithm, times, md5, azure, intsets, macros
 from std/sugar import dup
@@ -18,16 +18,12 @@ import compiler/nodejs
 import lib/stdtest/testutils
 from lib/stdtest/specialpaths import splitTestFile
 from std/private/gitutils import diffStrings
+import timn/dbgs
 
 proc trimUnitSep(x: var string) =
   let L = x.len
   if L > 0 and x[^1] == '\31':
     setLen x, L-1
-
-var useColors = true
-var backendLogging = true
-var simulate = false
-var optVerbose = false
 
 proc verboseCmd(cmd: string) =
   if optVerbose:
@@ -68,29 +64,15 @@ Experimental: using environment variable `NIM_TESTAMENT_REMOTE_NETWORKING=1` ena
 tests with remote networking (as in CI).
 """ % resultsFile
 
-proc isNimRepoTests(): bool =
-  # this logic could either be specific to cwd, or to some file derived from
-  # the input file, eg testament r /pathto/tests/foo/tmain.nim; we choose
-  # the former since it's simpler and also works with `testament all`.
-  let file = "testament"/"testament.nim.cfg"
-  result = file.fileExists
-
-type
-  Category = distinct string
-  TResults = object
-    total, passed, failedButAllowed, skipped: int
-      ## xxx rename passed to passedOrAllowedFailure
-    data: string
-  TTest = object
-    name: string
-    cat: Category
-    options: string
-    args: seq[string]
-    spec: TSpec
-    startTime: float
-    debugInfo: string
+proc initResults: TResults =
+  result.total = 0
+  result.passed = 0
+  result.failedButAllowed = 0
+  result.skipped = 0
+  result.data = ""
 
 # ----------------------------------------------------------------------------
+proc isTestEnabled(r: var TResults, test: TTest): bool
 
 let
   pegLineError =
@@ -162,7 +144,7 @@ proc prepareTestArgs(cmdTemplate, filename, options, nimcache: string,
   options.add ' ' & extraOptions
   result = parseCmdLine(cmdTemplate % ["target", targetToCmd[target],
                       "options", options, "file", filename.quoteShell,
-                      "filedir", filename.getFileDir(), "nim", compilerPrefix])
+                      "filedir", filename.getFileDir(), "nim", testamentData0.compilerPrefix])
 
 proc callNimCompiler(cmdTemplate, filename, options, nimcache: string,
                      target: TTarget, extraOptions = ""): TSpec =
@@ -227,13 +209,6 @@ proc callCCompiler(cmdTemplate, filename, options: string,
   if p.peekExitCode == 0:
     result.err = reSuccess
 
-proc initResults: TResults =
-  result.total = 0
-  result.passed = 0
-  result.failedButAllowed = 0
-  result.skipped = 0
-  result.data = ""
-
 macro ignoreStyleEcho(args: varargs[typed]): untyped =
   let typForegroundColor = bindSym"ForegroundColor".getType
   let typBackgroundColor = bindSym"BackgroundColor".getType
@@ -251,7 +226,7 @@ macro ignoreStyleEcho(args: varargs[typed]): untyped =
       result.add(arg)
 
 template maybeStyledEcho(args: varargs[untyped]): untyped =
-  if useColors:
+  if testamentData0.useColors:
     styledEcho(args)
   else:
     ignoreStyleEcho(args)
@@ -269,7 +244,8 @@ proc addResult(r: var TResults, test: TTest, target: TTarget,
   # test.name is easier to find than test.name.extractFilename
   # A bit hacky but simple and works with tests/testament/tshould_not_work.nim
   var name = test.name.replace(DirSep, '/')
-  name.add ' ' & $target
+  doAssert test.spec.isFlat or (test.spec.matrix.len == 0 and test.spec.targets.len == 0)
+  name.add ' ' & $target & " " & test.spec.matrixFlat
   if allowFailure:
     name.add " (allowed to fail) "
   if test.options.len > 0: name.add ' ' & test.options
@@ -279,7 +255,7 @@ proc addResult(r: var TResults, test: TTest, target: TTarget,
                 else: successOrig
 
   let durationStr = duration.formatFloat(ffDecimal, precision = 2).align(5)
-  if backendLogging:
+  if testamentData0.backendLogging:
     backend.writeTestResult(name = name,
                             category = test.cat.string,
                             target = $target,
@@ -312,7 +288,7 @@ proc addResult(r: var TResults, test: TTest, target: TTarget,
       maybeStyledEcho styleBright, given, "\n"
       echo diffStrings(expected, given).output
 
-  if backendLogging and (isAppVeyor or isAzure):
+  if testamentData0.backendLogging and (isAppVeyor or isAzure):
     let (outcome, msg) =
       case success
       of reSuccess:
@@ -459,24 +435,23 @@ proc getTestSpecTarget(): TTarget =
   else:
     result = targetC
 
-proc checkDisabled(r: var TResults, test: TTest): bool =
-  if test.spec.err in {reDisabled, reJoined}:
-    # targetC is a lie, but parameter is required
-    r.addResult(test, targetC, "", "", test.spec.err)
-    inc(r.skipped)
-    inc(r.total)
-    result = false
-  else:
-    result = true
-
 var count = 0
 
 proc equalModuloLastNewline(a, b: string): bool =
   # allow lazy output spec that omits last newline, but really those should be fixed instead
   result = a == b or b.endsWith("\n") and a == b[0 ..< ^1]
 
-proc testSpecHelper(r: var TResults, test: var TTest, expected: TSpec,
-                    target: TTarget, nimcache: string, extraOptions = "") =
+proc testSpecHelper(r: var TResults, test: TTest) =
+  testamentData0.flatTests.add test
+
+proc runFlatSpec(r: var TResults, test: TTest) =
+  var test = test
+  var expected = test.spec
+  doAssert expected.isFlat
+  let extraOptions = expected.matrixFlat
+  let target = expected.targetFlat
+  let nimcache = test.nimcache
+  doAssert nimcache.len > 0
   test.startTime = epochTime()
   template callNimCompilerImpl(): untyped = 
     # xxx this used to also pass: `--stdout --hint:Path:off`, but was done inconsistently
@@ -543,19 +518,66 @@ proc testSpecHelper(r: var TResults, test: var TTest, expected: TSpec,
     let given = callNimCompilerImpl()
     cmpMsgs(r, expected, given, test, target)
 
-proc targetHelper(r: var TResults, test: TTest, expected: TSpec, extraOptions = "") =
-  for target in expected.targets:
-    inc(r.total)
-    if target notin gTargets:
-      r.addResult(test, target, "", "", reDisabled)
-      inc(r.skipped)
-    elif simulate:
-      inc count
-      echo "testSpec count: ", count, " expected: ", expected
-    else:
-      let nimcache = nimcacheDir(test.name, test.options, target)
-      var testClone = test
-      testSpecHelper(r, testClone, expected, target, nimcache, extraOptions)
+import std/jsonutils
+
+proc runAccumulatedTests(r: var TResults) =
+  if testamentData0.isParallel:
+    let n = countProcessors()
+    var cmds: seq[string]
+    cmds.setLen n
+    let file = "/tmp/D20210510T192652.json"
+    writeFile(file, $testamentData0.toJson)
+    for i in 0..<n:
+      # TODO: could also use stdin for communication, or even http
+      let data = WorkerData(batch: i, numBatches: n, file: file)
+      let cmd = "$1 --worker:$2" % [getAppFilename().quoteShell, ($data.toJson).quoteShell]
+      dbg cmd
+      cmds.add cmd
+    proc progressStatus(idx: int) =
+      echo "progress2[all]: $1/$2" % [$idx, $n]
+    let m = osproc.execProcesses(cmds, {poEchoCmd, poStdErrToStdOut, poUsePath, poParentStreams}, beforeRunEvent = progressStatus)
+    dbg m
+    azure.finalize()
+    quit m
+  else:
+    for i, test in testamentData0.flatTests:
+      dbg i, testamentData0.flatTests.len
+      runFlatSpec(r, test)
+
+let workArg = "--worker:"
+
+proc workerProcess(arg: string) =
+  let val = arg[workArg.len..<arg.len]
+  dbg val
+  let data = val.parseJson.jsonTo(WorkerData)
+  testamentData0 = data.file.readFile.parseJson.jsonTo(TestamentData)
+  dbg testamentData0.compilerPrefix
+  # dbg testamentData0
+  # let tests = data.file.readFile.parseJson.jsonTo(TestamentData)
+  # testamentData0 = initTestamentData()
+  # dbg data
+  # let tests = data.file.readFile.parseJson.jsonTo(seq[TTest])
+  var r = initResults()
+  for i, test in testamentData0.flatTests:
+    if i mod data.numBatches == data.batch:
+      dbg i, testamentData0.flatTests.len, test.name
+      runFlatSpec(r, test)
+  dbg "done" # TODO: check resutls
+
+proc targetHelper(r: var TResults, test: TTest) =
+  doAssert test.spec.isFlat
+  let target = test.spec.targetFlat
+  inc(r.total)
+  if target notin gTargets: # PRTEMP?
+    r.addResult(test, target, "", "", reDisabled)
+    inc(r.skipped)
+  elif testamentData0.simulate:
+    inc count
+    echo "testSpec count: ", count, " expected: ", test.spec
+  else:
+    var test = test
+    test.nimcache = nimcacheDir(test.name, test.options, target)
+    testSpecHelper(r, test)
 
 proc testSpec(r: var TResults, test: TTest, targets: set[TTarget] = {}) =
   var expected = test.spec
@@ -564,56 +586,63 @@ proc testSpec(r: var TResults, test: TTest, targets: set[TTarget] = {}) =
     r.addResult(test, targetC, "", expected.parseErrors, reInvalidSpec)
     inc(r.total)
     return
-  if not checkDisabled(r, test): return
-
   expected.targets.incl targets
-  # still no target specified at all
   if expected.targets == {}:
     expected.targets = {getTestSpecTarget()}
-  if test.spec.matrix.len > 0:
-    for m in test.spec.matrix:
-      targetHelper(r, test, expected, m)
+  if expected.isFlat:
+    var test = test
+    test.spec = expected
+    if isTestEnabled(r, test): targetHelper(r, test)
   else:
-    targetHelper(r, test, expected)
+    for spec in flattentSepc(expected):
+      var test = test
+      test.spec = spec
+      if isTestEnabled(r, test): targetHelper(r, test)
 
 proc testSpecWithNimcache(r: var TResults, test: TTest; nimcache: string) {.used.} =
-  if not checkDisabled(r, test): return
-  for target in test.spec.targets:
-    inc(r.total)
-    var testClone = test
-    testSpecHelper(r, testClone, test.spec, target, nimcache)
+  for spec in flattentSepc(test.spec):
+    var test = test
+    test.spec = spec
+    if isTestEnabled(r, test):
+      inc(r.total)
+      test.nimcache = nimcache
+      testSpecHelper(r, test) # PRTEMP: bugfix: honors matrix
 
 proc testC(r: var TResults, test: TTest, action: TTestAction) =
   # runs C code. Doesn't support any specs, just goes by exit code.
-  if not checkDisabled(r, test): return
-
-  let tname = test.name.addFileExt(".c")
-  inc(r.total)
-  maybeStyledEcho "Processing ", fgCyan, extractFilename(tname)
-  var given = callCCompiler(getCmd(TSpec()), test.name & ".c", test.options, targetC)
-  if given.err != reSuccess:
-    r.addResult(test, targetC, "", given.msg, given.err)
-  elif action == actionRun:
-    let exeFile = changeFileExt(test.name, ExeExt)
-    var (_, exitCode) = execCmdEx(exeFile, options = {poStdErrToStdOut, poUsePath})
-    if exitCode != 0: given.err = reExitcodesDiffer
-  if given.err == reSuccess: inc(r.passed)
+  for spec2 in flattentSepc(test.spec):
+    var test = test
+    test.spec = spec2
+    if isTestEnabled(r, test):
+      let tname = test.name.addFileExt(".c")
+      inc(r.total)
+      maybeStyledEcho "Processing ", fgCyan, extractFilename(tname)
+      var given = callCCompiler(getCmd(TSpec()), test.name & ".c", test.options, targetC)
+      if given.err != reSuccess:
+        r.addResult(test, targetC, "", given.msg, given.err)
+      elif action == actionRun:
+        let exeFile = changeFileExt(test.name, ExeExt)
+        var (_, exitCode) = execCmdEx(exeFile, options = {poStdErrToStdOut, poUsePath})
+        if exitCode != 0: given.err = reExitcodesDiffer
+      if given.err == reSuccess: inc(r.passed)
 
 proc testExec(r: var TResults, test: TTest) =
   # runs executable or script, just goes by exit code
-  if not checkDisabled(r, test): return
+  for spec2 in flattentSepc(test.spec):
+    var test = test
+    test.spec = spec2
+    if isTestEnabled(r, test):
+      inc(r.total)
+      let (outp, errC) = execCmdEx(test.options.strip())
+      var given: TSpec
+      if errC == 0:
+        given.err = reSuccess
+      else:
+        given.err = reExitcodesDiffer
+        given.msg = outp
 
-  inc(r.total)
-  let (outp, errC) = execCmdEx(test.options.strip())
-  var given: TSpec
-  if errC == 0:
-    given.err = reSuccess
-  else:
-    given.err = reExitcodesDiffer
-    given.msg = outp
-
-  if given.err == reSuccess: inc(r.passed)
-  r.addResult(test, targetC, "", given.msg, given.err)
+      if given.err == reSuccess: inc(r.passed)
+      r.addResult(test, targetC, "", given.msg, given.err)
 
 proc makeTest(test, options: string, cat: Category): TTest =
   result.cat = cat
@@ -672,7 +701,19 @@ proc loadSkipFrom(name: string): seq[string] =
     if sline.len > 0 and not sline.startsWith('#'):
       result.add sline
 
+proc parseOnOff(val: string): bool =
+  case val:
+  of "on", "": true
+  of "off": false
+  else: quit Usage
+
 proc main() =
+  let args = commandLineParams()
+  if args.len == 1 and args[0].startsWith(workArg):
+    workerProcess(args[0])
+    return
+  var r = initResults()
+  testamentData0 = initTestamentData()
   azure.init()
   backend.open()
   var optPrintResults = false
@@ -680,32 +721,24 @@ proc main() =
   var targetsStr = ""
   var isMainProcess = true
   var skipFrom = ""
-  var useMegatest = true
 
   var p = initOptParser()
   p.next()
   while p.kind in {cmdLongOption, cmdShortOption}:
     case p.key.normalize
-    of "print": optPrintResults = true
-    of "verbose": optVerbose = true
-    of "failing": optFailing = true
+    of "print": optPrintResults = parseOnOff(p.val)
+    of "verbose": optVerbose = parseOnOff(p.val)
+    of "failing": optFailing = parseOnOff(p.val)
     of "pedantic": discard # deadcode refs https://github.com/nim-lang/Nim/issues/16731
     of "targets":
       targetsStr = p.val
       gTargets = parseTargets(targetsStr)
       targetsSet = true
     of "nim":
-      compilerPrefix = addFileExt(p.val.absolutePath, ExeExt)
+      testamentData0.compilerPrefix = addFileExt(p.val.absolutePath, ExeExt)
     of "directory":
       setCurrentDir(p.val)
-    of "colors":
-      case p.val:
-      of "on":
-        useColors = true
-      of "off":
-        useColors = false
-      else:
-        quit Usage
+    of "colors": testamentData0.useColors = parseOnOff(p.val)
     of "batch":
       testamentData0.batchArg = p.val
       if p.val != "_" and p.val.len > 0 and p.val[0] in {'0'..'9'}:
@@ -715,24 +748,9 @@ proc main() =
         testamentData0.testamentNumBatch = s[1].parseInt
         doAssert testamentData0.testamentNumBatch > 0
         doAssert testamentData0.testamentBatch >= 0 and testamentData0.testamentBatch < testamentData0.testamentNumBatch
-    of "simulate":
-      simulate = true
-    of "megatest":
-      case p.val:
-      of "on":
-        useMegatest = true
-      of "off":
-        useMegatest = false
-      else:
-        quit Usage
-    of "backendlogging":
-      case p.val:
-      of "on":
-        backendLogging = true
-      of "off":
-        backendLogging = false
-      else:
-        quit Usage
+    of "simulate": testamentData0.simulate = parseOnOff(p.val)
+    of "megatest": testamentData0.useMegatest = parseOnOff(p.val)
+    of "backendlogging": testamentData0.backendLogging = parseOnOff(p.val)
     of "skipfrom":
       skipFrom = p.val
     else:
@@ -740,57 +758,33 @@ proc main() =
     p.next()
   if p.kind != cmdArgument:
     quit Usage
+
   var action = p.key.normalize
   p.next()
-  var r = initResults()
+
+  template getSkip =
+    testamentData0.skips = loadSkipFrom(skipFrom)
+
   case action
   of "all":
-    #processCategory(r, Category"megatest", p.cmdLineRest, testsDir, runJoinableTests = false)
-
-    var myself = quoteShell(getAppFilename())
-    if targetsStr.len > 0:
-      myself &= " " & quoteShell("--targets:" & targetsStr)
-
-    myself &= " " & quoteShell("--nim:" & compilerPrefix)
-    if testamentData0.batchArg.len > 0:
-      myself &= " --batch:" & testamentData0.batchArg
-
-    if skipFrom.len > 0:
-      myself &= " " & quoteShell("--skipFrom:" & skipFrom)
-
     var cats: seq[string]
-    let rest = if p.cmdLineRest.len > 0: " " & p.cmdLineRest else: ""
+    # cmdLineRest PRTMEP
     for kind, dir in walkDir(testsDir):
       assert testsDir.startsWith(testsDir)
       let cat = dir[testsDir.len .. ^1]
       if kind == pcDir and cat notin ["testdata", "nimcache"]:
         cats.add cat
-    if isNimRepoTests():
-      cats.add AdditionalCategories
-    if useMegatest: cats.add MegaTestCat
-
-    var cmds: seq[string]
-    for cat in cats:
-      let runtype = if useMegatest: " pcat " else: " cat "
-      cmds.add(myself & runtype & quoteShell(cat) & rest)
-
-    proc progressStatus(idx: int) =
-      echo "progress[all]: $1/$2 starting: cat: $3" % [$idx, $cats.len, cats[idx]]
-
-    if simulate:
-      skips = loadSkipFrom(skipFrom)
-      for i, cati in cats:
-        progressStatus(i)
-        processCategory(r, Category(cati), p.cmdLineRest, testsDir, runJoinableTests = false)
-    else:
-      addExitProc azure.finalize
-      quit osproc.execProcesses(cmds, {poEchoCmd, poStdErrToStdOut, poUsePath, poParentStreams}, beforeRunEvent = progressStatus)
+    if isNimRepoTests(): cats.add AdditionalCategories
+    if testamentData0.useMegatest: cats.add "megatest"
+    getSkip()
+    for i, cati in cats:
+      processCategory(r, Category(cati), p.cmdLineRest, testsDir, runJoinableTests = false)
   of "c", "cat", "category":
-    skips = loadSkipFrom(skipFrom)
+    getSkip()
     var cat = Category(p.key)
     processCategory(r, cat, p.cmdLineRest, testsDir, runJoinableTests = true)
   of "pcat":
-    skips = loadSkipFrom(skipFrom)
+    getSkip()
     # 'pcat' is used for running a category in parallel. Currently the only
     # difference is that we don't want to run joinable tests here as they
     # are covered by the 'megatest' category.
@@ -799,10 +793,10 @@ proc main() =
     p.next
     processCategory(r, cat, p.cmdLineRest, testsDir, runJoinableTests = false)
   of "p", "pat", "pattern":
-    skips = loadSkipFrom(skipFrom)
+    getSkip()
     let pattern = p.key
     p.next
-    processPattern(r, pattern, p.cmdLineRest, simulate)
+    processPattern(r, pattern, p.cmdLineRest, testamentData0.simulate)
   of "r", "run":
     let (cat, path) = splitTestFile(p.key)
     processSingleTest(r, cat.Category, p.cmdLineRest, path, gTargets, targetsSet)
@@ -810,6 +804,8 @@ proc main() =
     generateHtml(resultsFile, optFailing)
   else:
     quit Usage
+
+  runAccumulatedTests(r)
 
   if optPrintResults:
     if action == "html": openDefaultBrowser(resultsFile)
@@ -822,7 +818,7 @@ proc main() =
       r.skipped, " failed: ", failed
     quit(QuitFailure)
   if isMainProcess:
-    echo "Used ", compilerPrefix, " to run the tests. Use --nim to override."
+    echo "Used ", testamentData0.compilerPrefix, " to run the tests. Use --nim to override."
 
 if paramCount() == 0:
   quit Usage

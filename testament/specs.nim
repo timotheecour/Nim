@@ -9,22 +9,18 @@
 
 import sequtils, parseutils, strutils, os, streams, parsecfg,
   tables, hashes, sets
-
-type TestamentData* = ref object
-  # better to group globals under 1 object; could group the other ones here too
-  batchArg*: string
-  testamentNumBatch*: int
-  testamentBatch*: int
-
-let testamentData0* = TestamentData()
-
-var compilerPrefix* = findExe("nim")
+# import timn/dbgs
 
 let isTravis* = existsEnv("TRAVIS")
 let isAppVeyor* = existsEnv("APPVEYOR")
 let isAzure* = existsEnv("TF_BUILD")
 
-var skips*: seq[string]
+proc isNimRepoTests*(): bool =
+  # this logic could either be specific to cwd, or to some file derived from
+  # the input file, eg testament r /pathto/tests/foo/tmain.nim; we choose
+  # the former since it's simpler and also works with `testament all`.
+  let file = "testament"/"testament.nim.cfg"
+  result = file.fileExists
 
 type
   TTestAction* = enum
@@ -85,8 +81,15 @@ type
     maxCodeSize*: int
     err*: TResultEnum
     inCurrentBatch*: bool
+
     targets*: set[TTarget]
     matrix*: seq[string]
+
+    # xxx use case object
+    isFlat*: bool # flattened TSpec (1 TSpec with N targets and M matrix gives N*M flattened TSpec)
+    targetFlat*: TTarget
+    matrixFlat*: string
+
     nimout*: string
     nimoutFull*: bool # whether nimout is all compiler output or a subset
     parseErrors*: string            # when the spec definition is invalid, this is not empty.
@@ -100,9 +103,75 @@ type
                       # but don't rely on much precision
     inlineErrors*: seq[InlineError] # line information to error message
 
+  Category* = distinct string
+  TResults* = object
+    total*, passed*, failedButAllowed*, skipped*: int
+      ## xxx rename passed to passedOrAllowedFailure
+    data*: string
+  TTest* = object
+    name*: string
+    cat*: Category
+    options*: string
+    args*: seq[string]
+    spec*: TSpec
+    startTime*: float
+    debugInfo*: string
+    nimcache*: string
+
+  TestamentData* = ref object
+    # analog to ConfigRef in nim compiler: holds global data
+    # better to group globals under 1 object; could group the other ones here too
+    batchArg*: string
+    testamentNumBatch*: int
+    testamentBatch*: int
+    compilerPrefix*: string
+    flatTests*: seq[TTest] # flat tests
+    useMegatest*: bool
+    simulate*: bool
+    useColors*: bool
+    backendLogging*: bool
+    isParallel*: bool
+    skips*: seq[string]
+
+  WorkerData* = object
+    numBatches*: int
+    batch*: int
+    file*: string
+
+proc initTestamentData*(): TestamentData =
+  result = TestamentData()
+  result.compilerPrefix = findExe("nim")
+  result.useColors = true
+  result.backendLogging = true
+  result.isParallel = true
+
+var optVerbose*: bool # not in TestamentData to avoid gcsafe warning
+# let testamentData0* = initTestamentData()
+var testamentData0*: TestamentData
+
+iterator flattentSepc*(a: TSpec): TSpec =
+  doAssert not a.isFlat
+  let matrix = if a.matrix.len == 0: @[""] else: a.matrix
+  var targets = a.targets
+  if targets == {}:
+    if a.file.isRelativeTo("tests/js") and isNimRepoTests():
+      targets = {targetJs}
+    else:
+      targets = {targetC} # PRTEMP getTestSpecTarget() ?
+      # TODO: move this logic to parseSpec?
+
+  # dbg a.file
+  for t in targets:
+    for m in matrix:
+      var a2 = a
+      a2.isFlat = true
+      a2.targetFlat = t
+      a2.matrixFlat = m
+      yield a2
+
 proc getCmd*(s: TSpec): string =
   if s.cmd.len == 0:
-    result = compilerPrefix & " $target --hints:on -d:testing --clearNimblePath --nimblePath:build/deps/pkgs $options $file"
+    result = testamentData0.compilerPrefix & " $target --hints:on -d:testing --clearNimblePath --nimblePath:build/deps/pkgs $options $file"
   else:
     result = s.cmd
 
@@ -364,7 +433,7 @@ proc parseSpec*(filename: string): TSpec =
           result.parseErrors.addLine "cannot interpret as a bool: ", e.value
       of "cmd":
         if e.value.startsWith("nim "):
-          result.cmd = compilerPrefix & e.value[3..^1]
+          result.cmd = testamentData0.compilerPrefix & e.value[3..^1]
         else:
           result.cmd = e.value
       of "ccodecheck":
@@ -397,7 +466,7 @@ proc parseSpec*(filename: string): TSpec =
       break
   close(p)
 
-  if skips.anyIt(it in result.file):
+  if testamentData0.skips.anyIt(it in result.file):
     result.err = reDisabled
 
   result.inCurrentBatch = isCurrentBatch(testamentData0, filename) or result.unbatchable
