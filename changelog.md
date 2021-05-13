@@ -70,6 +70,9 @@
 - `jsonutils` now serializes/deserializes holey enums as regular enums (via `ord`) instead of as strings.
   Use `-d:nimLegacyJsonutilsHoleyEnum` for a transition period.
 
+- `system.addFloat` now uses dragonbox algorithm, which ensures roundtrip guarantee, minimum length,
+  and correct rounding. Use `-d:nimLegacyAddFloat` for a transition period.
+
 
 ## Standard library additions and changes
 - Added support for parenthesized expressions in `strformat`
