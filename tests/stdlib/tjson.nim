@@ -10,7 +10,7 @@ Note: Macro tests are in tests/stdlib/tjsonmacro.nim
 import std/[json,parsejson,strutils]
 when not defined(js):
   import std/streams
-
+import stdtest/testutils
 from std/fenv import epsilon
 
 proc testRoundtrip[T](t: T, expected: string) =
@@ -25,7 +25,7 @@ proc testRoundtripVal[T](t: T, expected: string) =
   let j = %t
   doAssert $j == expected, $j
   let j2 = ($j).parseJson
-  doAssert $j2 == expected, $j2
+  doAssert $j2 == expected, $(j2, t)
   let t2 = j2.to(T)
   doAssert t2 == t
   doAssert $(%* t2) == expected # sanity check, because -0.0 = 0.0 but their json representation differs
@@ -320,8 +320,10 @@ block: # bug #15397, bug #13196
   testRoundtripVal(0.12345678901234567890123456789): "0.12345678901234568"
 
 block:
-  testRoundtripVal(0.0): "0.0"
-  testRoundtripVal(-0.0): "-0.0"
+  whenRuntimeJs: discard # pending https://github.com/nim-lang/Nim/issues/18009
+  do:
+    testRoundtripVal(0.0): "0.0"
+    testRoundtripVal(-0.0): "-0.0"
 
 when false: # xxx pending https://github.com/nim-lang/Nim/issues/18007:
   testRoundtripVal(Inf): "inf"
