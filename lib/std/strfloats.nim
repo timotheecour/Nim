@@ -104,7 +104,8 @@ when useDragonbox:
     fixup(buf, ret, first, result)
 
   template toString*(buf: var array[strFloatBufLen, char]; value: BiggestFloat): int =
-    toStringDragonbox(buf, value)
+    # toStringDragonbox(buf, value)
+    toStringDragonbox0(buf, value)
 else:
   template toString*(buf: var array[strFloatBufLen, char]; value: BiggestFloat): int =
     toStringSprintf(buf, value)
