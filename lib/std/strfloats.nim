@@ -91,26 +91,35 @@ when useDragonbox:
   proc nimtoStringDragonbox0Impl(buf: ptr char, value: cfloat): ptr char {.importc: "nimtoStringDragonbox0ImplFloat".}
 
   addDependency("drachennest_dragonbox")
-  proc toStringDragonboxImpl(buf: ptr char, value: cdouble): ptr char {.importc: "nim_dragonbox_Dtoa".}
+  proc toStringDragonboxImpl(buf: ptr char, value: cdouble): ptr char {.importc: "nimtoStringDragonboxImplDouble".}
+  proc toStringDragonboxImpl(buf: ptr char, value: cfloat): ptr char {.importc: "nimSchubfachFtoa".} # note: using schubfach here because drachennest dragonbox doesn't yet support float32
+
+  proc nimSchubfachToString(buf: ptr char, value: cfloat): ptr char {.importc: "nimSchubfachFtoa".}
+  proc nimSchubfachToString(buf: ptr char, value: cdouble): ptr char {.importc: "nimSchubfachDtoa".}
 
   proc toStringDragonbox0*(buf: var array[strFloatBufLen, char]; value: float|float32): int {.inline.} =
     let first = buf[0].addr
     let ret = nimtoStringDragonbox0Impl(first, value)
     fixup(buf, ret, first, result)
 
-  proc toStringDragonbox*(buf: var array[strFloatBufLen, char]; value: BiggestFloat): int {.inline.} =
+  proc toStringSchubfach*(buf: var array[strFloatBufLen, char]; value: float|float32): int {.inline.} =
+    let first = buf[0].addr
+    let ret = nimSchubfachToString(first, value)
+    fixup(buf, ret, first, result)
+
+  proc toStringDragonbox*(buf: var array[strFloatBufLen, char]; value: float|float32): int {.inline.} =
     let first = buf[0].addr
     let ret = toStringDragonboxImpl(first, value)
     fixup(buf, ret, first, result)
 
-  template toString*(buf: var array[strFloatBufLen, char]; value: BiggestFloat): int =
-    # toStringDragonbox(buf, value)
-    toStringDragonbox0(buf, value)
+  template toString*(buf: var array[strFloatBufLen, char]; value: float|float32): int =
+    toStringDragonbox(buf, value)
+    # toStringDragonbox0(buf, value)
 else:
   template toString*(buf: var array[strFloatBufLen, char]; value: BiggestFloat): int =
     toStringSprintf(buf, value)
 
-proc addFloat*(result: var string; x: float) =
+proc addFloat*(result: var string; x: float | float32) =
   ## Converts `x` to its string representation and appends it to `result`.
   ##
   ## The algorithm is implementation defined, but currently uses dragonbox algorithm,

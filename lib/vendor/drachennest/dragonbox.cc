@@ -4,30 +4,7 @@
 // Distributed under the Boost Software License, Version 1.0.
 //  (See accompanying file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
-namespace dragonbox {
-
-// char* output_end = Dtoa(buffer, value);
-//
-// Converts the given double-precision number into decimal form and stores the result in the given
-// buffer.
-//
-// The buffer must be large enough, i.e. >= DtoaMinBufferLength.
-// The output format is similar to printf("%g").
-// The output is _not_ null-terminted.
-//
-// The output is optimal, i.e. the output string
-//  1. rounds back to the input number when read in (using round-to-nearest-even)
-//  2. is as short as possible,
-//  3. is as close to the input number as possible.
-//
-// Note:
-// This function may temporarily write up to DtoaMinBufferLength characters into the buffer.
-
-constexpr int DtoaMinBufferLength = 64;
-
-char* Dtoa(char* buffer, double value);
-
-} // namespace dragonbox
+#include "dragonbox.h"
 
 //--------------------------------------------------------------------------------------------------
 // This file contains an implementation of Junekey Jeon's Dragonbox algorithm.
@@ -878,7 +855,7 @@ static inline FloatingDecimal64 ToDecimal64_asymmetric_interval(int32_t e2)
     const uint64_t upper_endpoint = (pow10.hi + (pow10.hi >> (P + 0))) >> (64 - P - beta_minus_1);
 
     // If we don't accept the left endpoint (but we do!) or
-  // if the left endpoint is not an integer, increase it
+	// if the left endpoint is not an integer, increase it
     const bool lower_endpoint_is_integer = (2 <= e2 && e2 <= 3);
 
     const uint64_t xi = lower_endpoint + !lower_endpoint_is_integer;
@@ -1546,8 +1523,4 @@ static inline char* ToChars(char* buffer, double value, bool force_trailing_dot_
 char* dragonbox::Dtoa(char* buffer, double value)
 {
     return ToChars(buffer, value);
-}
-
-extern "C" char* nim_dragonbox_Dtoa(char* buffer, double value){
-  return ToChars(buffer, value);
 }

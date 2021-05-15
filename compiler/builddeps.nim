@@ -27,16 +27,14 @@ proc addDependencyImpl(conf: ConfigRef, name: string, info: TLineInfo, jobs: seq
   for job in jobs:
     let objFile = dir / ("$1_$2_$3.o" % [prefix, name, job.input.splitFile.name])
     if optForceFullMake in conf.globalOptions or not objFile.fileExists:
-      # xxx
-      # let cppExe = getCompilerExe(c.config; compiler: TSystemCC; cfile: AbsoluteFile): string =
-          # compilePattern = getCompilerExe(conf, c, cfile.cname)
+      # xxx use `getCompilerExe`
       when defined(osx):
         let cppExe = "clang++"
       else:
         let cppExe = "g++"
       when defined(linux):
-          # PRTEMP: avoids:
-          # /usr/bin/ld: /home/runner/work/Nim/Nim/nimcache/r_linux_amd64/nimdragonbox.o: relocation R_X86_64_32S against `.rodata' can not be used when making a PIE object; recompile with -fPIE
+          # xxx: avoids linker errors:
+          # relocation R_X86_64_32S against `.rodata' can not be used when making a PIE object; recompile with -fPIE
         let options = "-fPIE"
       else:
         let options = ""
@@ -49,19 +47,23 @@ proc addDependencyImpl(conf: ConfigRef, name: string, info: TLineInfo, jobs: seq
         localError(conf, info, "building '$#' failed: cmd: $#\noutput:\n$#" % [name, cmd, outp])
     conf.addExternalFileToLink(objFile.AbsoluteFile)
   if linkerFlags.len > 0:
-    # conf.addExternalFileToLink(linkerFlags)
     conf.addLinkOption(linkerFlags)
 
 proc addDependency*(conf: ConfigRef, name: string, info: TLineInfo) =
   case name
   of "drachennest_dragonbox":
-    addDependencyImpl(conf, name, info, jobs = @[Job(input: "vendor/drachennest/dragonbox.cc", copts: "-std=c++11")])
+    let copts = "-std=c++11"
+    var jobs: seq[Job]
+    for file in "impl.cc dragonbox.cc schubfach_32.cc schubfach_64.cc".split:
+      jobs.add Job(input: "vendor/drachennest" / file, copts: copts)
+    addDependencyImpl(conf, name, info, jobs = jobs)
   of "dragonbox_dragonbox":
-    let includeDir = conf.libpath.string / "vendor/dragonbox/include"
+    let dir = "vendor/dragonbox"
+    let includeDir = conf.libpath.string / dir / "include"
     let copts = "-std=c++17 -I $#" % includeDir.quoteShell
-    let jobs = @[
-      Job(input: "vendor/dragonbox/impl.cc", copts: copts),
-      Job(input: "vendor/dragonbox/dragonbox_to_chars.cpp", copts: copts)]
+    var jobs: seq[Job]
+    for file in "impl.cc dragonbox_to_chars.cpp".split:
+      jobs.add Job(input: dir / file, copts: copts)
     addDependencyImpl(conf, name, info, jobs = jobs, linkerFlags = "-lc++")
   else:
     localError(conf, info, "expected: 'dragonbox', got: '$1'" % name)
