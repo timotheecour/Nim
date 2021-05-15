@@ -1,46 +1,41 @@
-var res = newStringOfCap(24)
+discard """
+  targets: "c cpp js"
+"""
 
-for i in 0 .. 9:
-  res.addInt int64(i)
+import stdtest/testutils
 
-doAssert res == "0123456789"
+template main =
+  var res = newStringOfCap(24)
+  template toStr(x): untyped =
+    res.setLen(0)
+    res.addInt x
+    doAssert res == $x # sanity check
+    res
 
-res.setLen(0)
+  block: # addInt
+    for i in 0 .. 9:
+      res.addInt int64(i)
 
-for i in -9 .. 0:
-  res.addInt int64(i)
+    doAssert res == "0123456789"
+    res.setLen(0)
+    for i in -9 .. 0:
+      res.addInt int64(i)
+    doAssert res == "-9-8-7-6-5-4-3-2-10"
 
-doAssert res == "-9-8-7-6-5-4-3-2-10"
+    assertAll:
+      0.toStr == "0"
+      (-0).toStr == "0"
+      high(int8).toStr == "127"
+      low(int8).toStr == "-128"
+      high(int16).toStr == "32767"
+      low(int16).toStr == "-32768"
+      high(int32).toStr == "2147483647"
+      low(int32).toStr == "-2147483648"
 
-res.setLen(0)
-res.addInt high(int64)
-doAssert res == "9223372036854775807"
+    when not defined(js):
+      assertAll:
+        high(int64).toStr == "9223372036854775807"
+        low(int64).toStr == "-9223372036854775808"
 
-res.setLen(0)
-res.addInt low(int64)
-doAssert res == "-9223372036854775808"
-
-res.setLen(0)
-res.addInt high(int32)
-doAssert res == "2147483647"
-
-res.setLen(0)
-res.addInt low(int32)
-doAssert res == "-2147483648"
-
-res.setLen(0)
-res.addInt high(int16)
-doAssert res == "32767"
-
-res.setLen(0)
-res.addInt low(int16)
-doAssert res == "-32768"
-
-
-res.setLen(0)
-res.addInt high(int8)
-doAssert res == "127"
-
-res.setLen(0)
-res.addInt low(int8)
-doAssert res == "-128"
+static: main()
+main()

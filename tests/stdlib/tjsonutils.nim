@@ -4,14 +4,27 @@ discard """
 
 import std/jsonutils
 import std/json
+from std/fenv import epsilon
 
 proc testRoundtrip[T](t: T, expected: string) =
+  # checks that `T => json => T2 => json2` is such that json2 = json
   let j = t.toJson
   doAssert $j == expected, $j
   doAssert j.jsonTo(T).toJson == j
   var t2: T
   t2.fromJson(j)
   doAssert t2.toJson == j
+
+proc testRoundtripVal[T](t: T, expected: string) =
+  # similar to testRoundtrip, but also checks that the `T => json => T2` is such that `T2 == T`
+  # note that this isn't always possible, e.g. for pointer-like types.
+  let j = t.toJson
+  let j2 = $j
+  doAssert j2 == expected, j2
+  let j3 = j2.parseJson
+  let t2 = j3.jsonTo(T)
+  doAssert t2 == t # xxx handle NaN specially, using isNaN once https://github.com/nim-lang/Nim/issues/18007 is fixed
+  doAssert $t2.toJson == j2 # still needed, because -0.0 = 0.0 but their json representation differs
 
 import tables, sets, algorithm, sequtils, options, strtabs
 from strutils import contains
@@ -90,6 +103,25 @@ template fn() =
         testRoundtrip(a): "[2147483647,4294967295]"
       else:
         testRoundtrip(a): "[9223372036854775807,18446744073709551615]"
+
+  block: # bug #15397, bug #13196
+    let a = 0.1
+    let x = 0.12345678901234567890123456789
+    let b = (a + 0.2, 0.3, x)
+    testRoundtripVal(b): "[0.30000000000000004,0.3,0.12345678901234568]"
+
+    testRoundtripVal(0.12345678901234567890123456789): "0.12345678901234568"
+    testRoundtripVal(epsilon(float64)): "2.220446049250313e-16"
+    testRoundtripVal(1.0 + epsilon(float64)): "1.0000000000000002"
+
+  block:
+    testRoundtripVal(0.0): "0.0"
+    testRoundtripVal(-0.0): "-0.0"
+
+  when false: # xxx pending https://github.com/nim-lang/Nim/issues/18007:
+    testRoundtripVal(Inf): "inf"
+    testRoundtripVal(-Inf): "-inf"
+    testRoundtripVal(NaN): "nan"
 
   block: # case object
     type Foo = object

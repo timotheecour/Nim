@@ -234,18 +234,19 @@ proc registerAdditionalOps*(c: PCtx) =
   registerCallback c, "stdlib.os.getCurrentCompilerExe", proc (a: VmArgs) {.nimcall.} =
     setResult(a, getAppFilename())
 
+  proc stackTrace2(msg: string, n: PNode) =
+    stackTrace(c, PStackFrame(prc: c.prc.sym, comesFrom: 0, next: nil), c.exceptionInstr, msg, n.info)
+
   registerCallback c, "stdlib.macros.symBodyHash", proc (a: VmArgs) =
     let n = getNode(a, 0)
     if n.kind != nkSym:
-      stackTrace(c, PStackFrame(prc: c.prc.sym, comesFrom: 0, next: nil), c.exceptionInstr,
-                  "symBodyHash() requires a symbol. '" & $n & "' is of kind '" & $n.kind & "'", n.info)
+      stackTrace2("symBodyHash() requires a symbol. '" & $n & "' is of kind '" & $n.kind & "'", n)
     setResult(a, $symBodyDigest(c.graph, n.sym))
 
   registerCallback c, "stdlib.macros.isExported", proc(a: VmArgs) =
     let n = getNode(a, 0)
     if n.kind != nkSym:
-      stackTrace(c, PStackFrame(prc: c.prc.sym, comesFrom: 0, next: nil), c.exceptionInstr,
-                  "isExported() requires a symbol. '" & $n & "' is of kind '" & $n.kind & "'", n.info)
+      stackTrace2("isExported() requires a symbol. '" & $n & "' is of kind '" & $n.kind & "'", n)
     setResult(a, sfExported in n.sym.flags)
 
   proc hashVmImpl(a: VmArgs) =
@@ -320,3 +321,8 @@ proc registerAdditionalOps*(c: PCtx) =
   registerCallback c, "stdlib.typetraits.hasClosureImpl", proc (a: VmArgs) =
     let fn = getNode(a, 0)
     setResult(a, fn.kind == nkClosure or (fn.typ != nil and fn.typ.callConv == ccClosure))
+
+  registerCallback c, "stdlib.strfloats.addFloat", proc(a: VmArgs) =
+    let p = a.getVar(0)
+    let x = a.getFloat(1)
+    addFloat(p.strVal, x)

@@ -96,12 +96,6 @@ proc getPragmaVal*(procAst: PNode; name: TSpecialWord): PNode =
 proc pragma*(c: PContext, sym: PSym, n: PNode, validPragmas: TSpecialWords;
             isStatement: bool = false)
 
-proc recordPragma(c: PContext; n: PNode; args: varargs[string]) =
-  var recorded = newNodeI(nkReplayAction, n.info)
-  for i in 0..args.high:
-    recorded.add newStrNode(args[i], n.info)
-  addPragmaComputation(c, recorded)
-
 const
   errStringLiteralExpected = "string literal expected"
   errIntLiteralExpected = "integer literal expected"

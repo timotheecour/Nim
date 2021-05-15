@@ -359,6 +359,7 @@ type
 
     externalToLink*: seq[string]  # files to link in addition to the file
                                   # we compiled (*)
+    dependencies*: seq[string]     # dependencies
     linkOptionsCmd*: string
     compileOptionsCmd*: seq[string]
     linkOptions*: string          # (*)
@@ -398,7 +399,7 @@ proc setNote*(conf: ConfigRef, note: TNoteKind, enabled = true) =
 proc hasHint*(conf: ConfigRef, note: TNoteKind): bool =
   # ternary states instead of binary states would simplify logic
   if optHints notin conf.options: false
-  elif note in {hintConf, hintProcessing}:
+  elif note in {hintConf, hintProcessing, hintCC}:
     # could add here other special notes like hintSource
     # these notes apply globally.
     note in conf.mainPackageNotes
