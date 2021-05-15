@@ -26,16 +26,6 @@ proc testRoundtripVal[T](t: T, expected: string) =
   doAssert t2 == t # xxx handle NaN specially, using isNaN once https://github.com/nim-lang/Nim/issues/18007 is fixed
   doAssert $t2.toJson == j2 # still needed, because -0.0 = 0.0 but their json representation differs
 
-proc testRoundtrip2[T](t: T, expected: string) =
-  let j = t.toJson
-  let j2 = $j
-  doAssert j2 == expected, j2
-  doAssert j.jsonTo(T).toJson == j
-  var t2: T
-  t2.fromJson(j)
-  doAssert t2.toJson == j
-  doAssert t2 == t
-
 import tables, sets, algorithm, sequtils, options, strtabs
 from strutils import contains
 
@@ -118,7 +108,7 @@ template fn() =
     let a = 0.1
     let x = 0.12345678901234567890123456789
     let b = (a + 0.2, 0.3, x)
-    testRoundtrip2(b): "[0.30000000000000004,0.3,0.12345678901234568]"
+    testRoundtripVal(b): "[0.30000000000000004,0.3,0.12345678901234568]"
 
     testRoundtripVal(0.12345678901234567890123456789): "0.12345678901234568"
     testRoundtripVal(epsilon(float64)): "2.220446049250313e-16"
