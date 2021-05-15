@@ -73,13 +73,7 @@ proc toStringSprintf*(buf: var array[strFloatBufLen, char]; value: BiggestFloat)
       result = 3
 
 when useDragonbox:
-  import private/deputils
-  addDependency("dragonbox")
-  proc dragonboxToString(buf: ptr char, value: cdouble): ptr char {.importc: "nim_dragonbox_Dtoa".}
-
-  proc toStringDragonbox*(buf: var array[strFloatBufLen, char]; value: BiggestFloat): int {.inline.} =
-    let first = buf[0].addr
-    let ret = dragonboxToString(first, value)
+  template fixup(buf, ret, first, result) =
     result = cast[int](ret) - cast[int](first)
     if buf[result-1] in {'f', 'n'}: # inf, -inf, nan
       return result
@@ -89,6 +83,25 @@ when useDragonbox:
     buf[result] = '.'
     buf[result+1] = '0'
     result += 2
+
+  import private/deputils
+
+  addDependency("dragonbox_dragonbox")
+  proc nimtoStringDragonbox0Impl(buf: ptr char, value: cdouble): ptr char {.importc: "nimtoStringDragonbox0ImplDouble".}
+  proc nimtoStringDragonbox0Impl(buf: ptr char, value: cfloat): ptr char {.importc: "nimtoStringDragonbox0ImplFloat".}
+
+  addDependency("drachennest_dragonbox")
+  proc toStringDragonboxImpl(buf: ptr char, value: cdouble): ptr char {.importc: "nim_dragonbox_Dtoa".}
+
+  proc toStringDragonbox0*(buf: var array[strFloatBufLen, char]; value: float|float32): int {.inline.} =
+    let first = buf[0].addr
+    let ret = nimtoStringDragonbox0Impl(first, value)
+    fixup(buf, ret, first, result)
+
+  proc toStringDragonbox*(buf: var array[strFloatBufLen, char]; value: BiggestFloat): int {.inline.} =
+    let first = buf[0].addr
+    let ret = toStringDragonboxImpl(first, value)
+    fixup(buf, ret, first, result)
 
   template toString*(buf: var array[strFloatBufLen, char]; value: BiggestFloat): int =
     toStringDragonbox(buf, value)

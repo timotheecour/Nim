@@ -32,13 +32,19 @@ template gen(algo, genFloat) =
 template genFloatCast(i): untyped = cast[float](i)
 template genFloatConf(i): untyped = float(i)
 
+template genFloat32Cast(i): untyped = cast[float32](i)
+template genFloat32Conf(i): untyped = float32(i)
+
 template gen(algo) =
   gen(algo, genFloatCast)
   gen(algo, genFloatConf)
+  gen(algo, genFloat32Cast)
+  gen(algo, genFloat32Conf)
 
 template main =
   gen(toStringSprintf)
   gen(toStringDragonbox)
+  gen(toStringDragonbox0)
 
 when isMainModule:
   main()
