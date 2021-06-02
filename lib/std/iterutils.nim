@@ -77,6 +77,7 @@ macro filterIt*(x: ForLoopStmt): untyped =
     for ai in filterIt(10.iota, it mod 2 == 0):
       echo ai
   # xxx instead, can we allow `iterable` as template return type? it would compose better
+  # maybe the alias PR solves this!
   let body = x[^1]
   let ai2 = x[^3]
   let elems = x[^2]
