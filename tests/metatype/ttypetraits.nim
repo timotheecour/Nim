@@ -12,6 +12,9 @@ block: # toUnsigned, toSigned
   doAssert int64.toUnsigned is uint64
   doAssert int.toUnsigned is uint
   doAssert $uint.toUnsigned == "uint"
+  # disallowed for now
+  doAssert not compiles(toUnsigned(range[0..7]))
+  doAssert not compiles(toSigned(range[0..7]))
 
 block: # isNamedTuple
   type Foo1 = (a:1,).type

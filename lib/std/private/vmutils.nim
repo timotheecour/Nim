@@ -12,7 +12,7 @@ template forwardImpl*(impl, arg) {.dirty.} =
     else:
       impl(x.uint64)
 
-template toUnsigned*(T: typedesc[SomeInteger]): untyped =
+template toUnsigned*(T: typedesc[SomeInteger and not range]): untyped =
   when T is int8: uint8
   elif T is int16: uint16
   elif T is int32: uint32
@@ -20,7 +20,7 @@ template toUnsigned*(T: typedesc[SomeInteger]): untyped =
   elif T is int: uint
   else: T
 
-template toSigned*(T: typedesc[SomeInteger]): untyped =
+template toSigned*(T: typedesc[SomeInteger and not range]): untyped =
   when T is uint8: int8
   elif T is uint16: int16
   elif T is uint32: int32

@@ -37,6 +37,9 @@ runnableExamples:
   assert int8.toUnsigned is uint8
   assert uint.toUnsigned is uint
   assert int.toUnsigned is uint
+  # range types are currently unsupported:
+  doAssert not compiles(toUnsigned(range[0..7]))
+  doAssert not compiles(toSigned(range[0..7]))
 
 proc name*(t: typedesc): string {.magic: "TypeTrait".} =
   ## Returns the name of the given type.
