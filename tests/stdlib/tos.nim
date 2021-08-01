@@ -700,6 +700,9 @@ block: # isAdmin
 template main =
   # xxx move all tests under here so they get tested in VM, for ones which can
   block: # parseCmdLine, bug #14343
+    doAssertRaises(ValueError): discard "\"".parseCmdLine
+    doAssertRaises(ValueError): discard "  \"  ".parseCmdLine
+    doAssertRaises(ValueError): discard "  \'  ".parseCmdLine
     let a = ["foo", "ba'r", "b\"az", "", "'", "''", "\"\'", "", "", "\\", "\n\a\b\t\0abc", " ", "  a   \\", " '   ' '", """  ' " \ '' "" """]
     let a2 = a.quoteShellCommand
     let b2 = a2.parseCmdLine
@@ -716,6 +719,7 @@ template main =
       
       doAssert "".parseCmdLine == @[]
       doAssert " \t\t   \t".parseCmdLine == @[]
+      doAssert " \t  abc   \t def  \t\t  ".parseCmdLine == @["abc", "def"]
       doAssert " \t  abc   \t def  \t\t  ".parseCmdLine == @["abc", "def"]
     elif defined(windows):
       discard # xxx add tests

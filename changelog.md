@@ -104,6 +104,9 @@
 - In `std/dom`, `Interval` is now a `ref object`, same as `Timeout`. Definitions of `setTimeout`,
   `clearTimeout`, `setInterval`, `clearInterval` were updated.
 
+- `os.parseCmdLine` now raises on posix for invalid inputs, and now returns correct results, such
+  that `parseCmdLine(quoteShellCommand(a)) == a`.
+
 
 ## Standard library additions and changes
 
