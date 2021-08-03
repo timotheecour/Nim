@@ -655,6 +655,17 @@ proc semVarOrLet(c: PContext, n: PNode, symkind: TSymKind): PNode =
       if v.flags * {sfGlobal, sfThread} == {sfGlobal}:
         message(c.config, v.info, hintGlobalVar)
 
+proc pushStaticContext(c: PContext, n: PNode): PSym =
+  let s2 = newSym(skLabel, c.cache.idAnon, nextSymId c.idgen, c.graph.owners[^1], n.info)
+  s2.flags.incl sfUsed
+  result = c.p.owner
+  c.p.owner = s2
+  pushOwner(c, s2)
+
+proc popStaticContext(c: PContext, ownerOld: PSym) =
+  c.p.owner = ownerOld
+  popOwner(c)
+
 proc semConst(c: PContext, n: PNode): PNode =
   result = copyNode(n)
   inc c.inStaticContext
@@ -672,13 +683,8 @@ proc semConst(c: PContext, n: PNode): PNode =
     var typFlags: TTypeAllowedFlags
 
     # don't evaluate here since the type compatibility check below may add a converter
-    let s2 = newSym(skLabel, c.cache.idAnon, nextSymId c.idgen, c.graph.owners[^1], n.info)
-    s2.flags.incl sfUsed
-    let ownerOld = c.p.owner
-    c.p.owner = s2
-    pushOwner(c, s2)
+    let ownerOld = pushStaticContext(c, a[^1])
     var def = semExprWithType(c, a[^1])
-
     if def.kind == nkSym and def.sym.kind in {skTemplate, skMacro}:
       typFlags.incl taIsTemplateOrMacro
     elif def.typ.kind == tyTypeDesc and c.p.owner.kind != skMacro:
@@ -736,8 +742,7 @@ proc semConst(c: PContext, n: PNode): PNode =
                 else: def[j][1]
         b[j] = newSymNode(v)
     result.add b
-    c.p.owner = ownerOld
-    popOwner(c)
+    popStaticContext(c, ownerOld)
   dec c.inStaticContext
 
 include semfields
