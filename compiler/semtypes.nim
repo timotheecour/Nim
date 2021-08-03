@@ -487,7 +487,6 @@ proc semTuple(c: PContext, n: PNode, prev: PType): PType =
 proc semIdentVis(c: PContext, kind: TSymKind, n: PNode,
                  allowed: TSymFlags): PSym =
   # identifier with visibility
-  dbgIf n, kind, allowed, n.kind
   if n.kind == nkPostfix:
     if n.len == 2:
       # for gensym'ed identifiers the identifier may already have been
@@ -505,7 +504,6 @@ proc semIdentVis(c: PContext, kind: TSymKind, n: PNode,
       illFormedAst(n, c.config)
   else:
     result = newSymG(kind, n, c)
-    dbgIf result, result.owner
 
 proc semIdentWithPragma(c: PContext, kind: TSymKind, n: PNode,
                         allowed: TSymFlags): PSym =

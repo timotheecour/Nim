@@ -83,7 +83,7 @@ block: # bug #13887
     template fun() =
       var s = @[10,11,12]
       let a1 = cast[int](s[0].addr) # 4323682360
-      let z = s[0].addr 
+      let z = s[0].addr
       let a2 = cast[int](z) # 10 => BUG
       doAssert a1 == a2
     static: fun() # fails

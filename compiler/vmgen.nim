@@ -1500,8 +1500,7 @@ proc checkCanEval(c: PCtx; n: PNode) =
     # are in the right scope:
     if sfGenSym in s.flags and c.prc.sym == nil: discard
     else:
-      dbg s, s.kind, s.isOwnedBy(c.prc.sym), s.owner, s.owner.kind, c.mode, c.prc.sym, s.flags
-      # , getCurrOwner(c)
+      # dbg s, s.kind, s.isOwnedBy(c.prc.sym), s.owner, s.owner.kind, c.mode, c.prc.sym, s.flags
       cannotEval(c, n)
   elif s.kind in {skProc, skFunc, skConverter, skMethod,
                   skIterator} and sfForward in s.flags:
