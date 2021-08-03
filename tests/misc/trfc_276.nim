@@ -155,6 +155,43 @@ when true: # tests with module dependencies
       doAssert z1 == @[k0, k1, k2]
   fn3()
 
+block: # bug #18641
+  type A = object
+    ha1: int
+  static:
+    var a = A()
+    var a2 = a.addr
+    a2.ha1 = 11
+    doAssert a2.ha1 == 11
+    a.ha1 = 12
+    doAssert a.ha1 == 12
+    doAssert a2.ha1 == 12
+  static:
+    proc fn() =
+      var a = A()
+      var a2 = a.addr
+      a2.ha1 = 11
+      doAssert a2.ha1 == 11
+      a.ha1 = 12
+      doAssert a.ha1 == 12
+      doAssert a2.ha1 == 12
+    fn()
+
+block:
+  type A = object
+    ha1: int
+  const z = block:
+    var a = A()
+    var a2 = a.addr
+    a2.ha1 = 11
+    doAssert a2.ha1 == 11
+    a.ha1 = 12
+    doAssert a.ha1 == 12
+    doAssert a2.ha1 == 12
+    123
+  doAssert z == 123
+
+
 when true:
   #[
   bug #14645 (only partial fix)

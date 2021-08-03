@@ -315,6 +315,7 @@ proc semIdentDef(c: PContext, n: PNode, kind: TSymKind): PSym =
   else:
     result = semIdentWithPragma(c, kind, n, {})
     if result.owner.kind == skModule:
+    # if result.owner.kind in {skModule, skLabel}:
       incl(result.flags, sfGlobal)
   result.options = c.config.options
 
@@ -2239,8 +2240,13 @@ proc semStaticStmt(c: PContext, n: PNode): PNode =
   #writeStackTrace()
   inc c.inStaticContext
   openScope(c)
+  # var ownerOld: PSym = nil
+  # if c.config.isDefined("nim_pushStaticContext"):
+  #   ownerOld = pushStaticContext(c, n)
   let ownerOld = pushStaticContext(c, n)
   let a = semStmt(c, n[0], {})
+  # if c.config.isDefined("nim_pushStaticContext"):
+  #   popStaticContext(c, ownerOld)
   popStaticContext(c, ownerOld)
   closeScope(c)
   dec c.inStaticContext
