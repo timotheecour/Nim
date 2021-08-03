@@ -2244,6 +2244,7 @@ proc semStaticStmt(c: PContext, n: PNode): PNode =
   # if c.config.isDefined("nim_pushStaticContext"):
   #   ownerOld = pushStaticContext(c, n)
   let ownerOld = pushStaticContext(c, n)
+  let ownerNew = c.p.owner
   let a = semStmt(c, n[0], {})
   # if c.config.isDefined("nim_pushStaticContext"):
   #   popStaticContext(c, ownerOld)
@@ -2251,7 +2252,10 @@ proc semStaticStmt(c: PContext, n: PNode): PNode =
   closeScope(c)
   dec c.inStaticContext
   n[0] = a
+  dbgIf c.p.owner, ownerOld, ownerNew
   evalStaticStmt(c.module, c.idgen, c.graph, a, c.p.owner)
+  dbgIf "after"
+  # popStaticContext(c, ownerOld)
   when false:
     # for incremental replays, keep the AST as required for replays:
     result = n
