@@ -140,7 +140,7 @@ block: # bug #13795
   main()
 
 when true: # tests with module dependencies
-  import std / sequtils
+  import std/sequtils
   # bug #13795
   type SomeEnum = enum
     k0 = "foo", k1, k2
@@ -154,3 +154,20 @@ when true: # tests with module dependencies
       let z1 = SomeEnum.toSeq
       doAssert z1 == @[k0, k1, k2]
   fn3()
+
+when true:
+  #[
+  bug #14645 (only partial fix)
+  ]#
+  import std/strformat
+  proc re(s: static string): string = s
+  proc p =
+    when false:
+      # xxx still doesn't work:
+      # internal error: compiler/vmgen.nim(1669, 23)
+      # internalAssert(c.config, c.prc.regInfo[dest].kind < slotSomeTemp)
+      const rx1 = re(&"")
+    const rx2 = re(static(&""))
+    static:
+      # now works
+      let rx3 = re(&"")
