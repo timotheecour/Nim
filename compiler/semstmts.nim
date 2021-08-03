@@ -314,6 +314,7 @@ proc semIdentDef(c: PContext, n: PNode, kind: TSymKind): PSym =
     #  echo "global variable here ", n.info, " ", result.name.s
   else:
     result = semIdentWithPragma(c, kind, n, {})
+    dbgIf result.owner
     if result.owner.kind == skModule:
       incl(result.flags, sfGlobal)
   result.options = c.config.options
@@ -525,6 +526,9 @@ proc semVarOrLet(c: PContext, n: PNode, symkind: TSymKind): PNode =
     var def: PNode = c.graph.emptyNode
     if a[^1].kind != nkEmpty:
       def = semExprWithType(c, a[^1], {})
+      if isCompilerDebug():
+        dbg def, def.kind
+        debug2 def
 
       if def.kind in nkSymChoices and def[0].typ.skipTypes(abstractInst).kind == tyEnum:
         errorSymChoiceUseQualifier(c, def)
@@ -590,13 +594,19 @@ proc semVarOrLet(c: PContext, n: PNode, symkind: TSymKind): PNode =
           if a.kind != nkVarTuple: typ else: tup[j])
         addToVarSection(c, result, n, a)
         continue
+      debugIf a[j]
       var v = semIdentDef(c, a[j], symkind)
+      dbgIf j, a.len, a[j], symkind, v, v.kind
+      dbgIf def, def.kind, v.owner, v.kind, v.flags, c.p.owner
+      debugIf v
+
       styleCheckDef(c.config, v)
       onDef(a[j].info, v)
       if sfGenSym notin v.flags:
         if not isDiscardUnderscore(v): addInterfaceDecl(c, v)
       else:
         if v.owner == nil: v.owner = c.p.owner
+      dbgIf v.owner
       when oKeepVariableNames:
         if c.inUnrolledContext > 0: v.flags.incl(sfShadowed)
         else:
@@ -672,7 +682,16 @@ proc semConst(c: PContext, n: PNode): PNode =
     var typFlags: TTypeAllowedFlags
 
     # don't evaluate here since the type compatibility check below may add a converter
+    let s2 = newSym(skLabel, c.cache.idAnon, nextSymId c.idgen, c.graph.owners[^1], n.info)
+    s2.flags.incl sfUsed
+    let ownerOld = c.p.owner
+    c.p.owner = s2
+    dbgIf ownerOld, s2
+    pushOwner(c, s2)
+
     var def = semExprWithType(c, a[^1])
+
+
 
     if def.kind == nkSym and def.sym.kind in {skTemplate, skMacro}:
       typFlags.incl taIsTemplateOrMacro
@@ -731,6 +750,8 @@ proc semConst(c: PContext, n: PNode): PNode =
                 else: def[j][1]
         b[j] = newSymNode(v)
     result.add b
+    c.p.owner = ownerOld
+    popOwner(c)
   dec c.inStaticContext
 
 include semfields

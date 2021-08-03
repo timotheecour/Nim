@@ -214,6 +214,7 @@ proc newSymS(kind: TSymKind, n: PNode, c: PContext): PSym =
 
 proc newSymG*(kind: TSymKind, n: PNode, c: PContext): PSym =
   # like newSymS, but considers gensym'ed symbols
+  dbgIf n, n.kind
   if n.kind == nkSym:
     # and sfGenSym in n.sym.flags:
     result = n.sym
@@ -232,6 +233,7 @@ proc newSymG*(kind: TSymKind, n: PNode, c: PContext): PSym =
     result.owner = getCurrOwner(c)
   else:
     result = newSym(kind, considerQuotedIdent(c, n), nextSymId c.idgen, getCurrOwner(c), n.info)
+    dbgIf result, result.owner, getCurrOwner(c)
   #if kind in {skForVar, skLet, skVar} and result.owner.kind == skModule:
   #  incl(result.flags, sfGlobal)
   when defined(nimsuggest):

@@ -2201,6 +2201,9 @@ proc evalConstExprAux(module: PSym; idgen: IdGenerator;
   var c = PCtx g.vm
   let oldMode = c.mode
   c.mode = mode
+
+  # PRTEMP1
+
   let start = genExpr(c, n, requiresValue = mode!=emStaticStmt)
   if c.code[start].opcode == opcEof: return newNodeI(nkEmpty, n.info)
   assert c.code[start].opcode != opcEof

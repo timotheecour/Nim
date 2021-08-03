@@ -1495,11 +1495,14 @@ proc checkCanEval(c: PCtx; n: PNode) =
   if {sfCompileTime, sfGlobal} <= s.flags: return
   if s.importcCondVar: return
   if s.kind in {skVar, skTemp, skLet, skParam, skResult} and
-      not s.isOwnedBy(c.prc.sym) and s.owner != c.module and c.mode != emRepl:
+      not s.isOwnedBy(c.prc.sym) and s.owner != c.module and c.mode != emRepl and not (s.owner.kind == skLabel): # PRTEMP
     # little hack ahead for bug #12612: assume gensym'ed variables
     # are in the right scope:
     if sfGenSym in s.flags and c.prc.sym == nil: discard
-    else: cannotEval(c, n)
+    else:
+      dbg s, s.kind, s.isOwnedBy(c.prc.sym), s.owner, s.owner.kind, c.mode, c.prc.sym, s.flags
+      # , getCurrOwner(c)
+      cannotEval(c, n)
   elif s.kind in {skProc, skFunc, skConverter, skMethod,
                   skIterator} and sfForward in s.flags:
     cannotEval(c, n)
