@@ -14,7 +14,7 @@ static: # bug #10938
     incl(s, i)
 
 block:
-  # this was causing issues in some variants
+  # make sure this keeps working (would fail under some implementation variants)
   const SymChars: set[char] = {'a' .. 'b'}
   var a = 'x'
   discard contains(SymChars, a)
@@ -106,15 +106,51 @@ block: # bug #12172
       test
   proc test2 =
     const a3 = block:
-      let i = 0 # Error here too
+      let i = 0 # was error here too
       i
 
-when false:
-  # xxx this doesn't work yet
-  block:
-    proc test =
-      const a = block:
-        template fn(x): untyped =
-          let i = 0
-          i
-        fn(123)
+block:
+  proc test =
+    const a1 = block:
+      template fn(x): untyped =
+        let i = 0
+        i
+      fn(123)
+
+  const a2 = block:
+    template fn(x): untyped =
+      let i = 0
+      i
+    fn(123)
+
+  const a3 = block:
+    template fn(x): untyped =
+      let i = x
+      i
+    fn(123)
+  doAssert a3 == 123
+
+block: # bug #13795
+  template fun(): untyped =
+    var c = 3
+    c
+  proc main() =
+    const c = fun()
+    doAssert c == 3
+  main()
+
+when true: # tests with module dependencies
+  import std / sequtils
+  # bug #13795
+  type SomeEnum = enum
+    k0 = "foo", k1, k2
+  proc fn2(): auto =
+    const y = SomeEnum.toSeq
+    y
+  doAssert fn2() == @[k0, k1, k2]
+
+  proc fn3() =
+    static:
+      let z1 = SomeEnum.toSeq
+      doAssert z1 == @[k0, k1, k2]
+  fn3()
