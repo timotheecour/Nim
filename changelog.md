@@ -104,9 +104,6 @@
 - In `std/dom`, `Interval` is now a `ref object`, same as `Timeout`. Definitions of `setTimeout`,
   `clearTimeout`, `setInterval`, `clearInterval` were updated.
 
-- `os.parseCmdLine` with `-d:nimPreviewParseCmdLine` (enabled on devel) now raises on posix for invalid inputs,
-  and now returns correct results, such that `parseCmdLine(quoteShellCommand(a)) == a`.
-
 
 ## Standard library additions and changes
 
@@ -211,6 +208,8 @@
   determining preferred I/O block size for this file object.
 
 - Added `os.getCacheDir()` to return platform specific cache directory.
+
+- Added `os.parseShellCommand` such that `parseShellCommand(quoteShellCommand(a)) == a`.
 
 - Added a simpler to use `io.readChars` overload.
 
