@@ -1834,7 +1834,6 @@ proc semMethodPrototype(c: PContext; s: PSym; n: PNode) =
 
 proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
                 validPragmas: TSpecialWords, flags: TExprFlags = {}): PNode =
-  dbgIf c.p, c.module
   result = semProcAnnotation(c, n, validPragmas)
   if result != nil: return result
   result = n
@@ -1875,7 +1874,6 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
   if c.config.isDefined("nimLazySemcheck"):
     # PRTEMP
     let status = lazyVisit(c.graph, s)
-    dbgIf status, s
     if not status.needDeclaration:
       # PRTEMP
       s.flags.incl sfForward
@@ -1892,11 +1890,8 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
       # c.graph.symToScope[s.id] = c.currentScope # TODO: needed?
       return result
 
-  dbgIf c.p, c.module
   pushOwner(c, s)
-  dbgIf c.p, c.module
   openScope(c)
-  dbgIf c.p, c.module
 
   # process parameters:
   # generic parameters, parameters, and also the implicit generic parameters
@@ -1907,7 +1902,6 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
   # potential forward declaration.
   setGenericParamsMisc(c, n)
 
-  dbgIf c.p, n[paramsPos].kind, s, c.module
   if n[paramsPos].kind != nkEmpty:
     semParamList(c, n[paramsPos], n[genericParamsPos], s)
   else:
@@ -1941,9 +1935,7 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
   var (proto, comesFromShadowScope) =
       if isAnon: (nil, false)
       else: searchForProc(c, declarationScope, s)
-  dbgIf proto, s, s.flags, s.kind, n[bodyPos].kind
   if proto == nil and sfForward in s.flags and sfLazy notin s.flags and n[bodyPos].kind != nkEmpty:
-    dbgIf "D20210829T225843"
     ## In cases such as a macro generating a proc with a gensymmed name we
     ## know `searchForProc` will not find it and sfForward will be set. In
     ## such scenarios the sym is shared between forward declaration and we
@@ -1955,7 +1947,6 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     ## See the "doubly-typed forward decls" case in tmacros_issues.nim
     proto = s
   let hasProto = proto != nil
-  dbgIf hasProto, s.flags
 
   # set the default calling conventions
   case s.kind
@@ -1974,7 +1965,6 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
       s.typ.callConv = lastOptionEntry(c).defaultCC # PRTEMP: for importc ?
 
   if not hasProto and sfGenSym notin s.flags and sfLazy notin s.flags: #and not isAnon:
-    dbgIf "here"
     if s.kind in OverloadableSyms:
       addInterfaceOverloadableSymAt(c, declarationScope, s)
     else:
@@ -1984,15 +1974,12 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     s.flags.excl sfLazy
     if not hasProto:
       s.flags.excl sfForward
-  dbgIf s.flags
 
   pragmaCallable(c, s, n, validPragmas)
   # PRTEMP after here, sfForward => sfImportc
-  dbgIf s.flags
 
   if not hasProto:
     implicitPragmas(c, s, n.info, validPragmas)
-  dbgIf s.flags
 
   if n[pragmasPos].kind != nkEmpty:
     setEffectsForProcType(c.graph, s.typ, n[pragmasPos], s)
@@ -2016,14 +2003,11 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
   styleCheckDef(c.config, s)
   if hasProto:
     onDefResolveForward(n[namePos].info, proto)
-    dbgIf proto.flags
   else:
     onDef(n[namePos].info, s)
 
   if hasProto: # PRTEMP ideally, shouldn't treat this like we have a proto for lazy re-visit?
-    dbgIf proto == s, s
     if sfForward notin proto.flags and proto.magic == mNone:
-      dbgIf proto.flags, proto == s, proto.magic, s
       wrongRedefinition(c, n.info, proto.name.s, proto.info)
     if not comesFromShadowScope:
       excl(proto.flags, sfForward)
@@ -2132,7 +2116,6 @@ proc determineType(c: PContext, s: PSym) =
   if s.typ != nil: return
   #if s.magic != mNone: return
   #if s.ast.isNil: return
-  dbgIf c.module, s
   # c.scopeStack.push
   # let old = c.currentScope
   #[
@@ -2167,7 +2150,6 @@ proc determineType(c: PContext, s: PSym) =
   c2.p = pBaseOld
   # c.scopeStack.pop
   dbgIf c.module, s, "after"
-  dbgIf getStacktrace()
 
 proc determineType2*(c: PContext, s: PSym) {.exportc.} =
   if c.config.isDefined("nimLazySemcheck"): # PRTEMP FACTOR
