@@ -1878,6 +1878,7 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     if not status.needDeclaration:
       # PRTEMP
       s.flags.incl sfForward
+      s.flags.incl sfLazy
       if s.kind in OverloadableSyms:
         addInterfaceOverloadableSymAt(c, declarationScope, s)
       else:
@@ -1931,6 +1932,7 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
   var (proto, comesFromShadowScope) =
       if isAnon: (nil, false)
       else: searchForProc(c, declarationScope, s)
+  dbgIf proto, s, s.flags, s.kind, n[bodyPos].kind
   if proto == nil and sfForward in s.flags and n[bodyPos].kind != nkEmpty:
     ## In cases such as a macro generating a proc with a gensymmed name we
     ## know `searchForProc` will not find it and sfForward will be set. In
@@ -1943,6 +1945,7 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     ## See the "doubly-typed forward decls" case in tmacros_issues.nim
     proto = s
   let hasProto = proto != nil
+  dbgIf hasProto, s.flags
 
   # set the default calling conventions
   case s.kind
@@ -1958,15 +1961,20 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
       # in this case we're either a forward declaration or we're an impl without
       # a forward decl. We set the calling convention or will be set during
       # pragma analysis further down.
-      s.typ.callConv = lastOptionEntry(c).defaultCC
+      s.typ.callConv = lastOptionEntry(c).defaultCC # PRTEMP: for importc ?
 
-  if not hasProto and sfGenSym notin s.flags: #and not isAnon:
+  if not hasProto and sfGenSym notin s.flags and sfLazy notin s.flags: #and not isAnon:
+    dbgIf "here"
     if s.kind in OverloadableSyms:
       addInterfaceOverloadableSymAt(c, declarationScope, s)
     else:
       addInterfaceDeclAt(c, declarationScope, s)
 
+  s.flags.excl sfLazy
+
   pragmaCallable(c, s, n, validPragmas)
+  # PRTEMP after here, sfForward => sfImportc
+
   if not hasProto:
     implicitPragmas(c, s, n.info, validPragmas)
 
@@ -1992,11 +2000,14 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
   styleCheckDef(c.config, s)
   if hasProto:
     onDefResolveForward(n[namePos].info, proto)
+    dbgIf proto.flags
   else:
     onDef(n[namePos].info, s)
 
-  if hasProto:
+  if hasProto: # PRTEMP ideally, shouldn't treat this like we have a proto for lazy re-visit?
+    dbgIf proto == s, s
     if sfForward notin proto.flags and proto.magic == mNone:
+      dbgIf proto.flags, proto == s, proto.magic, s
       wrongRedefinition(c, n.info, proto.name.s, proto.info)
     if not comesFromShadowScope:
       excl(proto.flags, sfForward)
