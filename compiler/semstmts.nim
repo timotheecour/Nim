@@ -2134,13 +2134,6 @@ proc determineType(c: PContext, s: PSym) =
   if s.typ != nil: return
   #if s.magic != mNone: return
   #if s.ast.isNil: return
-  # c.scopeStack.push
-  # let old = c.currentScope
-  #[
-  TODO: change PContext also?
-  ]#
-  # c.currentScope = c.scopeStack[^1]
-
   var validPragmas: TSpecialWords
   #[
   PRTEMP
@@ -2163,17 +2156,13 @@ proc determineType(c: PContext, s: PSym) =
   let pBaseOld = c2.p
   c2.p = lcontext.pBase.PProcCon
   discard semProcAux(c2, s.ast, s.kind, validPragmas)
-  # discard semProcAux(c, s.ast, s.kind, validPragmas)
   c2.currentScope = old
   c2.p = pBaseOld
-  # c.scopeStack.pop
-  dbgIf c.module, s, "after"
 
 proc determineType2*(c: PContext, s: PSym) {.exportc.} =
   if c.config.isDefined("nimLazySemcheck"): # PRTEMP FACTOR
     # TODO: instead, just set sfLazy flag?
     lazyVisit(c.graph, s).needDeclaration = true
-  # PRTEMP
   determineType(c, s)
 
 proc semIterator(c: PContext, n: PNode): PNode =
