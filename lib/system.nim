@@ -3153,6 +3153,6 @@ when notJSnotNims and not defined(nimSeqsV2):
     discard
 
 
-when not defined(nimscript):
+when defined(nimHasLazySemcheck) and not defined(nimscript):
   # PRTEMP
   {.define(nimLazySemcheck).}
