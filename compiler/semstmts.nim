@@ -1835,14 +1835,12 @@ proc semMethodPrototype(c: PContext; s: PSym; n: PNode) =
 proc isCompilerPoc(c: PContext, s: PSym, n: PNode): bool =
   # PRTEMP HACK
   # if s.name.s == "nimGCvisit":
-  #   return true
-  when true:
-    for ai in n[pragmasPos]:
-      # TODO: compilerproc; sameIdent etc
-      if ai.kind == nkIdent:
-        for a in ["compilerRtl", "compilerProc", "nimbaseH"]:
-          if ai.ident == getIdent(c.cache, a):
-            return true
+  for ai in n[pragmasPos]:
+    # TODO: compilerproc; sameIdent etc
+    if ai.kind == nkIdent:
+      for a in ["compilerRtl", "compilerProc", "nimbaseH"]:
+        if ai.ident == getIdent(c.cache, a):
+          return true
 
 proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
                 validPragmas: TSpecialWords, flags: TExprFlags = {}): PNode =
@@ -1883,12 +1881,32 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
   # where the proc was declared
   let declarationScope = c.currentScope
 
+  # if s.name.s == "nimGC_setStackBottom":
+  #   dbg s, n, "D20210830T175824"
   if c.config.isDefined("nimLazySemcheck"):
     # PRTEMP
     let status = lazyVisit(c.graph, s)
-    let ret = isCompilerPoc(c, s, n)
+    var ret = isCompilerPoc(c, s, n)
     if ret:
       dbg s, c.config$n.info, n[pragmasPos], ret
+    if s.name.s == "nimGC_setStackBottom":
+      dbg ret
+
+    var (proto2, comesFromShadowScope2) =
+      if isAnon: (nil, false)
+      else: searchForProc(c, declarationScope, s, isCompilerProc = true)
+    # dbg proto2
+    if proto2 != nil:
+      if sfCompilerProc in proto2.flags or sfLazyForwardRequested in proto2.flags:
+        ret = true
+        dbg proto2, s, proto2.flags, "D20210830T181343"
+
+    if s.name.s == "initGC":
+      dbg s, s.flags, s.typ, ret, status.needDeclaration, proto2
+      if proto2!=nil:
+        dbg proto2, proto2.flags, proto2.typ
+      # ret = true
+
     # if isCompilerPoc(s, n):
     if ret:
       # dbg s
@@ -1897,6 +1915,8 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     #   dbgIf s, s.flags
     #   debug2 n
     #   doAssert false
+    if s.name.s == "nimGC_setStackBottom":
+      dbg status.needDeclaration
     if not status.needDeclaration:
       # PRTEMP
       s.flags.incl sfForward
@@ -1912,6 +1932,9 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
       # PRTEMP
       # c.graph.symToScope[s.id] = c.currentScope # TODO: needed?
       return result
+
+  if s.name.s == "nimGC_setStackBottom":
+    dbg s
 
   pushOwner(c, s)
   openScope(c)
@@ -1997,6 +2020,7 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     s.flags.excl sfLazy
     if not hasProto:
       s.flags.excl sfForward
+      s.flags.incl sfLazyForwardRequested
 
   pragmaCallable(c, s, n, validPragmas)
   # PRTEMP after here, sfForward => sfImportc
@@ -2136,6 +2160,8 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     localError(c.config, s.info, "'.closure' calling convention for top level routines is invalid")
 
 proc determineType(c: PContext, s: PSym) =
+  if s.name.s == "initGC":
+    dbg s, s.flags, s.typ
   if s.typ != nil: return
   #if s.magic != mNone: return
   #if s.ast.isNil: return
