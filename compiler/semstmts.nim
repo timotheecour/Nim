@@ -1862,10 +1862,10 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
     n[namePos] = newSymNode(s)
   of nkSym:
     s = n[namePos].sym
-    dbgIf s, s.flags, c.module, s.owner
+    # dbgIf s, s.flags, c.module, s.owner
     # PRTEMP
     s.owner = c.getCurrOwner
-    dbgIf s, s.flags, c.module, s.owner, c.getCurrOwner
+    # dbgIf s, s.flags, c.module, s.owner, c.getCurrOwner
   else:
     s = semIdentDef(c, n[namePos], kind)
     n[namePos] = newSymNode(s)
@@ -1881,7 +1881,7 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
   s.ast = n
   s.options = c.config.options
   #s.scope = c.currentScope
-  dbgIf n, s, s.flags, c.module, s.owner
+  # dbgIf n, s, s.flags, c.module, s.owner
   # dbgIf getStacktrace()
 
   # before compiling the proc params & body, set as current the scope
@@ -1927,7 +1927,6 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
       lcontext.ctxt = c
       lcontext.scope = c.currentScope # TODO: needed?
       lcontext.pBase = c.p
-      dbgIf s.owner
       return result
 
   pushOwner(c, s)
@@ -2163,7 +2162,11 @@ proc determineType(c: PContext, s: PSym) =
   # dbgIf s, s.typ, s.flags, c.module
   if s.typ != nil: return
   if sfLazy notin s.flags: return # PRTEMP
-  dbgIf s, s.typ, s.flags, s.owner
+
+  when defined(nimCompilerStacktraceHints):
+    setFrameMsg c.config$s.ast.info & " " & $(s, s.owner, s.flags, c.module)
+
+  # dbgIf s, s.typ, s.flags, s.owner
   #if s.magic != mNone: return
   #if s.ast.isNil: return
   var validPragmas: TSpecialWords
