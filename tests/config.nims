@@ -37,3 +37,6 @@ switch("define", "nimExperimentalLinenoiseExtra")
 
 switch("define", "nimPreviewFloatRoundtrip")
 switch("define", "nimPreviewDotLikeOps")
+
+# PRTEMP
+switch("define", "nimLazySemcheckAfterSystem")
