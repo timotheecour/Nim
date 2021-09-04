@@ -40,3 +40,4 @@ switch("define", "nimPreviewDotLikeOps")
 
 # PRTEMP
 switch("define", "nimLazySemcheckAfterSystem")
+switch("define", "nimLazySemcheckComplete")
