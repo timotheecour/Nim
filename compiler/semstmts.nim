@@ -1937,6 +1937,7 @@ proc semProcAux(c: PContext, n: PNode, kind: TSymKind,
       lcontext.ctxt = c
       lcontext.scope = c.currentScope # TODO: needed?
       lcontext.pBase = c.p
+      lcontext.inConceptDecl = c.inConceptDecl
       # PRTEMP avoid doing all those copies; maybe c.optionStack should be what's always written to
       lcontext.optionStack = snapshotOptionEntry(c) # PRTEMP
       return result
@@ -2196,6 +2197,8 @@ proc determineTypeOne(c: PContext, s: PSym) =
   let lcontext = c.graph.symLazyContext[s.id]
   # let old = c.optionStack
   let old = c.snapshotOptionEntry
+  let inConceptDecl = c.inConceptDecl
+  c.inConceptDecl = lcontext.inConceptDecl
   c.optionStack = lcontext.optionStack
   # TODO: swap?
 
@@ -2212,6 +2215,7 @@ proc determineTypeOne(c: PContext, s: PSym) =
 
   readOptionEntry(c, old)
   c.optionStack = old.parent
+  c.inConceptDecl = inConceptDecl
   c.popOwner()
 
 proc determineType2(graph: ModuleGraph, s: PSym) {.exportc.} =
