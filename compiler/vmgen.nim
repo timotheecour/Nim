@@ -614,7 +614,9 @@ proc genCall(c: PCtx; n: PNode; dest: var TDest) =
     c.gABC(n, opcIndCallAsgn, dest, x, n.len)
   c.freeTempRange(x, n.len)
 
-template isGlobal(s: PSym): bool = sfGlobal in s.flags and s.kind != skForVar
+template isGlobal(s: PSym): bool =
+  # (sfGlobal in s.flags and s.kind != skForVar) or (s.owner != nil and s.owner.kind == skLabel)
+  (sfGlobal in s.flags and s.kind != skForVar)
 proc isGlobal(n: PNode): bool = n.kind == nkSym and isGlobal(n.sym)
 
 proc needsAsgnPatch(n: PNode): bool =
@@ -986,7 +988,8 @@ proc genBindSym(c: PCtx; n: PNode; dest: var TDest) =
 proc fitsRegister*(t: PType): bool =
   assert t != nil
   t.skipTypes(abstractInst + {tyStatic} - {tyTypeDesc}).kind in {
-    tyRange, tyEnum, tyBool, tyInt..tyUInt64, tyChar}
+    # tyRange, tyEnum, tyBool, tyInt..tyUInt64, tyChar}
+    tyRange, tyEnum, tyBool, tyInt..tyUInt64, tyChar, tyPtr} # PRTEMP
 
 proc ldNullOpcode(t: PType): TOpcode =
   assert t != nil
@@ -1495,11 +1498,13 @@ proc checkCanEval(c: PCtx; n: PNode) =
   if {sfCompileTime, sfGlobal} <= s.flags: return
   if s.importcCondVar: return
   if s.kind in {skVar, skTemp, skLet, skParam, skResult} and
-      not s.isOwnedBy(c.prc.sym) and s.owner != c.module and c.mode != emRepl:
+      not s.isOwnedBy(c.prc.sym) and s.owner != c.module and c.mode != emRepl and not (s.owner.kind == skLabel): # PRTEMP
     # little hack ahead for bug #12612: assume gensym'ed variables
     # are in the right scope:
     if sfGenSym in s.flags and c.prc.sym == nil: discard
-    else: cannotEval(c, n)
+    else:
+      # dbg s, s.kind, s.isOwnedBy(c.prc.sym), s.owner, s.owner.kind, c.mode, c.prc.sym, s.flags
+      cannotEval(c, n)
   elif s.kind in {skProc, skFunc, skConverter, skMethod,
                   skIterator} and sfForward in s.flags:
     cannotEval(c, n)
@@ -1632,6 +1637,8 @@ proc genRdVar(c: PCtx; n: PNode; dest: var TDest; flags: TGenFlags) =
   # gfNodeAddr and gfNode are mutually exclusive
   assert card(flags * {gfNodeAddr, gfNode}) < 2
   let s = n.sym
+  dbgIf s, c.config$n.info, n, s.isGlobal, s.kind, s.owner, flags, s.position, dest
+  dbgIf getStacktrace()
   if s.isGlobal:
     let isImportcVar = importcCondVar(s)
     if sfCompileTime in s.flags or c.mode == emRepl or isImportcVar:
@@ -1664,7 +1671,9 @@ proc genRdVar(c: PCtx; n: PNode; dest: var TDest; flags: TGenFlags) =
                           s.kind in {skParam, skResult}):
       if dest < 0:
         dest = s.position + ord(s.kind == skParam)
+        dbgIf c.prc.regInfo, dest, c.prc.regInfo.len, c.prc.sym
         internalAssert(c.config, c.prc.regInfo[dest].kind < slotSomeTemp)
+        # discard
       else:
         # we need to generate an assignment:
         let requiresCopy = c.prc.regInfo[dest].kind >= slotSomeTemp and
@@ -1853,6 +1862,7 @@ proc getNullValue(typ: PType, info: TLineInfo; conf: ConfigRef): PNode =
     result = newNodeI(nkEmpty, info)
 
 proc genVarSection(c: PCtx; n: PNode) =
+  dbgIf c.config$n.info, n
   for a in n:
     if a.kind == nkCommentStmt: continue
     #assert(a[0].kind == nkSym) can happen for transformed vars
@@ -1865,6 +1875,7 @@ proc genVarSection(c: PCtx; n: PNode) =
     elif a[0].kind == nkSym:
       let s = a[0].sym
       checkCanEval(c, a[0])
+      dbgIf s, s.kind, s.isGlobal, s.position, a[2].kind
       if s.isGlobal:
         if s.position == 0:
           if importcCond(c, s): c.importcSym(a.info, s)
@@ -1876,8 +1887,10 @@ proc genVarSection(c: PCtx; n: PNode) =
             c.globals.add(sa)
             s.position = c.globals.len
         if a[2].kind != nkEmpty:
+          dbgIf "gfNodeAddr"
           let tmp = c.genx(a[0], {gfNodeAddr})
           let val = c.genx(a[2])
+          dbgIf tmp, val
           c.genAdditionalCopy(a[2], opcWrDeref, tmp, 0, val)
           c.freeTemp(val)
           c.freeTemp(tmp)
@@ -1887,16 +1900,20 @@ proc genVarSection(c: PCtx; n: PNode) =
           c.gABx(a, ldNullOpcode(s.typ), s.position, c.genType(s.typ))
         else:
           assert s.typ != nil
+          dbgIf fitsRegister(s.typ), s.typ
           if not fitsRegister(s.typ):
             c.gABx(a, ldNullOpcode(s.typ), s.position, c.genType(s.typ))
           let le = a[0]
           assert le.typ != nil
+          dbgIf fitsRegister(le.typ), le.typ
           if not fitsRegister(le.typ) and s.kind in {skResult, skVar, skParam}:
+            dbgIf "not fitsRegister"
             var cc = c.getTemp(le.typ)
             gen(c, a[2], cc)
             c.gABC(le, whichAsgnOpc(le), s.position.TRegister, cc)
             c.freeTemp(cc)
           else:
+            dbgIf "fitsRegister"
             gen(c, a[2], s.position.TRegister)
     else:
       # assign to a[0]; happens for closures

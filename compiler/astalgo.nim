@@ -527,6 +527,12 @@ proc value(this: var DebugPrinter; value: PSym) =
   this.value(value.name.s)
   this.key("id")
   this.value(value.id)
+  if value.owner != nil:
+    this.key "ownerName"
+    this.value($value.owner) # PRTEMP
+    # this.key "owner"
+    # this.value(value.owner) # PRTEMP
+
   if value.kind in {skField, skEnumField, skParam}:
     this.key("position")
     this.value(value.position)

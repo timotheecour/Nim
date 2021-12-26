@@ -2204,6 +2204,11 @@ proc evalConstExprAux(module: PSym; idgen: IdGenerator;
   var c = PCtx g.vm
   let oldMode = c.mode
   c.mode = mode
+
+  # PRTEMP1
+  # let oldPrc = c.prc
+  # c.prc = PProc(sym: prc)
+
   let start = genExpr(c, n, requiresValue = mode!=emStaticStmt)
   if c.code[start].opcode == opcEof: return newNodeI(nkEmpty, n.info)
   assert c.code[start].opcode != opcEof
@@ -2214,6 +2219,8 @@ proc evalConstExprAux(module: PSym; idgen: IdGenerator;
   result = rawExecute(c, start, tos).regToNode
   if result.info.col < 0: result.info = n.info
   c.mode = oldMode
+
+  # c.prc = oldPrc
 
 proc evalConstExpr*(module: PSym; idgen: IdGenerator; g: ModuleGraph; e: PNode): PNode =
   result = evalConstExprAux(module, idgen, g, nil, e, emConst)

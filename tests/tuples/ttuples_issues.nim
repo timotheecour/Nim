@@ -5,7 +5,7 @@ discard """
 # targets include `cpp` because in the past, there were several cpp-specific bugs with tuples.
 
 import std/tables
-
+{.define(nimCompilerDebug).}
 template main() =
   block: # bug #4479
     type

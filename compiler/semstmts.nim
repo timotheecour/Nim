@@ -315,6 +315,7 @@ proc semIdentDef(c: PContext, n: PNode, kind: TSymKind): PSym =
   else:
     result = semIdentWithPragma(c, kind, n, {})
     if result.owner.kind == skModule:
+    # if result.owner.kind in {skModule, skLabel}:
       incl(result.flags, sfGlobal)
   result.options = c.config.options
 
@@ -660,6 +661,17 @@ proc semVarOrLet(c: PContext, n: PNode, symkind: TSymKind): PNode =
       if v.flags * {sfGlobal, sfThread} == {sfGlobal}:
         message(c.config, v.info, hintGlobalVar)
 
+proc pushStaticContext(c: PContext, n: PNode): PSym =
+  let s2 = newSym(skLabel, c.cache.idAnon, nextSymId c.idgen, c.graph.owners[^1], n.info)
+  s2.flags.incl sfUsed
+  result = c.p.owner
+  c.p.owner = s2
+  pushOwner(c, s2)
+
+proc popStaticContext(c: PContext, ownerOld: PSym) =
+  c.p.owner = ownerOld
+  popOwner(c)
+
 proc semConst(c: PContext, n: PNode): PNode =
   result = copyNode(n)
   inc c.inStaticContext
@@ -677,8 +689,8 @@ proc semConst(c: PContext, n: PNode): PNode =
     var typFlags: TTypeAllowedFlags
 
     # don't evaluate here since the type compatibility check below may add a converter
+    let ownerOld = pushStaticContext(c, a[^1])
     var def = semExprWithType(c, a[^1])
-
     if def.kind == nkSym and def.sym.kind in {skTemplate, skMacro}:
       typFlags.incl taIsTemplateOrMacro
     elif def.typ.kind == tyTypeDesc and c.p.owner.kind != skMacro:
@@ -736,6 +748,7 @@ proc semConst(c: PContext, n: PNode): PNode =
                 else: def[j][1]
         b[j] = newSymNode(v)
     result.add b
+    popStaticContext(c, ownerOld)
   dec c.inStaticContext
 
 include semfields
@@ -2251,11 +2264,22 @@ proc semStaticStmt(c: PContext, n: PNode): PNode =
   #writeStackTrace()
   inc c.inStaticContext
   openScope(c)
+  # var ownerOld: PSym = nil
+  # if c.config.isDefined("nim_pushStaticContext"):
+  #   ownerOld = pushStaticContext(c, n)
+  let ownerOld = pushStaticContext(c, n)
+  let ownerNew = c.p.owner
   let a = semStmt(c, n[0], {})
+  # if c.config.isDefined("nim_pushStaticContext"):
+  #   popStaticContext(c, ownerOld)
+  popStaticContext(c, ownerOld)
   closeScope(c)
   dec c.inStaticContext
   n[0] = a
+  dbgIf c.p.owner, ownerOld, ownerNew
   evalStaticStmt(c.module, c.idgen, c.graph, a, c.p.owner)
+  dbgIf "after"
+  # popStaticContext(c, ownerOld)
   when false:
     # for incremental replays, keep the AST as required for replays:
     result = n
